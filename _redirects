@@ -1,0 +1,3 @@
+# Netlify fetches the news RSS server-side so the browser never hits CORS.
+/api/ms/*  https://www.motorsport.com/rss/:splat  200
+/api/as/*  https://www.autosport.com/rss/:splat   200
