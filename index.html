@@ -717,10 +717,15 @@ textarea{resize:vertical;min-height:78px}
   transition:transform .16s var(--ease),border-color .16s var(--ease)}
 .tcard:active{transform:scale(.97)}
 .tcard .sw{width:11px;height:11px;border-radius:4px;flex:none}
-/* 색 동그라미 대신 그 팀 차 사진을 붙입니다 */
-.tcard .sw.pic{width:34px;height:22px;border-radius:5px;object-fit:cover;
-  border:1px solid var(--line)}
-.tcard:has(.sw.pic){padding:8px 9px}
+/* 팀 색 배지에 약칭을 넣어 로고처럼 씁니다 */
+.tcard .mk{width:27px;height:27px;border-radius:8px;flex:none;display:grid;place-items:center;
+  font-size:9px;font-weight:900;color:#fff;letter-spacing:.01em;font-style:normal;
+  text-shadow:0 1px 2px rgba(0,0,0,.28)}
+.tcard:has(.mk){padding:8px 10px}
+/* 시리즈 칸은 표시를 빼고 색 띠로만 구분합니다 */
+.tcard.ser{padding-left:12px;position:relative}
+.tcard.ser::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;
+  border-radius:0 3px 3px 0;background:var(--tc)}
 .tcard.on{border-color:var(--tc,var(--br));background:color-mix(in srgb,var(--tc,var(--br)) 12%,var(--surface))}
 .tcard em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -2167,6 +2172,45 @@ async function fetchNews(key){
    제목을 줄바꿈으로 이어 한 번에 보냅니다. 번역기가 문장부호에서 한 제목을 여러 세그먼트로
    쪼개기도 하므로, 세그먼트 수를 세지 않고 각 세그먼트의 '원문'에 들어 있는 줄바꿈을
    경계 삼아 원래 제목 단위로 다시 붙입니다. */
+/* 번역기가 유독 못 옮기는 모터스포츠 말은 보내기 전에 쉬운 영어로 바꿉니다.
+   영어를 영어로 바꾸는 것이라 번역기가 헷갈리지 않습니다.
+   (livery를 그대로 두면 "상징", shootout은 "승부차기"로 나옵니다) */
+const EN_FIX = [
+  [/\blivery\b/gi, 'car design'],
+  [/\bliveries\b/gi, 'car designs'],
+  [/\bshootout\b/gi, 'final round'],
+  [/\bcalendar return\b/gi, 'return to the calendar'],
+  [/\bcurtain[- ]raiser\b/gi, 'season opener'],
+  [/\bsilly season\b/gi, 'driver transfer season'],
+];
+const enFix = s => EN_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || ''));
+
+/* 번역이 끝난 뒤 남는 어색한 말을 바로잡습니다. 모터스포츠 기사에서만 쓰는 표현이라
+   다른 뜻으로 잘못 바뀔 걱정이 적은 것만 골랐습니다 */
+const KO_FIX = [
+  /* 받침이 바뀌면 뒤따르는 조사도 같이 바꿔야 "리버리을"처럼 어긋나지 않습니다 */
+  [/자동차 디자인을/g, '리버리를'], [/자동차 디자인은/g, '리버리는'],
+  [/자동차 디자인이/g, '리버리가'], [/자동차 디자인과/g, '리버리와'],
+  [/자동차 디자인/g, '리버리'],
+  [/승부차기를/g, '슛아웃을'], [/승부차기는/g, '슛아웃은'],
+  [/승부차기가/g, '슛아웃이'], [/승부차기와/g, '슛아웃과'],
+  [/승부차기/g, '슛아웃'],
+  [/운전자/g, '드라이버'],
+  [/캘린더를 반환/g, '캘린더로 복귀'],
+  [/구덩이 정거장|구덩이 스톱/g, '피트스톱'],
+  [/안전차/g, '세이프티카'],
+  [/자격 예선|예선 자격/g, '예선'],
+];
+const koFix = s => KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || ''));
+
+/* 이름 사전이 못 잡는, 자주 나오는 고유명사 */
+const EXTRA_NAMES = [
+  ['Red Bull','레드불'], ['Road America','로드 아메리카'], ['Abu Dhabi','아부다비'],
+  ['Kevin Estre','케빈 에스트르'], ['Calum Nicholas','칼럼 니컬러스'],
+  ['Zandvoort','잔드보르트'], ['Silverstone','실버스톤'], ['Spa','스파'],
+  ['Le Mans','르망'], ['Daytona','데이토나'], ['Sebring','세브링'],
+];
+
 /* 기계 번역은 사람·팀 이름을 영어로 남겨 두는 일이 잦습니다("Mercedes의 감독").
    번역이 끝난 뒤 남은 영어 이름을 한국어로 바꿔 표기를 통일합니다.
    긴 이름부터 바꿔야 "Aston Martin"이 "Aston"에 먼저 걸리지 않습니다. */
@@ -2192,6 +2236,7 @@ const NAME_MAP = (()=>{
     if(r.n && r.n[1] !== r.n[0]) pairs.push([r.n[1], r.n[0]]);
   });
   LEGENDS.forEach(p => pairs.push(p));
+  EXTRA_NAMES.forEach(p => pairs.push(p));
   const seen = new Set();
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
@@ -2220,7 +2265,7 @@ function polish(s){
 
 async function translateTitles(titles, target){
   const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
-            + target + '&dt=t&q=' + encodeURIComponent(titles.join('\n'));
+            + target + '&dt=t&q=' + encodeURIComponent(titles.map(enFix).join('\n'));
   /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
   let res;
   for(let i = 0; i < 2; i++){
@@ -2248,7 +2293,7 @@ async function translateTitles(titles, target){
 
   if(outs.length !== titles.length) throw new Error('segment mismatch');
   /* 한국어일 때만 이름을 손봅니다 (일본어 표기는 데이터에 없습니다) */
-  return target === 'ko' ? outs.map(s => polish(postNames(s))) : outs.map(polish);
+  return target === 'ko' ? outs.map(s => polish(koFix(postNames(s)))) : outs.map(polish);
 }
 
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
@@ -2483,13 +2528,12 @@ function renderHomeSetup(){
     </div>
     <button class="btn flow" id="myDone">${t('my.done')}</button>`;
 
-  /* pic이 있으면 색 동그라미 대신 그 팀 차 사진을 작게 붙입니다 */
-  const card = (on, color, label, pic) => {
+  /* mark가 있으면 팀 색 배지에 약칭을 넣어 로고처럼 씁니다 */
+  const card = (on, color, label, mark) => {
     const b = el('button', 'tcard' + (on ? ' on' : ''));
     b.type = 'button';
     b.style.setProperty('--tc', color);
-    b.innerHTML = (pic ? `<img class="sw pic" src="${pic}" alt="">`
-                       : `<i class="sw" style="background:${color}"></i>`)
+    b.innerHTML = (mark ? `<i class="mk" style="background:${color}">${esc(mark)}</i>` : '')
                 + `<em>${esc(label)}</em>`;
     return b;
   };
@@ -2498,6 +2542,7 @@ function renderHomeSetup(){
     const box = $('#myS'); box.innerHTML = '';
     Object.entries(SERIES).forEach(([k,s])=>{
       const b = card(d.series.includes(k), s.color, s.name);
+      b.classList.add('ser');
       b.onclick = ()=>{
         const i = d.series.indexOf(k);
         if(i < 0) d.series.push(k);
@@ -2522,7 +2567,7 @@ function renderHomeSetup(){
       const grid = el('div','tgrid');
       seriesTeams(sk).forEach(k=>{
         const tm = TEAMS[k];
-        const b = card(d.teams.includes(k), tm.c, lz(tm.n), (teamPhoto(k)||{}).src);
+        const b = card(d.teams.includes(k), tm.c, lz(tm.n), teamCode(tm));
         b.onclick = ()=>{
           const i = d.teams.indexOf(k);
           if(i < 0) d.teams.push(k); else d.teams.splice(i,1);
@@ -2542,7 +2587,7 @@ function renderHomeSetup(){
     if(!mine.length){ box.innerHTML = `<div class="note">${t('my.noF1')}</div>`; return; }
     [...DRIVERS].sort((a,b)=> (mine.includes(a.t)?0:1)-(mine.includes(b.t)?0:1) || a.p-b.p)
       .forEach(dr=>{
-        const b = card(d.driver === dr.code, TEAMS[dr.t].c, lz(dr.n), (teamPhoto(dr.t)||{}).src);
+        const b = card(d.driver === dr.code, TEAMS[dr.t].c, lz(dr.n), dr.code);
         b.onclick = ()=>{ d.driver = dr.code; paintD(); };
         box.appendChild(b);
       });
@@ -2676,8 +2721,8 @@ function streakOf(){
 
 /* F1은 드라이버, 나머지 시리즈는 제조사를 고릅니다 */
 function pickables(r){
-  if(r.s === 'f1') return DRIVERS.map(d => ({ k:d.code, n:lz(d.n), c:TEAMS[d.t].c, pic:(teamPhoto(d.t)||{}).src }));
-  return seriesTeams(r.s).map(k => ({ k, n:lz(TEAMS[k].n), c:TEAMS[k].c, pic:(teamPhoto(k)||{}).src }));
+  if(r.s === 'f1') return DRIVERS.map(d => ({ k:d.code, n:lz(d.n), c:TEAMS[d.t].c, mk:d.code }));
+  return seriesTeams(r.s).map(k => ({ k, n:lz(TEAMS[k].n), c:TEAMS[k].c, mk:teamCode(TEAMS[k]) }));
 }
 const pickName = (r, k) => (pickables(r).find(x => x.k === k) || {}).n || k;
 
@@ -2768,9 +2813,7 @@ function openPick(r, result){
     const b = el('button', 'tcard' + (x.k === cur ? ' on' : ''));
     b.type = 'button';
     b.style.setProperty('--tc', x.c);
-    b.innerHTML = (x.pic ? `<img class="sw pic" src="${x.pic}" alt="">`
-                         : `<i class="sw" style="background:${x.c}"></i>`)
-                + `<em>${esc(x.n)}</em>`;
+    b.innerHTML = `<i class="mk" style="background:${x.c}">${esc(x.mk)}</i><em>${esc(x.n)}</em>`;
     b.onclick = ()=>{
       const all = picksOf();
       if(result){
