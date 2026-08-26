@@ -673,6 +673,31 @@ textarea{resize:vertical;min-height:78px}
 .hsec span{font-size:11.5px;color:var(--dim);font-weight:700}
 .hsec .refresh{margin-left:auto}
 
+/* ── 승자 맞히기 ── */
+.gm{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);
+  padding:16px;margin-bottom:22px;box-shadow:var(--sh1);animation:pop .4s var(--ease) backwards}
+.gm-top{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+.gm-rank{display:flex;align-items:baseline;gap:8px;min-width:0}
+.gm-rank b{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.gm-rank span{font-size:12.5px;font-weight:800;color:var(--br)}
+.gm-streak{margin-left:auto;flex:0 0 auto;font-size:10.5px;font-weight:800;color:#e8a13a;
+  background:rgba(232,161,58,.14);border-radius:999px;padding:4px 9px}
+.gm-race{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx-2);
+  padding:11px 12px;background:var(--surface-2);border-radius:var(--r2);margin-bottom:12px}
+.gm-race b{font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-race span{margin-left:auto;flex:0 0 auto;color:var(--tx-3);font-size:11px}
+.gm-q{font-size:14.5px;font-weight:800;letter-spacing:-.01em;margin-bottom:11px}
+.gm-my{font-size:13px;color:var(--tx-2);padding:11px 12px;border-radius:var(--r2);
+  background:var(--br-tint);border:1px solid var(--line)}
+.gm .btn{margin-top:11px}
+.gm .note{margin-top:10px}
+.gm-res{padding:13px;border-radius:var(--r2);text-align:center}
+.gm-res b{display:block;font-size:15px;font-weight:800;margin-bottom:4px}
+.gm-res span{font-size:12px;opacity:.85}
+.gm-res.hit{background:rgba(52,168,83,.14);color:#2f9e4f}
+:root[data-theme="dark"] .gm-res.hit{color:#5ed67f}
+.gm-res.miss{background:var(--surface-2);color:var(--tx-2)}
+
 /* 팀 카드가 여러 장 쌓이므로 사이를 띄웁니다 */
 .hero-team + .hero-team,
 .hstats + .hero-team{margin-top:22px}
@@ -909,6 +934,12 @@ ko:{
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
+ 'gm.q':'이번 경기, 누가 이길까요?','gm.pick':'우승자 예측하기','gm.change':'다시 고르기',
+ 'gm.picked':'내 예측 · <b>{0}</b>','gm.saved':'{0} 선택! 경기 끝나고 채점해요',
+ 'gm.locked':'경기가 시작돼서 예측을 바꿀 수 없어요.','gm.tooLate':'이번 경기는 예측 시간이 지났어요.',
+ 'gm.ended':'경기 종료','gm.enterResult':'결과 입력하고 채점하기','gm.whoWon':'누가 이겼나요?',
+ 'gm.hit':'적중! +{0} 포인트','gm.miss':'아쉬워요, 다음 기회에','gm.answer':'정답은 {0}',
+ 'gm.streak':'{0}연속 적중 중',
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
  'news.issues':'{0} 이슈','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 갱신','news.next':'다음 자동 갱신 {0}','news.failedShort':'불러오기 실패',
@@ -1044,6 +1075,12 @@ en:{
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
  'art.terms':'Terms in this story','art.full':'Read the full article',
+ 'gm.q':'Who wins this one?','gm.pick':'Make your pick','gm.change':'Change pick',
+ 'gm.picked':'Your pick · <b>{0}</b>','gm.saved':'{0} it is — we\u2019ll score it after the race',
+ 'gm.locked':'The race has started, so picks are locked.','gm.tooLate':'Too late to pick this one.',
+ 'gm.ended':'Race over','gm.enterResult':'Enter the result','gm.whoWon':'Who won?',
+ 'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
+ 'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
  'news.issues':'{0}','news.refresh':'Refresh','news.loading':'Loading…',
  'news.updated':'Updated {0}','news.next':'Next refresh {0}','news.failedShort':'Failed to load',
@@ -1179,6 +1216,12 @@ ja:{
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
+ 'gm.q':'今回、勝つのは誰？','gm.pick':'優勝者を予想する','gm.change':'選び直す',
+ 'gm.picked':'あなたの予想 · <b>{0}</b>','gm.saved':'{0}ですね。レース後に採点します',
+ 'gm.locked':'レースが始まったので変更できません。','gm.tooLate':'今回の予想時間は過ぎました。',
+ 'gm.ended':'レース終了','gm.enterResult':'結果を入力して採点','gm.whoWon':'勝ったのは誰？',
+ 'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
+ 'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
  'news.issues':'{0}','news.refresh':'更新','news.loading':'読み込み中…',
  'news.updated':'{0}に更新','news.next':'次回更新 {0}','news.failedShort':'読み込み失敗',
@@ -2087,7 +2130,7 @@ function cleanLead(s){
     .replace(/([.!?])([A-Z"'‘“])/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 600);
+    .slice(0, 900);
 }
 
 async function fetchNews(key){
@@ -2120,9 +2163,50 @@ async function fetchNews(key){
    제목을 줄바꿈으로 이어 한 번에 보냅니다. 번역기가 문장부호에서 한 제목을 여러 세그먼트로
    쪼개기도 하므로, 세그먼트 수를 세지 않고 각 세그먼트의 '원문'에 들어 있는 줄바꿈을
    경계 삼아 원래 제목 단위로 다시 붙입니다. */
+/* 기계 번역은 사람·팀 이름을 제멋대로 옮기고, 같은 이름도 기사마다 다르게 씁니다.
+   그래서 번역기에 보내기 전에 아는 이름은 한국어로 미리 바꿔 둡니다.
+   번역기는 이미 한국어인 부분을 대체로 그대로 두므로 표기가 일정해집니다.
+   긴 이름부터 바꿔야 "Aston Martin"이 "Aston"에 먼저 걸리지 않습니다. */
+const NAME_MAP = (()=>{
+  const pairs = [];
+  DRIVERS.forEach(d=>{
+    pairs.push([d.n[1], d.n[0]]);                              /* 풀네임 */
+    pairs.push([d.key, d.n[0].split(' ').slice(-1)[0]]);       /* 성만 나올 때 */
+  });
+  Object.values(TEAMS).forEach(t=>{ if(t.n[1] !== t.n[0]) pairs.push([t.n[1], t.n[0]]); });
+  const seen = new Set();
+  return pairs
+    .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
+    .sort((a,b) => b[0].length - a[0].length)
+    .map(([en,ko]) => [new RegExp('\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\async function translateTitles(titles, target){') + '\\b', 'g'), ko]);
+})();
+
+function preNames(s){
+  /* 이름을 바꾼 뒤 's가 남으면 번역기가 "페라리's"를 "페페라리의"처럼 앞글자를 겹칩니다.
+     그래서 아직 영어일 때 소유격을 먼저 '의'로 정리합니다.
+     이 순서라야 따옴표로 감싼 'Ferrari'를 소유격으로 잘못 보지 않습니다. */
+  let out = String(s || '')
+    .replace(/\b([A-Z][A-Za-z-]*)['’`]s\b/g, '$1의')          /* Ferrari's → Ferrari의 */
+    .replace(/\b([A-Z][A-Za-z-]*s)['’`](?=\s)/g, '$1의');     /* Mercedes' → Mercedes의 */
+  for(const [re, ko] of NAME_MAP) out = out.replace(re, ko);
+  return out;
+}
+
+/* 번역 결과에서 눈에 걸리는 자국을 정리합니다 */
+function polish(s){
+  return String(s || '')
+    .replace(/\s+([,.!?%])/g, '$1')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 async function translateTitles(titles, target){
+  /* 한국어로 옮길 때만 이름을 미리 바꿉니다 (일본어 표기는 데이터에 없습니다) */
+  const src = target === 'ko' ? titles.map(preNames) : titles;
   const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
-            + target + '&dt=t&q=' + encodeURIComponent(titles.join('\n'));
+            + target + '&dt=t&q=' + encodeURIComponent(src.join('\n'));
   /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
   let res;
   for(let i = 0; i < 2; i++){
@@ -2149,7 +2233,7 @@ async function translateTitles(titles, target){
   if(cur.trim()) outs.push(cur.replace(/\s+/g,' ').trim());
 
   if(outs.length !== titles.length) throw new Error('segment mismatch');
-  return outs;
+  return outs.map(polish);
 }
 
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
@@ -2541,6 +2625,156 @@ function teamCard(k, dr){
       </div>` : ''}`;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   승자 맞히기 — 경기 전에 우승자를 고르고, 끝나면 채점해 포인트를 받습니다.
+   결과를 자동으로 받아올 데이터가 없어서, 경기가 끝나면 누가 이겼는지
+   직접 골라 확정하는 방식입니다.
+   ══════════════════════════════════════════════════════════════ */
+const GAME_HIT = 50;          /* 적중 기본 점수 */
+const GAME_BONUS = 10;        /* 연속 적중 1회당 보너스 */
+const GAME_BONUS_MAX = 50;
+
+const RANKS = [
+  { at:0,    n:['루키','Rookie','ルーキー'] },
+  { at:150,  n:['세미프로','Semi-pro','セミプロ'] },
+  { at:400,  n:['프로','Pro','プロ'] },
+  { at:900,  n:['에이스','Ace','エース'] },
+  { at:1800, n:['레전드','Legend','レジェンド'] },
+];
+
+const picksOf  = ()=> DB.get('picks', {});
+const pointsOf = ()=> Object.values(picksOf()).reduce((s,p)=> s + (p.pts || 0), 0);
+const rankOf   = pts => [...RANKS].reverse().find(r => pts >= r.at) || RANKS[0];
+
+/* 최근 경기부터 거슬러 올라가며 연속 적중 횟수를 셉니다 */
+function streakOf(){
+  const done = Object.entries(picksOf())
+    .filter(([,p]) => p.result)
+    .sort((a,b) => (b[1].at || 0) - (a[1].at || 0));
+  let n = 0;
+  for(const [,p] of done){ if(p.pick === p.result) n++; else break; }
+  return n;
+}
+
+/* F1은 드라이버, 나머지 시리즈는 제조사를 고릅니다 */
+function pickables(r){
+  if(r.s === 'f1') return DRIVERS.map(d => ({ k:d.code, n:lz(d.n), c:TEAMS[d.t].c }));
+  return seriesTeams(r.s).map(k => ({ k, n:lz(TEAMS[k].n), c:TEAMS[k].c }));
+}
+const pickName = (r, k) => (pickables(r).find(x => x.k === k) || {}).n || k;
+
+/* 사흘 안에 채점한 결과가 있으면 카드 위에 띄워 줍니다 */
+function lastScored(){
+  const picks = picksOf();
+  const hit = Object.entries(picks)
+    .filter(([,p]) => p.result && Date.now() - (p.at || 0) < 3*86400000)
+    .sort((a,b) => (b[1].at || 0) - (a[1].at || 0))[0];
+  if(!hit) return null;
+  const r = RACES.find(x => x.id === hit[0]);
+  return r ? { r, p:hit[1] } : null;
+}
+
+/* 결과를 아직 안 넣은 지난 경기가 있으면 그것부터, 없으면 다음 경기 */
+function gameRace(){
+  const picks = picksOf();
+  const pending = RACES
+    .filter(r => status(r) === 'done' && picks[r.id] && !picks[r.id].result)
+    .sort((a,b) => b.ms - a.ms)[0];
+  return pending || nextRace();
+}
+
+function gameCard(){
+  const r = gameRace();
+  if(!r) return '';
+  const picks = picksOf(), mine = picks[r.id];
+  const pts = pointsOf(), rank = rankOf(pts), streak = streakOf();
+  const st = status(r);
+  const last = lastScored();
+
+  let body;
+  if(mine && st === 'done' && !mine.result){
+    body = `<div class="gm-my">${t('gm.picked', esc(pickName(r, mine.pick)))}</div>
+            <button class="btn flow sm" id="gmResult">${t('gm.enterResult')}</button>`;
+  }else if(mine){
+    body = `<div class="gm-my">${t('gm.picked', esc(pickName(r, mine.pick)))}</div>
+            ${st === 'soon' ? `<button class="btn ghost sm" id="gmPick">${t('gm.change')}</button>`
+                            : `<div class="note">${t('gm.locked')}</div>`}`;
+  }else if(st === 'soon'){
+    body = `<button class="btn flow sm" id="gmPick">${t('gm.pick')}</button>`;
+  }else{
+    body = `<div class="note">${t('gm.tooLate')}</div>`;
+  }
+
+  return `
+    <div class="gm">
+      <div class="gm-top">
+        <div class="gm-rank">
+          <b>${esc(lz3(rank.n))}</b>
+          <span>${pts.toLocaleString()} P</span>
+        </div>
+        ${streak > 1 ? `<div class="gm-streak">${t('gm.streak', streak)}</div>` : ''}
+      </div>
+      <div class="gm-race">
+        <i class="sdot" style="background:${SERIES[r.s].color}"></i>
+        <b>${esc(rname(r))}</b>
+        <span>${st === 'done' ? t('gm.ended') : fmtShort(r.ms)}</span>
+      </div>
+      ${last ? `<div class="gm-res ${last.p.pick === last.p.result ? 'hit' : 'miss'}">
+            <b>${last.p.pick === last.p.result ? t('gm.hit', last.p.pts) : t('gm.miss')}</b>
+            <span>${esc(rname(last.r))} · ${t('gm.answer', esc(pickName(last.r, last.p.result)))}</span>
+          </div>` : ''}
+      <div class="gm-q">${t('gm.q')}</div>
+      ${body}
+    </div>`;
+}
+
+function wireGame(){
+  const r = gameRace(); if(!r) return;
+  const bp = $('#gmPick'), br = $('#gmResult');
+  if(bp) bp.onclick = ()=> openPick(r, false);
+  if(br) br.onclick = ()=> openPick(r, true);
+}
+
+/* result=false면 예측, true면 실제 결과 입력 */
+function openPick(r, result){
+  const list = pickables(r);
+  const cur = result ? null : (picksOf()[r.id] || {}).pick;
+  openSheet(`
+    <h2>${result ? t('gm.whoWon') : t('gm.q')}</h2>
+    <div class="muted">${esc(rname(r))} · ${esc(fmtFull(r.ms))}</div>
+    <div class="tgrid" id="gmGrid" style="margin-top:14px"></div>
+    <button class="btn ghost sm" id="gmClose">${t('r.close')}</button>`);
+
+  const grid = $('#gmGrid');
+  list.forEach(x=>{
+    const b = el('button', 'tcard' + (x.k === cur ? ' on' : ''));
+    b.type = 'button';
+    b.style.setProperty('--tc', x.c);
+    b.innerHTML = `<i class="sw" style="background:${x.c}"></i><em>${esc(x.n)}</em>`;
+    b.onclick = ()=>{
+      const all = picksOf();
+      if(result){
+        const p = all[r.id]; if(!p) return;
+        p.result = x.k;
+        p.at = Date.now();   /* 최근 채점 순서를 이 시각으로 셉니다 */
+        const win = p.pick === x.k;
+        p.pts = win ? GAME_HIT + Math.min(streakOf() * GAME_BONUS, GAME_BONUS_MAX) : 0;
+        all[r.id] = p;
+        DB.set('picks', all);
+        toast(win ? t('gm.hit', p.pts) : t('gm.miss'));
+      }else{
+        all[r.id] = { pick:x.k, at:Date.now(), result:null, pts:0 };
+        DB.set('picks', all);
+        toast(t('gm.saved', x.n));
+      }
+      closeSheet();
+      renderHome();
+    };
+    grid.appendChild(b);
+  });
+  $('#gmClose').onclick = closeSheet;
+}
+
 async function renderHome(){
   const my = myNorm(myGet());
   if(!my || !my.teams.length) return renderHomeSetup();
@@ -2552,7 +2786,7 @@ async function renderHome(){
   const hasF1 = my.teams.some(k => TEAMS[k].s === 'f1');
   const lead  = dr ? lz(dr.n) : lz(TEAMS[order[0]].n);
 
-  $('#p-home').innerHTML =
+  $('#p-home').innerHTML = gameCard() +
     order.map(k => teamCard(k, dr)).join('') + `
     ${hasF1 ? '' : `<div class="note" style="margin-top:14px">${t('my.other')}</div>`}
     <div class="hsec">
@@ -2562,6 +2796,7 @@ async function renderHome(){
     <div id="myNews"><div class="skel"></div><div class="skel"></div></div>
     <button class="btn ghost sm" id="myEdit" style="margin-top:24px">${t('my.edit')}</button>`;
 
+  wireGame();
   $('#myEdit').onclick    = ()=>{ myDraft = null; renderHomeSetup(); };
   $('#myRefresh').onclick = ()=>{ my.series.forEach(s => DB.del('news2-'+s)); renderHome(); };
 
@@ -3996,7 +4231,7 @@ $('#btnSettings').onclick = ()=>{
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
-    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','pro','myhome'].forEach(DB.del);
+    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','pro','myhome','picks'].forEach(DB.del);
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('ms-mir-')) localStorage.removeItem(k); });
     Object.keys(SERIES).forEach(k=> DB.del('news2-'+k));
     location.reload();
