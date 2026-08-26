@@ -241,8 +241,22 @@ main{padding:14px 16px 0}
 .nitem .th{width:80px;height:66px;border-radius:var(--r2);object-fit:cover;flex:0 0 80px;
   background:var(--surface-3)}
 .nitem .nb{flex:1;min-width:0}
-.nitem .hl{text-decoration:none;color:inherit;display:block}
+/* 제목은 이제 링크가 아니라 앱 안에서 기사를 여는 버튼입니다 */
+.nitem .hl{text-decoration:none;color:inherit;display:block;width:100%;text-align:left;
+  border:0;background:none;padding:0;cursor:pointer;font:inherit}
 .nitem .hl:active{opacity:.55}
+
+/* ── 기사 읽기 ── */
+.artimg{width:100%;border-radius:var(--r2);margin-bottom:14px;display:block;
+  aspect-ratio:16/9;object-fit:cover}
+.artmeta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tx-3);margin-bottom:9px}
+.arttitle{margin:0 0 12px;font-size:19px;line-height:1.36;font-weight:800;letter-spacing:-.015em}
+.artlead{margin:0 0 6px;font-size:14px;line-height:1.72;color:var(--tx-2)}
+.terms{display:grid;gap:9px}
+.term{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);padding:12px 13px}
+.term b{display:block;font-size:12.5px;font-weight:800;color:var(--br);margin-bottom:4px}
+.term span{display:block;font-size:12px;line-height:1.6;color:var(--tx-2)}
+.artlink{display:block;text-align:center;text-decoration:none;line-height:1.2}
 .nitem h3{margin:0 0 6px;font-size:14px;line-height:1.42;font-weight:700;letter-spacing:-.015em;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .nitem p{margin:0 0 8px;font-size:11.5px;line-height:1.5;color:var(--tx-2);
@@ -894,6 +908,8 @@ ko:{
  'my.news':'{0} 소식','my.newsAll':'관심 시리즈 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
+ 'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
+ 'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
  'news.issues':'{0} 이슈','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 갱신','news.next':'다음 자동 갱신 {0}','news.failedShort':'불러오기 실패',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
@@ -1027,6 +1043,8 @@ en:{
  'my.news':'{0} news','my.newsAll':'News from your series','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
+ 'art.terms':'Terms in this story','art.full':'Read the full article',
+ 'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
  'news.issues':'{0}','news.refresh':'Refresh','news.loading':'Loading…',
  'news.updated':'Updated {0}','news.next':'Next refresh {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
@@ -1160,6 +1178,8 @@ ja:{
  'my.news':'{0}のニュース','my.newsAll':'興味のあるシリーズのニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
+ 'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
+ 'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
  'news.issues':'{0}','news.refresh':'更新','news.loading':'読み込み中…',
  'news.updated':'{0}に更新','news.next':'次回更新 {0}','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
@@ -1937,6 +1957,108 @@ addEventListener('scroll', ()=>{ $('#hdr').classList.toggle('stuck', scrollY > 1
 /* ══════════════════════════════════════════════════════════════
    1. 소식 — 3일마다 갱신
    ══════════════════════════════════════════════════════════════ */
+/* 모터스포츠 용어 풀이.
+   기사 원문(영어)에서 아래 낱말을 찾아, 처음 보는 사람도 알아듣게 풀어 줍니다.
+   re = 원문에서 찾을 표현, n = 용어 이름[한/영/일], d = 설명[한/영/일] */
+const TERMS = [
+ { re:/\bDRS\b/i, n:['DRS','DRS','DRS'], d:[
+   '뒷날개를 눕혀 공기저항을 줄이는 추월 보조 장치. 앞차와 1초 이내일 때 지정 구간에서만 열 수 있습니다.',
+   'A flap on the rear wing that opens to cut drag. Only allowed in set zones when within one second of the car ahead.',
+   'リアウイングを開いて空気抵抗を減らす追い越し補助装置。前車と1秒以内の時だけ指定区間で使えます。'] },
+ { re:/\bundercut\b/i, n:['언더컷','Undercut','アンダーカット'], d:[
+   '앞차보다 먼저 피트인해 새 타이어로 빠르게 달려 앞질러 나오는 전략.',
+   'Pitting earlier than a rival so fresh tyres carry you ahead when they stop.',
+   'ライバルより早くピットインし、新しいタイヤで先に出る戦略。'] },
+ { re:/\bovercut\b/i, n:['오버컷','Overcut','オーバーカット'], d:[
+   '반대로 피트인을 늦춰, 빈 트랙에서 빠르게 달려 앞서는 전략.',
+   'Staying out longer instead, using clear track to gain enough time.',
+   '逆にピットインを遅らせ、空いたコースで速く走って前に出る戦略。'] },
+ { re:/\bsafety car\b|\bSC\b/i, n:['세이프티카','Safety car','セーフティカー'], d:[
+   '사고가 나면 코스에 나와 모든 차를 줄 세워 천천히 달리게 하는 차. 이때 간격이 사라져 순위가 뒤집히기도 합니다.',
+   'A car sent out after a crash to bunch the field up at low speed. Gaps disappear, so it often reshuffles the order.',
+   '事故の際にコースへ出て全車を隊列走行させる車。差が消えるため順位が入れ替わることがあります。'] },
+ { re:/virtual safety car|\bVSC\b/i, n:['버추얼 세이프티카','Virtual safety car','バーチャルセーフティカー'], d:[
+   '실제 차를 내보내지 않고, 모든 차에 똑같이 속도를 줄이라고 지시하는 방식. 간격은 유지됩니다.',
+   'Same idea without a real car — everyone must slow by the same amount, so gaps stay.',
+   '実車を出さず、全車に同じだけ減速を指示する方式。差は保たれます。'] },
+ { re:/\bpole position\b|\bpole\b/i, n:['폴 포지션','Pole position','ポールポジション'], d:[
+   '예선 1위. 결승에서 맨 앞자리에서 출발합니다.',
+   'Fastest in qualifying — starts the race from the very front.',
+   '予選1位。決勝で最前列から発進します。'] },
+ { re:/\bpodium\b/i, n:['포디움','Podium','表彰台'], d:[
+   '1~3위. 경기 후 시상대에 오르는 세 자리를 뜻합니다.',
+   'The top three finishers, who stand on the rostrum after the race.',
+   '1〜3位。レース後に表彰台へ上がる3つの順位です。'] },
+ { re:/\bstint\b/i, n:['스틴트','Stint','スティント'], d:[
+   '한 번 피트인해서 다음 피트인까지, 같은 타이어로 달리는 구간.',
+   'The run between two pit stops on one set of tyres.',
+   'ピットインからピットインまで、同じタイヤで走る区間。'] },
+ { re:/\bdegradation\b|\bdeg\b/i, n:['타이어 마모','Degradation','タイヤ摩耗'], d:[
+   '타이어가 닳아 점점 느려지는 현상. 언제 갈아 끼울지가 전략의 핵심입니다.',
+   'Tyres wearing out and losing pace — deciding when to change is the heart of strategy.',
+   'タイヤが摩耗して遅くなる現象。交換時期が戦略の要です。'] },
+ { re:/\bparc ferm[eé]\b/i, n:['파크 페르메','Parc fermé','パルクフェルメ'], d:[
+   '예선이 끝나면 차 설정을 바꾸지 못하게 봉인하는 규칙. 어기면 피트에서 출발해야 합니다.',
+   'Rules that lock the car’s setup after qualifying. Break them and you start from the pit lane.',
+   '予選後に車のセッティング変更を禁じる規則。破るとピットスタートになります。'] },
+ { re:/\bgrid penalty\b|\bplace grid\b/i, n:['그리드 페널티','Grid penalty','グリッド降格'], d:[
+   '규정 위반이나 부품 교체로 결승 출발 순서를 뒤로 미루는 벌칙.',
+   'Being moved back on the starting grid for a rule breach or a parts change.',
+   '違反や部品交換により決勝のスタート位置を後ろに下げる罰則。'] },
+ { re:/\bslipstream\b|\btow\b/i, n:['슬립스트림','Slipstream','スリップストリーム'], d:[
+   '앞차 뒤 공기가 갈라진 자리에 바짝 붙어 저항을 덜 받으며 속도를 얻는 것.',
+   'Tucking into the low-drag air behind another car to gain speed.',
+   '前車の後ろの空気が薄い場所に入り、抵抗を減らして加速すること。'] },
+ { re:/\bdownforce\b/i, n:['다운포스','Downforce','ダウンフォース'], d:[
+   '공기가 차를 아래로 눌러 주는 힘. 클수록 코너를 빠르게 돌지만 직선에서는 느려집니다.',
+   'Aerodynamic load pressing the car down — more grip in corners, less speed on straights.',
+   '空気が車を下へ押さえる力。大きいほどコーナーは速く、直線は遅くなります。'] },
+ { re:/\bDNF\b|\bretirement\b|\bretired\b/i, n:['리타이어','DNF','リタイア'], d:[
+   '고장이나 사고로 경기를 끝까지 못 마치고 중도 하차하는 것.',
+   'Did Not Finish — dropping out mid-race through damage or a failure.',
+   '故障や事故で完走できず途中で終えること。'] },
+ { re:/\bstewards\b/i, n:['스튜어드','Stewards','スチュワード'], d:[
+   '경기 중 반칙을 판정하고 벌칙을 주는 심판진.',
+   'The race officials who judge incidents and hand out penalties.',
+   'レース中の反則を判定し罰則を科す審判団。'] },
+ { re:/\bchicane\b/i, n:['시케인','Chicane','シケイン'], d:[
+   '속도를 줄이려고 일부러 만든 좌우로 꺾이는 짧은 구간.',
+   'A tight left-right kink built into a circuit to slow cars down.',
+   '速度を落とすために設けられた左右に折れる短い区間。'] },
+ { re:/\bapex\b/i, n:['에이펙스','Apex','クリッピングポイント'], d:[
+   '코너 안쪽에서 차가 가장 가깝게 스치는 지점. 이 지점을 잘 잡아야 빠릅니다.',
+   'The innermost point of a corner — hitting it well is what makes a lap fast.',
+   'コーナー内側で車が最も近づく地点。ここを正確に通ると速く走れます。'] },
+ { re:/\bsprint\b/i, n:['스프린트','Sprint','スプリント'], d:[
+   '토요일에 짧게 치르는 별도 경기. 여기서도 포인트를 줍니다.',
+   'A short Saturday race that also awards championship points.',
+   '土曜日に行われる短い別レース。ここでもポイントが付きます。'] },
+ { re:/\bhypercar\b|\bLMH\b|\bLMDh\b/i, n:['하이퍼카','Hypercar','ハイパーカー'], d:[
+   'WEC 최상위 클래스. 르망 24시에서 종합 우승을 다투는 차들입니다.',
+   'The top WEC class — these are the cars fighting for overall victory at Le Mans.',
+   'WEC最上位クラス。ル・マン24時間で総合優勝を争う車です。'] },
+ { re:/\bGT3\b|\bLMGT3\b/i, n:['GT3','GT3','GT3'], d:[
+   '시판 스포츠카를 개조한 경주차 규격. 여러 대회가 같은 규격을 함께 씁니다.',
+   'A racing class based on modified road-going sports cars, shared across many championships.',
+   '市販スポーツカーを改造したレース車両規格。多くの選手権で共通に使われます。'] },
+ { re:/balance of performance|\bBoP\b/i, n:['성능 균형(BoP)','Balance of Performance','性能調整(BoP)'], d:[
+   '제조사마다 다른 차의 성능을 무게·출력으로 맞춰 공정하게 겨루게 하는 조정.',
+   'Weight and power adjustments that even out different manufacturers’ cars.',
+   'メーカーごとに異なる車の性能を重量・出力で揃える調整。'] },
+ { re:/\bformation lap\b/i, n:['포메이션 랩','Formation lap','フォーメーションラップ'], d:[
+   '출발 직전 한 바퀴 돌며 타이어와 브레이크를 데우는 준비 주행.',
+   'The lap before the start, used to warm tyres and brakes.',
+   'スタート前に1周してタイヤとブレーキを温める走行。'] },
+ { re:/\bblue flag\b/i, n:['블루 플래그','Blue flag','ブルーフラッグ'], d:[
+   '한 바퀴 뒤진 차에게 빠른 차를 먼저 보내라고 알리는 깃발.',
+   'Shown to a lapped car, telling it to let the faster car by.',
+   '周回遅れの車に速い車を先に行かせるよう示す旗。'] },
+ { re:/\bred flag\b/i, n:['레드 플래그','Red flag','レッドフラッグ'], d:[
+   '큰 사고나 악천후로 경기를 잠시 멈추는 것. 차들은 피트로 돌아옵니다.',
+   'The race is stopped for a big crash or bad weather; cars return to the pits.',
+   '大きな事故や悪天候でレースを一時中断すること。車はピットへ戻ります。'] },
+];
+
 const NEWS_TTL = 3*24*3600*1000;
 let newsSeries = 'f1';
 
@@ -1956,6 +2078,18 @@ const FEEDS = [
 ];
 const stripTags = s => String(s||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
 
+/* 피드 리드 문단 다듬기 — 끝에 붙는 '계속 읽기' 안내를 걷어내고,
+   태그를 제거하며 붙어버린 문장 사이에 공백을 넣어 줍니다 */
+function cleanLead(s){
+  return String(s || '')
+    .replace(/\s*(Keep reading|Read more|Continue reading)\s*\.*\s*$/i, '')
+    .replace(/\s*[-–—]\s*\.\.\.\s*$/, '')
+    .replace(/([.!?])([A-Z"'‘“])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 600);
+}
+
 async function fetchNews(key){
   const feed = SERIES[key].feed;
   let lastErr;
@@ -1971,7 +2105,7 @@ async function fetchNews(key){
       if(!nodes.length) throw new Error('empty');
       return nodes.slice(0,20).map(it=>({
         title: stripTags(it.querySelector('title')?.textContent),
-        desc : stripTags(it.querySelector('description')?.textContent).slice(0,180),
+        desc : cleanLead(stripTags(it.querySelector('description')?.textContent)),
         link : (it.querySelector('link')?.textContent || '').split('?')[0],
         img  : it.querySelector('enclosure')?.getAttribute('url') || '',
         src  : f.src,
@@ -2012,13 +2146,50 @@ async function translateTitles(titles, target){
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
 async function ensureTitles(key, data){
   if(L === 'en' || !data.items.length) return false;
-  data.tr ||= {};
-  if(data.tr[L]) return false;
+  data.tr ||= {}; data.trd ||= {};
+  if(data.tr[L] && data.trd[L]) return false;
   try{
-    data.tr[L] = await translateTitles(data.items.map(i=>i.title), L);
+    if(!data.tr[L])  data.tr[L]  = await translateTitles(data.items.map(i=>i.title), L);
+    /* 리드 문단은 길어서 따로 보냅니다. 실패해도 제목 번역은 살립니다 */
+    if(!data.trd[L]){
+      try{ data.trd[L] = await translateTitles(data.items.map(i=>(i.desc||'').replace(/\n/g,' ')), L); }
+      catch(e){ /* 원문 리드를 그대로 씁니다 */ }
+    }
     DB.set('news2-'+key, data);
     return true;
   }catch(e){ return false; }
+}
+/* 기사 읽기 — 밖으로 나가지 않고 앱 안에서 봅니다.
+   언론사 기사 페이지는 봇 차단(403)이라 본문을 가져올 수 없고, 전문을 그대로 옮기는 것도
+   저작권 문제가 있습니다. 그래서 피드가 배포용으로 제공하는 리드 문단만 번역해 보여주고,
+   전문은 원문 링크로 넘깁니다. */
+function openArticle(it, title, lead){
+  const s = SERIES[it.series || newsSeries];
+  const hay = (it.title + ' ' + (it.desc || ''));
+  const hits = TERMS.filter(x => x.re.test(hay)).slice(0, 6);
+
+  const terms = hits.length ? `
+    <div class="sec">${t('art.terms')}</div>
+    <div class="terms">${hits.map(x => `
+      <div class="term">
+        <b>${esc(lz3(x.n))}</b>
+        <span>${esc(lz3(x.d))}</span>
+      </div>`).join('')}</div>` : '';
+
+  openSheet(`
+    ${it.img ? `<img class="artimg" src="${esc(it.img)}" alt="" onerror="this.remove()">` : ''}
+    <div class="artmeta">
+      <span class="pill" style="color:${s.color}">${esc(s.name)}</span>
+      <span>${esc(it.src)} · ${esc(relTime(it.at))}</span>
+    </div>
+    <h2 class="arttitle">${esc(title)}</h2>
+    ${lead ? `<p class="artlead">${esc(lead)}</p>` : ''}
+    ${terms}
+    <div class="note">${t('art.note')}</div>
+    <a class="btn flow artlink" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${t('art.full')}</a>
+    <button class="btn ghost sm" id="artClose">${t('r.close')}</button>`);
+
+  $('#artClose').onclick = closeSheet;
 }
 
 function buildNewsChips(){
@@ -2072,22 +2243,23 @@ function paintNews(data){
   const list = $('#newsList'); list.innerHTML = '';
   if(!data.items.length){ list.innerHTML = `<div class="empty">${ic('news')}${t('news.empty')}</div>`; return; }
   const titles = data.tr?.[L] || null;      // 번역된 제목이 있으면 그걸 씁니다
+  const descs  = data.trd?.[L] || null;     // 리드 문단 번역
+  const key = newsSeries;
   data.items.forEach((it,i)=>{
-    const tr = `https://translate.google.com/translate?sl=en&tl=${L}&u=` + encodeURIComponent(it.link);
+    const lead = descs?.[i] || it.desc || '';
     const a = el('article','nitem');
     a.style.animationDelay = Math.min(i,8)*28 + 'ms';
     a.innerHTML = `
       ${it.img ? `<img class="th" src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
       <div class="nb">
-        <a class="hl" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">
-          <h3>${esc(titles?.[i] || it.title)}</h3></a>
-        ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
+        <button class="hl"><h3>${esc(titles?.[i] || it.title)}</h3></button>
+        ${lead ? `<p>${esc(lead)}</p>` : ''}
         <div class="nfoot">
           <span class="pill" style="color:${s.color}">${esc(s.name)}</span>
           <span class="src">${esc(it.src)} · ${esc(relTime(it.at))}</span>
-          <a class="tr" href="${tr}" target="_blank" rel="noopener noreferrer">${ic('globe')}${t('news.translate')}</a>
         </div>
       </div>`;
+    a.querySelector('.hl').onclick = ()=> openArticle({...it, series:key}, titles?.[i] || it.title, lead);
     list.appendChild(a);
   });
 }
@@ -2273,7 +2445,8 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: c.tr?.[L]?.[i] || it.title }));
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: c.tr?.[L]?.[i] || it.title,
+                                        td: c.trd?.[L]?.[i] || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
 
@@ -2299,13 +2472,13 @@ function newsCard(it){
   a.innerHTML = `
     ${it.img ? `<img class="th" src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
     <div class="nb">
-      <a class="hl" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">
-        <h3>${esc(it.tt)}</h3></a>
+      <button class="hl"><h3>${esc(it.tt)}</h3></button>
       <div class="nfoot">
         <span class="pill" style="color:${s.color}">${esc(s.name)}</span>
         <span class="src">${esc(it.src)} · ${esc(relTime(it.at))}</span>
       </div>
     </div>`;
+  a.querySelector('.hl').onclick = ()=> openArticle(it, it.tt, it.td || it.desc || '');
   return a;
 }
 
