@@ -717,6 +717,10 @@ textarea{resize:vertical;min-height:78px}
   transition:transform .16s var(--ease),border-color .16s var(--ease)}
 .tcard:active{transform:scale(.97)}
 .tcard .sw{width:11px;height:11px;border-radius:4px;flex:none}
+/* 색 동그라미 대신 그 팀 차 사진을 붙입니다 */
+.tcard .sw.pic{width:34px;height:22px;border-radius:5px;object-fit:cover;
+  border:1px solid var(--line)}
+.tcard:has(.sw.pic){padding:8px 9px}
 .tcard.on{border-color:var(--tc,var(--br));background:color-mix(in srgb,var(--tc,var(--br)) 12%,var(--surface))}
 .tcard em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -2163,10 +2167,18 @@ async function fetchNews(key){
    제목을 줄바꿈으로 이어 한 번에 보냅니다. 번역기가 문장부호에서 한 제목을 여러 세그먼트로
    쪼개기도 하므로, 세그먼트 수를 세지 않고 각 세그먼트의 '원문'에 들어 있는 줄바꿈을
    경계 삼아 원래 제목 단위로 다시 붙입니다. */
-/* 기계 번역은 사람·팀 이름을 제멋대로 옮기고, 같은 이름도 기사마다 다르게 씁니다.
-   그래서 번역기에 보내기 전에 아는 이름은 한국어로 미리 바꿔 둡니다.
-   번역기는 이미 한국어인 부분을 대체로 그대로 두므로 표기가 일정해집니다.
+/* 기계 번역은 사람·팀 이름을 영어로 남겨 두는 일이 잦습니다("Mercedes의 감독").
+   번역이 끝난 뒤 남은 영어 이름을 한국어로 바꿔 표기를 통일합니다.
    긴 이름부터 바꿔야 "Aston Martin"이 "Aston"에 먼저 걸리지 않습니다. */
+/* 현역이 아니라 DRIVERS에 없지만 기사에 자주 나오는 이름들 */
+const LEGENDS = [
+  ['Michael Schumacher','미하엘 슈마허'], ['Ayrton Senna','아일톤 세나'],
+  ['Sebastian Vettel','제바스티안 페텔'], ['Fernando Alonso','페르난도 알론소'],
+  ['Toto Wolff','토토 볼프'], ['Christian Horner','크리스티안 호너'],
+  ['Flavio Briatore','플라비오 브리아토레'], ['Zak Brown','잭 브라운'],
+  ['Frederic Vasseur','프레데리크 바쇠르'], ['Andrea Stella','안드레아 스텔라'],
+];
+
 const NAME_MAP = (()=>{
   const pairs = [];
   DRIVERS.forEach(d=>{
@@ -2174,6 +2186,12 @@ const NAME_MAP = (()=>{
     pairs.push([d.key, d.n[0].split(' ').slice(-1)[0]]);       /* 성만 나올 때 */
   });
   Object.values(TEAMS).forEach(t=>{ if(t.n[1] !== t.n[0]) pairs.push([t.n[1], t.n[0]]); });
+  /* 서킷과 대회 이름도 한국어로 (RACES에 이미 두 가지 표기가 들어 있습니다) */
+  RACES.forEach(r=>{
+    if(r.c && r.c[1] !== r.c[0]) pairs.push([r.c[1], r.c[0]]);
+    if(r.n && r.n[1] !== r.n[0]) pairs.push([r.n[1], r.n[0]]);
+  });
+  LEGENDS.forEach(p => pairs.push(p));
   const seen = new Set();
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
@@ -2181,13 +2199,11 @@ const NAME_MAP = (()=>{
     .map(([en,ko]) => [new RegExp('\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\async function translateTitles(titles, target){') + '\\b', 'g'), ko]);
 })();
 
-function preNames(s){
-  /* 이름을 바꾼 뒤 's가 남으면 번역기가 "페라리's"를 "페페라리의"처럼 앞글자를 겹칩니다.
-     그래서 아직 영어일 때 소유격을 먼저 '의'로 정리합니다.
-     이 순서라야 따옴표로 감싼 'Ferrari'를 소유격으로 잘못 보지 않습니다. */
-  let out = String(s || '')
-    .replace(/\b([A-Z][A-Za-z-]*)['’`]s\b/g, '$1의')          /* Ferrari's → Ferrari의 */
-    .replace(/\b([A-Z][A-Za-z-]*s)['’`](?=\s)/g, '$1의');     /* Mercedes' → Mercedes의 */
+/* 번역이 끝난 한국어 문장에 남은 영어 이름만 한국어로 바꿉니다.
+   번역기에 한국어를 섞어 보내면 그 한국어까지 다시 번역해 버려
+   "Mercedes"가 "현대차"나 "포르쉐"로 둔갑합니다. 그래서 반드시 번역 뒤에 합니다. */
+function postNames(s){
+  let out = String(s || '');
   for(const [re, ko] of NAME_MAP) out = out.replace(re, ko);
   return out;
 }
@@ -2203,10 +2219,8 @@ function polish(s){
 }
 
 async function translateTitles(titles, target){
-  /* 한국어로 옮길 때만 이름을 미리 바꿉니다 (일본어 표기는 데이터에 없습니다) */
-  const src = target === 'ko' ? titles.map(preNames) : titles;
   const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
-            + target + '&dt=t&q=' + encodeURIComponent(src.join('\n'));
+            + target + '&dt=t&q=' + encodeURIComponent(titles.join('\n'));
   /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
   let res;
   for(let i = 0; i < 2; i++){
@@ -2233,7 +2247,8 @@ async function translateTitles(titles, target){
   if(cur.trim()) outs.push(cur.replace(/\s+/g,' ').trim());
 
   if(outs.length !== titles.length) throw new Error('segment mismatch');
-  return outs.map(polish);
+  /* 한국어일 때만 이름을 손봅니다 (일본어 표기는 데이터에 없습니다) */
+  return target === 'ko' ? outs.map(s => polish(postNames(s))) : outs.map(polish);
 }
 
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
@@ -2253,7 +2268,7 @@ async function ensureTitles(key, data){
     if(out.length === titles.length + leads.length){
       data.tr[L]  = out.slice(0, titles.length);
       data.trd[L] = out.slice(titles.length);
-      DB.set('news2-'+key, data);
+      DB.set('news3-'+key, data);
       return true;
     }
   }catch(e){ /* 아래에서 제목만이라도 살려 봅니다 */ }
@@ -2261,7 +2276,7 @@ async function ensureTitles(key, data){
   if(!data.tr[L]){
     try{
       data.tr[L] = await translateTitles(titles, L);
-      DB.set('news2-'+key, data);
+      DB.set('news3-'+key, data);
       return true;
     }catch(e){}
   }
@@ -2313,7 +2328,7 @@ function buildNewsChips(){
 async function renderNews(force){
   buildNewsChips();
   const key = newsSeries, list = $('#newsList');
-  const cache = DB.get('news2-'+key, null);
+  const cache = DB.get('news3-'+key, null);
   const fresh = cache && (Date.now() - cache.at < NEWS_TTL);
 
   if(cache){
@@ -2329,7 +2344,7 @@ async function renderNews(force){
   try{
     const items = await fetchNews(key);
     const data = { at: Date.now(), items };
-    DB.set('news2-'+key, data);
+    DB.set('news3-'+key, data);
     if(newsSeries === key) paintNews(data);
     await ensureTitles(key, data);
     if(newsSeries === key) paintNews(data);
@@ -2468,11 +2483,14 @@ function renderHomeSetup(){
     </div>
     <button class="btn flow" id="myDone">${t('my.done')}</button>`;
 
-  const card = (on, color, label) => {
+  /* pic이 있으면 색 동그라미 대신 그 팀 차 사진을 작게 붙입니다 */
+  const card = (on, color, label, pic) => {
     const b = el('button', 'tcard' + (on ? ' on' : ''));
     b.type = 'button';
     b.style.setProperty('--tc', color);
-    b.innerHTML = `<i class="sw" style="background:${color}"></i><em>${esc(label)}</em>`;
+    b.innerHTML = (pic ? `<img class="sw pic" src="${pic}" alt="">`
+                       : `<i class="sw" style="background:${color}"></i>`)
+                + `<em>${esc(label)}</em>`;
     return b;
   };
 
@@ -2504,7 +2522,7 @@ function renderHomeSetup(){
       const grid = el('div','tgrid');
       seriesTeams(sk).forEach(k=>{
         const tm = TEAMS[k];
-        const b = card(d.teams.includes(k), tm.c, lz(tm.n));
+        const b = card(d.teams.includes(k), tm.c, lz(tm.n), (teamPhoto(k)||{}).src);
         b.onclick = ()=>{
           const i = d.teams.indexOf(k);
           if(i < 0) d.teams.push(k); else d.teams.splice(i,1);
@@ -2524,7 +2542,7 @@ function renderHomeSetup(){
     if(!mine.length){ box.innerHTML = `<div class="note">${t('my.noF1')}</div>`; return; }
     [...DRIVERS].sort((a,b)=> (mine.includes(a.t)?0:1)-(mine.includes(b.t)?0:1) || a.p-b.p)
       .forEach(dr=>{
-        const b = card(d.driver === dr.code, TEAMS[dr.t].c, lz(dr.n));
+        const b = card(d.driver === dr.code, TEAMS[dr.t].c, lz(dr.n), (teamPhoto(dr.t)||{}).src);
         b.onclick = ()=>{ d.driver = dr.code; paintD(); };
         box.appendChild(b);
       });
@@ -2547,9 +2565,9 @@ function renderHomeSetup(){
 async function homeNews(my){
   const out = [];
   for(const s of my.series){
-    let c = DB.get('news2-'+s, null);
+    let c = DB.get('news3-'+s, null);
     if(!c || Date.now() - c.at > NEWS_TTL){
-      try{ c = { at:Date.now(), items: await fetchNews(s) }; DB.set('news2-'+s, c); }
+      try{ c = { at:Date.now(), items: await fetchNews(s) }; DB.set('news3-'+s, c); }
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
@@ -2658,8 +2676,8 @@ function streakOf(){
 
 /* F1은 드라이버, 나머지 시리즈는 제조사를 고릅니다 */
 function pickables(r){
-  if(r.s === 'f1') return DRIVERS.map(d => ({ k:d.code, n:lz(d.n), c:TEAMS[d.t].c }));
-  return seriesTeams(r.s).map(k => ({ k, n:lz(TEAMS[k].n), c:TEAMS[k].c }));
+  if(r.s === 'f1') return DRIVERS.map(d => ({ k:d.code, n:lz(d.n), c:TEAMS[d.t].c, pic:(teamPhoto(d.t)||{}).src }));
+  return seriesTeams(r.s).map(k => ({ k, n:lz(TEAMS[k].n), c:TEAMS[k].c, pic:(teamPhoto(k)||{}).src }));
 }
 const pickName = (r, k) => (pickables(r).find(x => x.k === k) || {}).n || k;
 
@@ -2750,7 +2768,9 @@ function openPick(r, result){
     const b = el('button', 'tcard' + (x.k === cur ? ' on' : ''));
     b.type = 'button';
     b.style.setProperty('--tc', x.c);
-    b.innerHTML = `<i class="sw" style="background:${x.c}"></i><em>${esc(x.n)}</em>`;
+    b.innerHTML = (x.pic ? `<img class="sw pic" src="${x.pic}" alt="">`
+                         : `<i class="sw" style="background:${x.c}"></i>`)
+                + `<em>${esc(x.n)}</em>`;
     b.onclick = ()=>{
       const all = picksOf();
       if(result){
@@ -2798,7 +2818,7 @@ async function renderHome(){
 
   wireGame();
   $('#myEdit').onclick    = ()=>{ myDraft = null; renderHomeSetup(); };
-  $('#myRefresh').onclick = ()=>{ my.series.forEach(s => DB.del('news2-'+s)); renderHome(); };
+  $('#myRefresh').onclick = ()=>{ my.series.forEach(s => DB.del('news3-'+s)); renderHome(); };
 
   const box = $('#myNews');
   try{
@@ -4226,14 +4246,14 @@ $('#btnSettings').onclick = ()=>{
     CFG.nick = v; saveCfg(); toast(t('set.nickSaved'));
   };
   $('#clearNews').onclick = ()=>{
-    Object.keys(SERIES).forEach(k=> DB.del('news2-'+k));
+    Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
     toast(t('set.newsCleared')); closeSheet(); switchTab('news');
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
     ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','pro','myhome','picks'].forEach(DB.del);
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('ms-mir-')) localStorage.removeItem(k); });
-    Object.keys(SERIES).forEach(k=> DB.del('news2-'+k));
+    Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
     location.reload();
   };
   $('#setClose').onclick = closeSheet;
