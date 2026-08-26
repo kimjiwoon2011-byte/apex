@@ -2123,11 +2123,20 @@ async function fetchNews(key){
 async function translateTitles(titles, target){
   const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
             + target + '&dt=t&q=' + encodeURIComponent(titles.join('\n'));
-  const ac = new AbortController();
-  const timer = setTimeout(()=>ac.abort(), 12000);
-  const res = await fetch(url, {signal:ac.signal});
-  clearTimeout(timer);
-  if(!res.ok) throw new Error('HTTP '+res.status);
+  /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
+  let res;
+  for(let i = 0; i < 2; i++){
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), 12000);
+    try{
+      res = await fetch(url, {signal:ac.signal});
+      clearTimeout(timer);
+      if(res.ok) break;
+      res = null;
+    }catch(e){ clearTimeout(timer); res = null; }
+    if(i === 0) await new Promise(r => setTimeout(r, 1600));
+  }
+  if(!res) throw new Error('translate blocked');
 
   const segs = (await res.json())[0] || [];
   const outs = [];
@@ -2148,16 +2157,31 @@ async function ensureTitles(key, data){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {};
   if(data.tr[L] && data.trd[L]) return false;
+
+  /* 제목과 리드를 한 번의 요청으로 함께 보냅니다.
+     번역기는 짧은 시간에 여러 번 부르면 잠시 차단해 버리므로,
+     요청 횟수를 줄이는 것이 가장 확실한 대비책입니다.
+     빈 줄은 세그먼트 경계를 흐트러뜨려서 '-'로 채웁니다. */
+  const titles = data.items.map(i => i.title || '-');
+  const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
   try{
-    if(!data.tr[L])  data.tr[L]  = await translateTitles(data.items.map(i=>i.title), L);
-    /* 리드 문단은 길어서 따로 보냅니다. 실패해도 제목 번역은 살립니다 */
-    if(!data.trd[L]){
-      try{ data.trd[L] = await translateTitles(data.items.map(i=>(i.desc||'').replace(/\n/g,' ')), L); }
-      catch(e){ /* 원문 리드를 그대로 씁니다 */ }
+    const out = await translateTitles([...titles, ...leads], L);
+    if(out.length === titles.length + leads.length){
+      data.tr[L]  = out.slice(0, titles.length);
+      data.trd[L] = out.slice(titles.length);
+      DB.set('news2-'+key, data);
+      return true;
     }
-    DB.set('news2-'+key, data);
-    return true;
-  }catch(e){ return false; }
+  }catch(e){ /* 아래에서 제목만이라도 살려 봅니다 */ }
+
+  if(!data.tr[L]){
+    try{
+      data.tr[L] = await translateTitles(titles, L);
+      DB.set('news2-'+key, data);
+      return true;
+    }catch(e){}
+  }
+  return false;
 }
 /* 기사 읽기 — 밖으로 나가지 않고 앱 안에서 봅니다.
    언론사 기사 페이지는 봇 차단(403)이라 본문을 가져올 수 없고, 전문을 그대로 옮기는 것도
