@@ -204,12 +204,12 @@ main{padding:14px 16px 0}
 .tabs button:active .ib{transform:scale(.88)}
 
 /* ── 칩 ── */
-.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;
-  margin:0 -16px;padding-left:16px;padding-right:16px}
-.chips::-webkit-scrollbar{display:none}
+/* 시리즈가 8개로 늘면서 가로 스크롤로는 뒤쪽이 잘려 보이지 않았습니다.
+   줄바꿈으로 바꿔 한 화면에 전부 나오게 합니다 */
+.chips{display:flex;gap:7px;flex-wrap:wrap;padding:2px 0 10px}
 .chip{
   flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--tx-2);
-  border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;
+  border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;
   display:flex;align-items:center;gap:7px;box-shadow:var(--sh1);
   transition:transform .18s var(--ease),background .22s,color .22s,border-color .22s
 }
