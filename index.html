@@ -1375,8 +1375,10 @@ const SERIES = {
           results:'https://www.imsa.com/weathertech/results/' },
   dtm:  { name:'DTM',  full:['도이체 투어렌바겐 마스터스','Deutsche Tourenwagen Masters'], color:'#ffc531', feed:'dtm',
           results:'https://www.dtm.com/en/results' },
-  gtwc: { name:'GT3',  full:['GT 월드 챌린지 유럽','GT World Challenge Europe'], color:'#a855f7', feed:'gt',
+  gtwc: { name:'GT EU',   full:['GT 월드 챌린지 유럽','GT World Challenge Europe'], color:'#a855f7', feed:'gt',
           results:'https://www.gt-world-challenge-europe.com/results' },
+  gta:  { name:'GT ASIA', full:['GT 월드 챌린지 아시아','GT World Challenge Asia'],  color:'#f43f7e', feed:'gt',
+          results:'https://www.gt-world-challenge-asia.com/results' },
 };
 
 /* 중계 플랫폼 — 앱 아이콘 타일 */
@@ -1408,6 +1410,8 @@ const WATCH = {
    Douglas-Peucker로 단순화해 200×200 좌표계로 옮긴 실제 코스 형상입니다.
    ══════════════════════════════════════════════════════════════ */
 const CIRCUITS = {
+mandalika:'M59 180L61 145L65 142L83 135L89 127L86 90L81 83L66 81L59 77L54 71L35 43L34 31L37 20L41 15L46 18L45 39L46 41L50 42L151 14L156 15L159 21L160 49L156 54L148 55L144 63L151 73L166 86L166 119L147 141L127 145L121 149L113 159L107 164L66 186L60 185L59 180Z',
+okayama:'M138 29L107 135L103 136L100 133L103 116L102 114L85 110L79 114L81 158L85 160L88 159L93 148L95 146L99 147L101 151L97 178L92 181L78 186L72 186L68 180L62 105L63 89L67 85L73 86L94 99L104 97L108 93L117 69L115 52L119 39L122 16L128 14L134 16L137 20L138 29Z',
 albertpark:'M85 142L62 119L62 117L64 111L63 105L61 102L45 86L40 80L35 72L28 59L29 58L30 57L40 55L42 54L42 51L42 33L43 31L57 22L71 16L78 12L80 13L84 16L87 17L95 18L100 20L107 26L109 32L113 49L112 53L111 57L106 65L102 85L103 96L107 104L113 112L124 122L128 123L138 123L140 125L157 138L160 142L163 148L172 179L171 180L149 188L146 187L144 186L134 168L132 168L124 176L122 176L118 176L85 142Z',
 shanghai:'M59 161L40 165L33 161L30 158L29 154L29 150L30 146L32 143L38 141L42 143L42 146L41 153L43 156L45 157L49 156L51 153L52 144L47 136L24 110L12 77L14 75L17 75L21 79L29 88L42 111L47 115L52 118L58 118L67 115L72 110L80 95L86 91L92 91L96 93L106 109L111 108L117 100L117 96L83 40L80 40L76 44L73 46L70 44L66 38L66 31L69 26L73 24L81 23L89 26L95 33L187 173L188 176L185 177L177 172L153 139L59 161Z',
 suzuka:'M162 103L187 133L188 138L186 144L184 147L181 147L178 145L167 130L160 130L157 128L152 116L149 114L141 113L138 111L136 108L136 105L139 95L137 91L133 89L125 86L119 87L111 91L100 104L86 105L83 95L80 79L80 75L83 66L82 65L80 65L73 77L69 81L65 82L55 83L43 79L37 74L32 68L28 56L26 54L23 53L17 54L12 57L12 60L14 64L32 77L43 83L87 98L92 97L100 93L118 78L122 80L129 76L136 76L140 78L145 82L162 103Z',
@@ -1459,6 +1463,7 @@ misano:'M98 85L94 83L91 81L82 63L80 62L78 61L70 66L40 94L38 97L38 114L35 118L32 
 };
 /* 서킷 이름(영문) → 윤곽 키 */
 const CIRCUIT_OF = [
+  [/mandalika/i,'mandalika'], [/okayama/i,'okayama'],
   [/albert park/i,'albertpark'], [/shanghai/i,'shanghai'], [/suzuka/i,'suzuka'],
   [/miami/i,'miami'], [/villeneuve/i,'villeneuve'], [/monaco/i,'monaco'],
   [/barcelona-catalunya|catalunya/i,'catalunya'], [/red bull ring/i,'redbullring'],
@@ -1690,6 +1695,16 @@ const TEAMS = {
   gt3_ast:{ s:'gtwc', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
   gt3_for:{ s:'gtwc', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
   gt3_cor:{ s:'gtwc', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
+  /* GT 월드 챌린지 아시아 — 유럽과 같은 GT3 차량이라 사진을 공유합니다 */
+  gta_fer:{ s:'gta', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
+  gta_por:{ s:'gta', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
+  gta_bmw:{ s:'gta', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
+  gta_mer:{ s:'gta', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
+  gta_lam:{ s:'gta', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
+  gta_mcl:{ s:'gta', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
+  gta_ast:{ s:'gta', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
+  gta_lex:{ s:'gta', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
+  gta_aud:{ s:'gta', n:['아우디','Audi'],             c:'#A21C34', p:'gt3_aud' },
   gt3_lex:{ s:'gtwc', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
 };
 /* key = 결과 데이터(영문)에서 우승/포디움을 세기 위한 성(姓) */
@@ -1861,6 +1876,21 @@ const RACES = [
   {s:'gtwc',r:8,n:['잔드보르트 스프린트','Zandvoort Sprint'],c:['잔드보르트','Zandvoort'],f:'🇳🇱',t:'2026-09-20T21:00:00+09:00',h:1},
   {s:'gtwc',r:9,n:['바르셀로나 스프린트','Barcelona Sprint'],c:['카탈루냐','Circuit de Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-04T21:00:00+09:00',h:1},
   {s:'gtwc',r:10,n:['3시간 포르티망','3 Hours of Portimão'],c:['알가르베','Algarve International'],f:'🇵🇹',t:'2026-10-18T21:00:00+09:00',h:3},
+  /* ───── GT 월드 챌린지 아시아 ─────
+     6개 서킷에서 1시간 경기를 두 번씩, 모두 12경기입니다.
+     세부 시각은 아직 공식 발표 전이라 현지 오후 기준으로 잡아 두었습니다. */
+  {s:'gta',r:1,n:['세팡 R1','Sepang Race 1'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-04T15:00:00+09:00',h:1},
+  {s:'gta',r:2,n:['세팡 R2','Sepang Race 2'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-05T15:00:00+09:00',h:1},
+  {s:'gta',r:3,n:['만달리카 R1','Mandalika Race 1'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-02T15:00:00+09:00',h:1},
+  {s:'gta',r:4,n:['만달리카 R2','Mandalika Race 2'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-03T15:00:00+09:00',h:1},
+  {s:'gta',r:5,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-05T15:00:00+09:00',h:1},
+  {s:'gta',r:6,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-06T15:00:00+09:00',h:1},
+  {s:'gta',r:7,n:['후지 R1','Fuji Race 1'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-11T14:00:00+09:00',h:1},
+  {s:'gta',r:8,n:['후지 R2','Fuji Race 2'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-12T14:00:00+09:00',h:1},
+  {s:'gta',r:9,n:['오카야마 R1','Okayama Race 1'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-29T14:00:00+09:00',h:1},
+  {s:'gta',r:10,n:['오카야마 R2','Okayama Race 2'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-30T14:00:00+09:00',h:1},
+  {s:'gta',r:11,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
+  {s:'gta',r:12,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-18T15:00:00+09:00',h:1},
 ];
 RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
