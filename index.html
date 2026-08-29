@@ -246,6 +246,13 @@ main{padding:14px 16px 0}
   border:0;background:none;padding:0;cursor:pointer;font:inherit}
 .nitem .hl:active{opacity:.55}
 
+/* ── 경기 영상 (앱 안에서 재생) ── */
+.vidwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:var(--r2);
+  overflow:hidden;background:#000;box-shadow:var(--sh1)}
+.vidwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.skel.vid{aspect-ratio:16/9;height:auto;border-radius:var(--r2)}
+.vidout{display:block;text-align:center;text-decoration:none;line-height:1.2;margin-top:0}
+
 /* ── 기사 읽기 ── */
 .artimg{width:100%;border-radius:var(--r2);margin-bottom:14px;display:block;
   aspect-ratio:16/9;object-fit:cover}
@@ -944,6 +951,7 @@ ko:{
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상','watch.videoSb':'유튜브에서 바로 찾기',
+ 'watch.openYt':'유튜브에서 이 경기 영상 보기',
  'gm.q':'이번 경기, 누가 이길까요?','gm.pick':'우승자 예측하기','gm.change':'다시 고르기',
  'gm.picked':'내 예측 · <b>{0}</b>','gm.saved':'{0} 선택! 경기 끝나고 채점해요',
  'gm.locked':'경기가 시작돼서 예측을 바꿀 수 없어요.','gm.tooLate':'이번 경기는 예측 시간이 지났어요.',
@@ -1086,6 +1094,7 @@ en:{
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video','watch.videoSb':'Find it on YouTube',
+ 'watch.openYt':'Watch this race on YouTube',
  'gm.q':'Who wins this one?','gm.pick':'Make your pick','gm.change':'Change pick',
  'gm.picked':'Your pick · <b>{0}</b>','gm.saved':'{0} it is — we\u2019ll score it after the race',
  'gm.locked':'The race has started, so picks are locked.','gm.tooLate':'Too late to pick this one.',
@@ -1228,6 +1237,7 @@ ja:{
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像','watch.videoSb':'YouTubeで探す',
+ 'watch.openYt':'YouTubeでこのレースを見る',
  'gm.q':'今回、勝つのは誰？','gm.pick':'優勝者を予想する','gm.change':'選び直す',
  'gm.picked':'あなたの予想 · <b>{0}</b>','gm.saved':'{0}ですね。レース後に採点します',
  'gm.locked':'レースが始まったので変更できません。','gm.tooLate':'今回の予想時間は過ぎました。',
@@ -3319,16 +3329,61 @@ function videoSearch(r){
   return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
 }
 
+/* 경기 영상을 앱 안에서 바로 재생합니다.
+   유튜브 검색 결과를 임베드하는 방법(listType=search)은 막혀 있어서,
+   서버가 대신 검색 페이지를 받아와 첫 영상의 ID를 찾아낸 뒤 그 영상을 넣습니다.
+   파일로 열었을 때는 프록시가 없어 검색이 안 되므로 유튜브로 넘겨줍니다. */
+const vidCache = {};
+
+function ytQuery(r){
+  return [SERIES[r.s].full[1], r.c[1], new Date(r.ms).getFullYear(),
+          status(r) === 'done' ? 'highlights' : 'live'].join(' ');
+}
+
+async function findVideo(r){
+  if(vidCache[r.id] !== undefined) return vidCache[r.id];
+  if(!HOSTED){ vidCache[r.id] = null; return null; }
+  try{
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), 12000);
+    const res = await fetch('/api/yt/results?search_query=' + encodeURIComponent(ytQuery(r)),
+                            { signal: ac.signal });
+    clearTimeout(timer);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const html = await res.text();
+    /* 검색 결과 첫 영상. 쇼츠는 세로라 화면에 안 맞아서 거릅니다 */
+    const shorts = new Set([...html.matchAll(/"reelWatchEndpoint":\{"videoId":"([\w-]{11})"/g)].map(m=>m[1]));
+    const ids = [...html.matchAll(/"videoId":"([\w-]{11})"/g)].map(m=>m[1]);
+    const id = ids.find(x => !shorts.has(x)) || null;
+    vidCache[r.id] = id;
+    return id;
+  }catch(e){ vidCache[r.id] = null; return null; }
+}
+
+/* 경기 카드 안의 영상 자리를 채웁니다 */
+async function fillVideo(r){
+  const box = document.getElementById('vidBox');
+  if(!box) return;
+  const id = await findVideo(r);
+  if(!document.getElementById('vidBox')) return;      /* 그 사이 카드가 닫혔으면 그만둡니다 */
+  if(!id){
+    box.innerHTML = `<a class="btn ghost sm vidout" href="${esc(videoSearch(r))}"
+                        target="_blank" rel="noopener noreferrer">${t('watch.openYt')}</a>`;
+    return;
+  }
+  box.innerHTML = `<div class="vidwrap">
+      <iframe src="https://www.youtube-nocookie.com/embed/${esc(id)}?rel=0"
+              title="${esc(rname(r))}" loading="lazy" allowfullscreen
+              allow="accelerometer; encrypted-media; picture-in-picture; fullscreen"></iframe>
+    </div>`;
+}
+
 function openRace(r){
   const s = SERIES[r.s], st = status(r);
   const rev = DB.get('reviews', {})[r.id];
   const ck = circuitKey(r);
 
-  const watch = [
-    { nm:t('watch.video'), sb:[t('watch.videoSb'), t('watch.videoSb')], ico:'play',
-      c1:'#ff0000', c2:'#ff8a80', url:videoSearch(r) },
-    ...(WATCH[r.s]||[])
-  ].map(w=>`
+  const watch = (WATCH[r.s]||[]).map(w=>`
     <a class="watch" href="${watchUrl(w, r)}" target="_blank" rel="noopener noreferrer">
       <span class="ico" style="background:linear-gradient(152deg,${w.c1},${w.c2})">${
         w.ico ? ic(w.ico,'fill') : esc(w.mark).replace(/\n/g,'<br>')}</span>
@@ -3377,6 +3432,8 @@ function openRace(r){
     </div>
     <button class="btn ghost sm" id="btnIcs">${ic('cal')} ${t('r.addCal')}</button>
 
+    <div class="sec">${t('watch.video')}</div>
+    <div id="vidBox"><div class="skel vid"></div></div>
     <div class="sec">${t('r.watch')}</div>
     <div class="wgrid">${watch}</div>
     <div class="note">${t('r.watchNote')}</div>
@@ -3385,6 +3442,7 @@ function openRace(r){
 
     <button class="btn ghost sm" id="btnRoom">${ic('chat')} ${t('r.makeRoom')}</button>
     <button class="btn ghost sm" id="btnClose">${t('r.close')}</button>`);
+  fillVideo(r);
 
   $('#btnClose').onclick = closeSheet;
   $('#btnIcs').onclick   = ()=> downloadIcs(r);
