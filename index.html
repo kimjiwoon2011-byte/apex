@@ -1376,10 +1376,18 @@ const SERIES = {
   dtm:  { name:'DTM',  full:['도이체 투어렌바겐 마스터스','Deutsche Tourenwagen Masters'], color:'#ffc531', feed:'dtm',
           results:'https://www.dtm.com/en/results' },
   gtwc: { name:'GT EU',   full:['GT 월드 챌린지 유럽','GT World Challenge Europe'], color:'#a855f7', feed:'gt',
-          results:'https://www.gt-world-challenge-europe.com/results' },
+          results:'https://www.gt-world-challenge-europe.com/results', g:'gt' },
   gta:  { name:'GT ASIA', full:['GT 월드 챌린지 아시아','GT World Challenge Asia'],  color:'#f43f7e', feed:'gt',
-          results:'https://www.gt-world-challenge-asia.com/results' },
+          results:'https://www.gt-world-challenge-asia.com/results', g:'gt' },
+  gtam: { name:'GT USA',  full:['GT 월드 챌린지 아메리카','GT World Challenge America'], color:'#38bdf8', feed:'gt',
+          results:'https://www.gt-world-challenge-america.com/results', g:'gt' },
+  sgt:  { name:'SUPER GT', full:['슈퍼 GT','Super GT'],                      color:'#22c55e', feed:'super-gt',
+          results:'https://supergt.net/en/race/result' },
 };
+
+/* 같은 계열끼리 묶어서 보여줍니다. g가 없으면 단독 시리즈입니다 */
+const GROUPS = { gt: ['GT 월드 챌린지','GT World Challenge','GTワールドチャレンジ'] };
+const groupOf = k => SERIES[k].g || null;
 
 /* 중계 플랫폼 — 앱 아이콘 타일 */
 const WATCH = {
@@ -1410,6 +1418,11 @@ const WATCH = {
    Douglas-Peucker로 단순화해 200×200 좌표계로 옮긴 실제 코스 형상입니다.
    ══════════════════════════════════════════════════════════════ */
 const CIRCUITS = {
+sonoma:'M44 33L55 42L65 45L78 57L94 59L101 62L139 94L137 100L138 103L158 107L164 111L171 123L186 171L185 177L181 178L177 175L164 139L131 112L125 111L103 112L93 119L87 130L79 132L64 120L49 102L34 102L30 99L14 76L14 73L18 69L34 65L44 66L53 71L71 98L76 101L83 102L89 100L93 95L95 87L94 82L90 76L68 59L24 36L35 22L40 22L44 33Z',
+barber:'M97 99L125 72L126 67L119 41L120 36L124 33L129 31L134 31L139 34L142 38L143 43L140 66L136 71L88 120L87 125L92 130L99 128L119 114L161 56L166 54L174 55L181 51L186 58L184 66L146 103L139 120L68 152L59 166L54 169L46 169L23 162L17 158L14 147L14 140L18 131L25 125L31 125L45 139L53 140L97 99Z',
+sugo:'M122 106L118 115L119 120L123 122L132 120L136 117L139 110L171 91L175 92L185 104L186 109L184 112L100 139L74 143L71 140L70 135L83 107L82 104L72 91L65 88L33 96L27 96L21 93L16 88L14 82L14 74L18 67L23 62L30 59L39 57L156 72L160 76L160 87L158 90L153 91L132 90L128 93L122 106Z',
+autopolis:'M52 108L51 116L47 120L29 123L23 120L18 111L21 91L15 82L14 75L16 71L21 68L24 68L33 74L47 74L52 66L55 46L60 40L66 39L73 42L79 52L85 56L176 117L185 124L186 127L185 131L176 142L167 149L127 161L121 161L118 159L109 145L103 143L95 144L88 153L85 154L82 153L81 149L85 141L90 137L105 129L109 123L109 116L105 109L88 99L80 91L68 54L66 53L62 53L60 56L52 108Z',
+motegi:'M57 35L72 35L80 39L84 42L102 74L105 77L111 77L122 74L129 77L131 84L130 114L133 118L137 117L180 82L185 82L186 87L103 164L98 165L83 139L67 134L61 139L56 137L14 61L14 56L17 53L22 50L28 51L74 117L79 118L88 109L88 101L36 44L35 41L37 38L47 36Z',
 mandalika:'M59 180L61 145L65 142L83 135L89 127L86 90L81 83L66 81L59 77L54 71L35 43L34 31L37 20L41 15L46 18L45 39L46 41L50 42L151 14L156 15L159 21L160 49L156 54L148 55L144 63L151 73L166 86L166 119L147 141L127 145L121 149L113 159L107 164L66 186L60 185L59 180Z',
 okayama:'M138 29L107 135L103 136L100 133L103 116L102 114L85 110L79 114L81 158L85 160L88 159L93 148L95 146L99 147L101 151L97 178L92 181L78 186L72 186L68 180L62 105L63 89L67 85L73 86L94 99L104 97L108 93L117 69L115 52L119 39L122 16L128 14L134 16L137 20L138 29Z',
 albertpark:'M85 142L62 119L62 117L64 111L63 105L61 102L45 86L40 80L35 72L28 59L29 58L30 57L40 55L42 54L42 51L42 33L43 31L57 22L71 16L78 12L80 13L84 16L87 17L95 18L100 20L107 26L109 32L113 49L112 53L111 57L106 65L102 85L103 96L107 104L113 112L124 122L128 123L138 123L140 125L157 138L160 142L163 148L172 179L171 180L149 188L146 187L144 186L134 168L132 168L124 176L122 176L118 176L85 142Z',
@@ -1464,6 +1477,8 @@ misano:'M98 85L94 83L91 81L82 63L80 62L78 61L70 66L40 94L38 97L38 114L35 118L32 
 /* 서킷 이름(영문) → 윤곽 키 */
 const CIRCUIT_OF = [
   [/mandalika/i,'mandalika'], [/okayama/i,'okayama'],
+  [/sonoma/i,'sonoma'], [/barber/i,'barber'], [/sugo/i,'sugo'],
+  [/autopolis/i,'autopolis'], [/motegi/i,'motegi'],
   [/albert park/i,'albertpark'], [/shanghai/i,'shanghai'], [/suzuka/i,'suzuka'],
   [/miami/i,'miami'], [/villeneuve/i,'villeneuve'], [/monaco/i,'monaco'],
   [/barcelona-catalunya|catalunya/i,'catalunya'], [/red bull ring/i,'redbullring'],
@@ -1695,6 +1710,27 @@ const TEAMS = {
   gt3_ast:{ s:'gtwc', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
   gt3_for:{ s:'gtwc', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
   gt3_cor:{ s:'gtwc', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
+  /* GT 월드 챌린지 아메리카 — 같은 GT3 차량입니다 */
+  gtam_fer:{ s:'gtam', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
+  gtam_por:{ s:'gtam', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
+  gtam_bmw:{ s:'gtam', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
+  gtam_mer:{ s:'gtam', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
+  gtam_lam:{ s:'gtam', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
+  gtam_mcl:{ s:'gtam', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
+  gtam_ast:{ s:'gtam', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
+  gtam_for:{ s:'gtam', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
+  gtam_cor:{ s:'gtam', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
+
+  /* 슈퍼 GT — GT500은 일본 3사, GT300은 GT3 차량이 섞입니다 */
+  sgt_toy:{ s:'sgt', n:['토요타','Toyota'],             c:'#EB0A1E', p:'wec_toy' },
+  sgt_hon:{ s:'sgt', n:['혼다','Honda'],                c:'#E8002D', p:'ims_acu' },
+  sgt_nis:{ s:'sgt', n:['닛산','Nissan'],               c:'#C3002F', p:'gt3_lex' },
+  sgt_lex:{ s:'sgt', n:['렉서스','Lexus'],              c:'#1A1A1A', p:'gt3_lex' },
+  sgt_por:{ s:'sgt', n:['포르쉐','Porsche'],            c:'#D5001C', p:'gt3_por' },
+  sgt_mer:{ s:'sgt', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
+  sgt_bmw:{ s:'sgt', n:['BMW','BMW'],                   c:'#0066B1', p:'gt3_bmw' },
+  sgt_fer:{ s:'sgt', n:['페라리','Ferrari'],            c:'#E8002D', p:'gt3_fer' },
+
   /* GT 월드 챌린지 아시아 — 유럽과 같은 GT3 차량이라 사진을 공유합니다 */
   gta_fer:{ s:'gta', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
   gta_por:{ s:'gta', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
@@ -1891,6 +1927,25 @@ const RACES = [
   {s:'gta',r:10,n:['오카야마 R2','Okayama Race 2'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-30T14:00:00+09:00',h:1},
   {s:'gta',r:11,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
   {s:'gta',r:12,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-18T15:00:00+09:00',h:1},
+  /* ───── GT 월드 챌린지 아메리카 ─────
+     2026년부터 라운드마다 3시간 경기 한 번으로 형식이 바뀌었습니다. */
+  {s:'gtam',r:1,n:['소노마 3시간','Sonoma 3 Hours'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T05:00:00+09:00',h:3},
+  {s:'gtam',r:2,n:['오스틴 3시간','Austin 3 Hours'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-26T03:00:00+09:00',h:3},
+  {s:'gtam',r:3,n:['세브링 3시간','Sebring 3 Hours'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-10T02:00:00+09:00',h:3},
+  {s:'gtam',r:4,n:['로드 애틀랜타 3시간','Road Atlanta 3 Hours'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T02:00:00+09:00',h:3},
+  {s:'gtam',r:5,n:['로드 아메리카 3시간','Road America 3 Hours'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T03:00:00+09:00',h:3},
+  {s:'gtam',r:6,n:['바버 3시간','Barber 3 Hours'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T02:00:00+09:00',h:3},
+  {s:'gtam',r:7,n:['인디애나폴리스 3시간','Indianapolis 3 Hours'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T02:00:00+09:00',h:3},
+
+  /* ───── 슈퍼 GT ─────
+     2026년은 세팡 라운드가 빠져 7전으로 치릅니다. */
+  {s:'sgt',r:1,n:['오카야마 GT','Okayama GT'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-04-12T14:00:00+09:00',h:2},
+  {s:'sgt',r:2,n:['후지 GT','Fuji GT'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-05-04T14:00:00+09:00',h:2},
+  {s:'sgt',r:3,n:['후지 GT 500마일','Fuji GT 500 Miles'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:5},
+  {s:'sgt',r:4,n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
+  {s:'sgt',r:5,n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
+  {s:'sgt',r:6,n:['오토폴리스 GT','Autopolis GT'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T14:00:00+09:00',h:2},
+  {s:'sgt',r:7,n:['모테기 GT','Motegi GT'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2},
 ];
 RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
@@ -2392,7 +2447,11 @@ function openArticle(it, title, lead){
 
 function buildNewsChips(){
   const box = $('#newsChips'); box.innerHTML = '';
-  Object.entries(SERIES).forEach(([k,s])=>{
+  /* 묶음이 없는 시리즈를 먼저, GT 계열은 뒤에 모아 둡니다 */
+  const order = [...Object.keys(SERIES).filter(k => !groupOf(k)),
+                 ...Object.keys(SERIES).filter(k => groupOf(k))];
+  order.forEach(k=>{
+    const s = SERIES[k];
     const b = el('button','chip' + (k===newsSeries?' on':''));
     b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(t('news.issues', s.name))}`;
     b.onclick = ()=>{ newsSeries = k; buildNewsChips(); renderNews(); };
@@ -2546,7 +2605,7 @@ function renderHomeSetup(){
 
     <div class="setup-step">
       <div class="fl">${t('my.step1')} <span class="hint">· ${t('my.step1h')}</span></div>
-      <div class="tgrid" id="myS"></div>
+      <div id="myS"></div>
     </div>
     <div class="setup-step">
       <div class="fl">${t('my.step2')} <span class="hint">· ${t('my.step2h')}</span></div>
@@ -2570,7 +2629,8 @@ function renderHomeSetup(){
 
   const paintS = ()=>{
     const box = $('#myS'); box.innerHTML = '';
-    Object.entries(SERIES).forEach(([k,s])=>{
+    const mk = k => {
+      const s = SERIES[k];
       const b = card(d.series.includes(k), s.color, s.name);
       b.classList.add('ser');
       b.onclick = ()=>{
@@ -2582,7 +2642,22 @@ function renderHomeSetup(){
         }
         paintS(); paintT(); paintD();
       };
-      box.appendChild(b);
+      return b;
+    };
+    /* 묶음이 없는 시리즈를 먼저, 그다음 묶음별로 */
+    const solo = Object.keys(SERIES).filter(k => !groupOf(k));
+    const grid = el('div','tgrid');
+    solo.forEach(k => grid.appendChild(mk(k)));
+    box.appendChild(grid);
+    Object.keys(GROUPS).forEach(g=>{
+      const ks = Object.keys(SERIES).filter(k => groupOf(k) === g);
+      if(!ks.length) return;
+      const head = el('div','tgroup');
+      head.innerHTML = `<i class="sdot" style="background:${SERIES[ks[0]].color}"></i>${esc(lz3(GROUPS[g]))}`;
+      box.appendChild(head);
+      const gr = el('div','tgrid');
+      ks.forEach(k => gr.appendChild(mk(k)));
+      box.appendChild(gr);
     });
   };
 
