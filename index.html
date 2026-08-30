@@ -1388,28 +1388,19 @@ const SERIES = {
           results:'https://www.imsa.com/weathertech/results/' },
   dtm:  { name:'DTM',  full:['도이체 투어렌바겐 마스터스','Deutsche Tourenwagen Masters'], color:'#ffc531', feed:'dtm',
           results:'https://www.dtm.com/en/results' },
-  gtwc: { name:'GT EU',   full:['GT 월드 챌린지 유럽','GT World Challenge Europe'], color:'#a855f7', feed:'gt',
-          results:'https://www.gt-world-challenge-europe.com/results', g:'gt' },
-  gta:  { name:'GT ASIA', full:['GT 월드 챌린지 아시아','GT World Challenge Asia'],  color:'#f43f7e', feed:'gt',
-          results:'https://www.gt-world-challenge-asia.com/results', g:'gt' },
-  gtam: { name:'GT USA',  full:['GT 월드 챌린지 아메리카','GT World Challenge America'], color:'#38bdf8', feed:'gt',
-          results:'https://www.gt-world-challenge-america.com/results', g:'gt' },
-  sgt:  { name:'SUPER GT', full:['슈퍼 GT','Super GT'],                      color:'#22c55e', feed:'super-gt',
+  sgt:  { name:'SUPER GT', full:['슈퍼 GT','Super GT'],                     color:'#22c55e', feed:'supergt',
           results:'https://supergt.net/en/race/result' },
-  tcam: { name:'TC USA',  full:['TC 아메리카','TC America'],                  color:'#f97316', feed:'touring-car',
-          results:'https://www.tcamerica.us/results', g:'tc' },
-  tceu: { name:'TC EU',   full:['TCR 유럽','TCR Europe'],                     color:'#eab308', feed:'touring-car',
-          results:'https://europe.tcr-series.com/', g:'tc' },
-  tcas: { name:'TC ASIA', full:['TCR 아시아','TCR Asia'],                     color:'#14b8a6', feed:'touring-car',
-          results:'https://tcr-series.com/', g:'tc' },
+  /* GT 월드 챌린지는 유럽·아시아·아메리카를 한데 묶었습니다.
+     세 지역이 같은 뉴스 피드를 쓰고, 어느 지역 경기인지는 서킷으로 구분됩니다 */
+  gt:   { name:'GT',   full:['GT 월드 챌린지','GT World Challenge'],         color:'#a855f7', feed:'gt',
+          results:'https://www.gt-world-challenge-europe.com/results' },
+  /* TCR 투어링카도 마찬가지. 전용 뉴스 피드가 없어 GT 피드를 함께 쓰되,
+     nk로 투어링카 기사만 걸러냅니다 */
+  tc:   { name:'TC',   full:['TCR 투어링카','TCR Touring Car'],              color:'#f97316', feed:'gt',
+          feedUrl:'/api/tct/feed/', src:'TouringCarTimes',
+          results:'https://tcr-series.com/' },
 };
 
-/* 같은 계열끼리 묶어서 보여줍니다. g가 없으면 단독 시리즈입니다 */
-const GROUPS = {
-  gt: ['GT 월드 챌린지','GT World Challenge','GTワールドチャレンジ'],
-  tc: ['TC 투어링카','TC Touring Car','TCツーリングカー'],
-};
-const groupOf = k => SERIES[k].g || null;
 
 /* 중계 플랫폼 — 앱 아이콘 타일 */
 const WATCH = {
@@ -1430,33 +1421,17 @@ const WATCH = {
     { nm:'DTM',    sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',   c1:'#ff0000', c2:'#ff5b52', yt:'DTM' },
     { nm:'ran.de', sb:['독일 무료 중계','Free in Germany'],          mark:'ran', c1:'#e2001a', c2:'#ff5f70', url:'https://www.ran.de/motorsport/dtm' },
   ],
-  gtwc: [
-    { nm:'GTWorld',    sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',  c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
-    { nm:'GTWC Europe',sb:['공식 사이트','Official site'],                mark:'GT', c1:'#7c3aed', c2:'#a78bfa', url:'https://www.gt-world-challenge-europe.com/' },
-  ],
-  gta: [
-    { nm:'GTWorld',  sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',  c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
-    { nm:'GTWC Asia',sb:['공식 사이트','Official site'],                mark:'GT', c1:'#f43f7e', c2:'#fb8db0', url:'https://www.gt-world-challenge-asia.com/' },
-  ],
-  gtam: [
-    { nm:'GTWorld', sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',  c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
-    { nm:'GTWC America', sb:['공식 사이트','Official site'],           mark:'GT', c1:'#38bdf8', c2:'#7dd3fc', url:'https://www.gt-world-challenge-america.com/' },
-  ],
-  tcam: [
-    { nm:'TC America', sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
-    { nm:'TC America', sb:['공식 사이트','Official site'], mark:'TC', c1:'#f97316', c2:'#fdba74', url:'https://www.tcamerica.us/' },
-  ],
-  tceu: [
-    { nm:'TCR Series', sb:['유튜브 공식 채널','Official YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'TCRSeries' },
-    { nm:'TCR Europe', sb:['공식 사이트','Official site'], mark:'TCR', c1:'#eab308', c2:'#fde047', url:'https://europe.tcr-series.com/' },
-  ],
-  tcas: [
-    { nm:'TCR Series', sb:['유튜브 공식 채널','Official YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'TCRSeries' },
-    { nm:'TCR', sb:['공식 사이트','Official site'], mark:'TCR', c1:'#14b8a6', c2:'#5eead4', url:'https://tcr-series.com/' },
-  ],
   sgt: [
     { nm:'SUPER GT', sb:['유튜브 공식 채널','Official YouTube'],  ico:'play',    c1:'#ff0000', c2:'#ff5b52', yt:'SUPERGTOfficialChannel' },
     { nm:'J SPORTS', sb:['일본 생중계','Live in Japan'],           mark:'J\nSP', c1:'#0b7a3b', c2:'#22c55e', url:'https://www.jsports.co.jp/motor/supergt/' },
+  ],
+  gt: [
+    { nm:'GTWorld', sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
+    { nm:'GT World Challenge', sb:['공식 사이트','Official site'], mark:'GT', c1:'#7c3aed', c2:'#a78bfa', url:'https://www.gt-world-challenge-europe.com/' },
+  ],
+  tc: [
+    { nm:'TCR Series', sb:['유튜브 공식 채널','Official YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'TCRSeries' },
+    { nm:'TCR', sb:['공식 사이트','Official site'], mark:'TCR', c1:'#f97316', c2:'#fdba74', url:'https://tcr-series.com/' },
   ],
 };
 
@@ -1748,39 +1723,15 @@ const TEAMS = {
   dtm_ast:{ s:'dtm', n:['애스턴 마틴','Aston Martin'],  c:'#229971', p:'gt3_ast' },
 
   /* GT3 — GT 월드 챌린지 */
-  gt3_fer:{ s:'gtwc', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
-  gt3_por:{ s:'gtwc', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
-  gt3_bmw:{ s:'gtwc', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
-  gt3_mer:{ s:'gtwc', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
-  gt3_lam:{ s:'gtwc', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
-  gt3_mcl:{ s:'gtwc', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
-  gt3_ast:{ s:'gtwc', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
-  gt3_for:{ s:'gtwc', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
-  gt3_cor:{ s:'gtwc', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
-  /* TC 투어링카 — 세 지역 모두 TCR 규격이라 같은 차를 씁니다 */
-  tcam_hyu:{ s:'tcam', n:['현대','Hyundai'],      c:'#002C5F', p:'tc_hyu' },
-  tcam_hon:{ s:'tcam', n:['혼다','Honda'],        c:'#E8002D', p:'tc_hon' },
-  tcam_aud:{ s:'tcam', n:['아우디','Audi'],       c:'#A21C34', p:'tc_aud' },
-  tcam_cup:{ s:'tcam', n:['쿠프라','Cupra'],      c:'#94714F', p:'tc_cup' },
-  tceu_hyu:{ s:'tceu', n:['현대','Hyundai'],      c:'#002C5F', p:'tc_hyu' },
-  tceu_hon:{ s:'tceu', n:['혼다','Honda'],        c:'#E8002D', p:'tc_hon' },
-  tceu_aud:{ s:'tceu', n:['아우디','Audi'],       c:'#A21C34', p:'tc_aud' },
-  tceu_cup:{ s:'tceu', n:['쿠프라','Cupra'],      c:'#94714F', p:'tc_cup' },
-  tcas_hyu:{ s:'tcas', n:['현대','Hyundai'],      c:'#002C5F', p:'tc_hyu' },
-  tcas_hon:{ s:'tcas', n:['혼다','Honda'],        c:'#E8002D', p:'tc_hon' },
-  tcas_aud:{ s:'tcas', n:['아우디','Audi'],       c:'#A21C34', p:'tc_aud' },
-  tcas_cup:{ s:'tcas', n:['쿠프라','Cupra'],      c:'#94714F', p:'tc_cup' },
-
-  /* GT 월드 챌린지 아메리카 — 같은 GT3 차량입니다 */
-  gtam_fer:{ s:'gtam', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
-  gtam_por:{ s:'gtam', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
-  gtam_bmw:{ s:'gtam', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
-  gtam_mer:{ s:'gtam', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
-  gtam_lam:{ s:'gtam', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
-  gtam_mcl:{ s:'gtam', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
-  gtam_ast:{ s:'gtam', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
-  gtam_for:{ s:'gtam', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
-  gtam_cor:{ s:'gtam', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
+  gt3_fer:{ s:'gt', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
+  gt3_por:{ s:'gt', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
+  gt3_bmw:{ s:'gt', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
+  gt3_mer:{ s:'gt', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
+  gt3_lam:{ s:'gt', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
+  gt3_mcl:{ s:'gt', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
+  gt3_ast:{ s:'gt', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
+  gt3_for:{ s:'gt', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
+  gt3_cor:{ s:'gt', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
 
   /* 슈퍼 GT — GT500은 일본 3사, GT300은 GT3 차량이 섞입니다 */
   sgt_toy:{ s:'sgt', n:['토요타','Toyota'],             c:'#EB0A1E', p:'wec_toy' },
@@ -1793,16 +1744,21 @@ const TEAMS = {
   sgt_fer:{ s:'sgt', n:['페라리','Ferrari'],            c:'#E8002D', p:'gt3_fer' },
 
   /* GT 월드 챌린지 아시아 — 유럽과 같은 GT3 차량이라 사진을 공유합니다 */
-  gta_fer:{ s:'gta', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
-  gta_por:{ s:'gta', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
-  gta_bmw:{ s:'gta', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
-  gta_mer:{ s:'gta', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
-  gta_lam:{ s:'gta', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
-  gta_mcl:{ s:'gta', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
-  gta_ast:{ s:'gta', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
-  gta_lex:{ s:'gta', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
-  gta_aud:{ s:'gta', n:['아우디','Audi'],             c:'#A21C34', p:'gt3_aud' },
-  gt3_lex:{ s:'gtwc', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
+  gta_fer:{ s:'gt', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
+  gta_por:{ s:'gt', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
+  gta_bmw:{ s:'gt', n:['BMW','BMW'],                 c:'#0066B1', p:'gt3_bmw' },
+  gta_mer:{ s:'gt', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
+  gta_lam:{ s:'gt', n:['람보르기니','Lamborghini'],   c:'#DDB321', p:'gt3_lam' },
+  gta_mcl:{ s:'gt', n:['맥라렌','McLaren'],          c:'#FF8000', p:'gt3_mcl' },
+  gta_ast:{ s:'gt', n:['애스턴 마틴','Aston Martin'], c:'#229971', p:'gt3_ast' },
+  gta_lex:{ s:'gt', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
+  gta_aud:{ s:'gt', n:['아우디','Audi'],             c:'#A21C34', p:'gt3_aud' },
+  gt3_lex:{ s:'gt', n:['렉서스','Lexus'],            c:'#1A1A1A', p:'gt3_lex' },
+  /* TCR 투어링카 — 유럽·아시아·아메리카가 같은 TCR 규격 차량을 씁니다 */
+  tc_hyu:{ s:'tc', n:['현대','Hyundai'],   c:'#002C5F', p:'tc_hyu' },
+  tc_hon:{ s:'tc', n:['혼다','Honda'],     c:'#E8002D', p:'tc_hon' },
+  tc_aud:{ s:'tc', n:['아우디','Audi'],    c:'#A21C34', p:'tc_aud' },
+  tc_cup:{ s:'tc', n:['쿠프라','Cupra'],   c:'#94714F', p:'tc_cup' },
 };
 /* key = 결과 데이터(영문)에서 우승/포디움을 세기 위한 성(姓) */
 const DRIVERS = [
@@ -1967,40 +1923,40 @@ const RACES = [
   {s:'dtm',r:16,n:['호켄하임 R2','Hockenheim Race 2'],c:['호켄하임링','Hockenheimring'],f:'🇩🇪',t:'2026-10-11T20:30:00+09:00',h:1},
 
   /* ───── GT World Challenge Europe ───── */
-  {s:'gtwc',r:1,n:['6시간 폴 리카르','6 Hours of Paul Ricard'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-04-12T18:00:00+09:00',h:6},
-  {s:'gtwc',r:2,n:['브랜즈 해치 스프린트','Brands Hatch Sprint'],c:['브랜즈 해치','Brands Hatch'],f:'🇬🇧',t:'2026-05-03T21:00:00+09:00',h:1},
-  {s:'gtwc',r:3,n:['3시간 몬차','3 Hours of Monza'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-05-31T22:00:00+09:00',h:3},
-  {s:'gtwc',r:4,n:['스파 24시','24 Hours of Spa'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-06-27T23:30:00+09:00',h:24},
-  {s:'gtwc',r:5,n:['미사노 스프린트','Misano Sprint'],c:['미사노','Misano'],f:'🇮🇹',t:'2026-07-19T21:00:00+09:00',h:1},
-  {s:'gtwc',r:6,n:['마니-쿠르 스프린트','Magny-Cours Sprint'],c:['마니-쿠르','Magny-Cours'],f:'🇫🇷',t:'2026-08-02T21:00:00+09:00',h:1},
-  {s:'gtwc',r:7,n:['3시간 뉘르부르크링','3 Hours of Nürburgring'],c:['뉘르부르크링','Nürburgring'],f:'🇩🇪',t:'2026-08-30T22:00:00+09:00',h:3},
-  {s:'gtwc',r:8,n:['잔드보르트 스프린트','Zandvoort Sprint'],c:['잔드보르트','Zandvoort'],f:'🇳🇱',t:'2026-09-20T21:00:00+09:00',h:1},
-  {s:'gtwc',r:9,n:['바르셀로나 스프린트','Barcelona Sprint'],c:['카탈루냐','Circuit de Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-04T21:00:00+09:00',h:1},
-  {s:'gtwc',r:10,n:['3시간 포르티망','3 Hours of Portimão'],c:['알가르베','Algarve International'],f:'🇵🇹',t:'2026-10-18T21:00:00+09:00',h:3},
+  {s:'gt',r:4,n:['6시간 폴 리카르','6 Hours of Paul Ricard'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-04-12T18:00:00+09:00',h:6},
+  {s:'gt',r:8,n:['브랜즈 해치 스프린트','Brands Hatch Sprint'],c:['브랜즈 해치','Brands Hatch'],f:'🇬🇧',t:'2026-05-03T21:00:00+09:00',h:1},
+  {s:'gt',r:10,n:['3시간 몬차','3 Hours of Monza'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-05-31T22:00:00+09:00',h:3},
+  {s:'gt',r:14,n:['스파 24시','24 Hours of Spa'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-06-27T23:30:00+09:00',h:24},
+  {s:'gt',r:17,n:['미사노 스프린트','Misano Sprint'],c:['미사노','Misano'],f:'🇮🇹',t:'2026-07-19T21:00:00+09:00',h:1},
+  {s:'gt',r:18,n:['마니-쿠르 스프린트','Magny-Cours Sprint'],c:['마니-쿠르','Magny-Cours'],f:'🇫🇷',t:'2026-08-02T21:00:00+09:00',h:1},
+  {s:'gt',r:22,n:['3시간 뉘르부르크링','3 Hours of Nürburgring'],c:['뉘르부르크링','Nürburgring'],f:'🇩🇪',t:'2026-08-30T22:00:00+09:00',h:3},
+  {s:'gt',r:23,n:['잔드보르트 스프린트','Zandvoort Sprint'],c:['잔드보르트','Zandvoort'],f:'🇳🇱',t:'2026-09-20T21:00:00+09:00',h:1},
+  {s:'gt',r:25,n:['바르셀로나 스프린트','Barcelona Sprint'],c:['카탈루냐','Circuit de Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-04T21:00:00+09:00',h:1},
+  {s:'gt',r:29,n:['3시간 포르티망','3 Hours of Portimão'],c:['알가르베','Algarve International'],f:'🇵🇹',t:'2026-10-18T21:00:00+09:00',h:3},
   /* ───── GT 월드 챌린지 아시아 ─────
      6개 서킷에서 1시간 경기를 두 번씩, 모두 12경기입니다.
      세부 시각은 아직 공식 발표 전이라 현지 오후 기준으로 잡아 두었습니다. */
-  {s:'gta',r:1,n:['세팡 R1','Sepang Race 1'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-04T15:00:00+09:00',h:1},
-  {s:'gta',r:2,n:['세팡 R2','Sepang Race 2'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-05T15:00:00+09:00',h:1},
-  {s:'gta',r:3,n:['만달리카 R1','Mandalika Race 1'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-02T15:00:00+09:00',h:1},
-  {s:'gta',r:4,n:['만달리카 R2','Mandalika Race 2'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-03T15:00:00+09:00',h:1},
-  {s:'gta',r:5,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-05T15:00:00+09:00',h:1},
-  {s:'gta',r:6,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-06T15:00:00+09:00',h:1},
-  {s:'gta',r:7,n:['후지 R1','Fuji Race 1'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-11T14:00:00+09:00',h:1},
-  {s:'gta',r:8,n:['후지 R2','Fuji Race 2'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-12T14:00:00+09:00',h:1},
-  {s:'gta',r:9,n:['오카야마 R1','Okayama Race 1'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-29T14:00:00+09:00',h:1},
-  {s:'gta',r:10,n:['오카야마 R2','Okayama Race 2'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-30T14:00:00+09:00',h:1},
-  {s:'gta',r:11,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
-  {s:'gta',r:12,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-18T15:00:00+09:00',h:1},
+  {s:'gt',r:2,n:['세팡 R1','Sepang Race 1'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-04T15:00:00+09:00',h:1},
+  {s:'gt',r:3,n:['세팡 R2','Sepang Race 2'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-05T15:00:00+09:00',h:1},
+  {s:'gt',r:6,n:['만달리카 R1','Mandalika Race 1'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-02T15:00:00+09:00',h:1},
+  {s:'gt',r:7,n:['만달리카 R2','Mandalika Race 2'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-03T15:00:00+09:00',h:1},
+  {s:'gt',r:11,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-05T15:00:00+09:00',h:1},
+  {s:'gt',r:12,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-06T15:00:00+09:00',h:1},
+  {s:'gt',r:15,n:['후지 R1','Fuji Race 1'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-11T14:00:00+09:00',h:1},
+  {s:'gt',r:16,n:['후지 R2','Fuji Race 2'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-12T14:00:00+09:00',h:1},
+  {s:'gt',r:19,n:['오카야마 R1','Okayama Race 1'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-29T14:00:00+09:00',h:1},
+  {s:'gt',r:21,n:['오카야마 R2','Okayama Race 2'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-30T14:00:00+09:00',h:1},
+  {s:'gt',r:27,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
+  {s:'gt',r:28,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-18T15:00:00+09:00',h:1},
   /* ───── GT 월드 챌린지 아메리카 ─────
      2026년부터 라운드마다 3시간 경기 한 번으로 형식이 바뀌었습니다. */
-  {s:'gtam',r:1,n:['소노마 3시간','Sonoma 3 Hours'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T05:00:00+09:00',h:3},
-  {s:'gtam',r:2,n:['오스틴 3시간','Austin 3 Hours'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-26T03:00:00+09:00',h:3},
-  {s:'gtam',r:3,n:['세브링 3시간','Sebring 3 Hours'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-10T02:00:00+09:00',h:3},
-  {s:'gtam',r:4,n:['로드 애틀랜타 3시간','Road Atlanta 3 Hours'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T02:00:00+09:00',h:3},
-  {s:'gtam',r:5,n:['로드 아메리카 3시간','Road America 3 Hours'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T03:00:00+09:00',h:3},
-  {s:'gtam',r:6,n:['바버 3시간','Barber 3 Hours'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T02:00:00+09:00',h:3},
-  {s:'gtam',r:7,n:['인디애나폴리스 3시간','Indianapolis 3 Hours'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T02:00:00+09:00',h:3},
+  {s:'gt',r:1,n:['소노마 3시간','Sonoma 3 Hours'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T05:00:00+09:00',h:3},
+  {s:'gt',r:5,n:['오스틴 3시간','Austin 3 Hours'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-26T03:00:00+09:00',h:3},
+  {s:'gt',r:9,n:['세브링 3시간','Sebring 3 Hours'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-10T02:00:00+09:00',h:3},
+  {s:'gt',r:13,n:['로드 애틀랜타 3시간','Road Atlanta 3 Hours'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T02:00:00+09:00',h:3},
+  {s:'gt',r:20,n:['로드 아메리카 3시간','Road America 3 Hours'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T03:00:00+09:00',h:3},
+  {s:'gt',r:24,n:['바버 3시간','Barber 3 Hours'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T02:00:00+09:00',h:3},
+  {s:'gt',r:26,n:['인디애나폴리스 3시간','Indianapolis 3 Hours'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T02:00:00+09:00',h:3},
 
   /* ───── 슈퍼 GT ─────
      2026년은 세팡 라운드가 빠져 7전으로 치릅니다. */
@@ -2013,47 +1969,47 @@ const RACES = [
   {s:'sgt',r:7,n:['모테기 GT','Motegi GT'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2},
   /* ───── TC 아메리카 ─────
      GT 월드 챌린지 아메리카와 같은 주말에 열립니다. 35분 스프린트 두 경기씩. */
-  {s:'tcam',r:1,n:['소노마 R1','Sonoma Race 1'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-28T04:00:00+09:00',h:1},
-  {s:'tcam',r:2,n:['소노마 R2','Sonoma Race 2'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T04:00:00+09:00',h:1},
-  {s:'tcam',r:3,n:['오스틴 R1','Austin Race 1'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-25T02:00:00+09:00',h:1},
-  {s:'tcam',r:4,n:['오스틴 R2','Austin Race 2'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-26T02:00:00+09:00',h:1},
-  {s:'tcam',r:5,n:['세브링 R1','Sebring Race 1'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-09T01:00:00+09:00',h:1},
-  {s:'tcam',r:6,n:['세브링 R2','Sebring Race 2'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-10T01:00:00+09:00',h:1},
-  {s:'tcam',r:7,n:['로드 애틀랜타 R1','Road Atlanta Race 1'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-13T01:00:00+09:00',h:1},
-  {s:'tcam',r:8,n:['로드 애틀랜타 R2','Road Atlanta Race 2'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T01:00:00+09:00',h:1},
-  {s:'tcam',r:9,n:['로드 아메리카 R1','Road America Race 1'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-29T02:00:00+09:00',h:1},
-  {s:'tcam',r:10,n:['로드 아메리카 R2','Road America Race 2'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T02:00:00+09:00',h:1},
-  {s:'tcam',r:11,n:['바버 R1','Barber Race 1'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-26T01:00:00+09:00',h:1},
-  {s:'tcam',r:12,n:['바버 R2','Barber Race 2'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T01:00:00+09:00',h:1},
-  {s:'tcam',r:13,n:['인디애나폴리스 R1','Indianapolis Race 1'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-10T01:00:00+09:00',h:1},
-  {s:'tcam',r:14,n:['인디애나폴리스 R2','Indianapolis Race 2'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T01:00:00+09:00',h:1},
+  {s:'tc',r:3,n:['소노마 R1','Sonoma Race 1'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-28T04:00:00+09:00',h:1},
+  {s:'tc',r:4,n:['소노마 R2','Sonoma Race 2'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T04:00:00+09:00',h:1},
+  {s:'tc',r:5,n:['오스틴 R1','Austin Race 1'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-25T02:00:00+09:00',h:1},
+  {s:'tc',r:6,n:['오스틴 R2','Austin Race 2'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-04-26T02:00:00+09:00',h:1},
+  {s:'tc',r:7,n:['세브링 R1','Sebring Race 1'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-09T01:00:00+09:00',h:1},
+  {s:'tc',r:8,n:['세브링 R2','Sebring Race 2'],c:['세브링 인터내셔널','Sebring International'],f:'🇺🇸',t:'2026-05-10T01:00:00+09:00',h:1},
+  {s:'tc',r:13,n:['로드 애틀랜타 R1','Road Atlanta Race 1'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-13T01:00:00+09:00',h:1},
+  {s:'tc',r:14,n:['로드 애틀랜타 R2','Road Atlanta Race 2'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T01:00:00+09:00',h:1},
+  {s:'tc',r:17,n:['로드 아메리카 R1','Road America Race 1'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-29T02:00:00+09:00',h:1},
+  {s:'tc',r:18,n:['로드 아메리카 R2','Road America Race 2'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T02:00:00+09:00',h:1},
+  {s:'tc',r:19,n:['바버 R1','Barber Race 1'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-26T01:00:00+09:00',h:1},
+  {s:'tc',r:21,n:['바버 R2','Barber Race 2'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T01:00:00+09:00',h:1},
+  {s:'tc',r:26,n:['인디애나폴리스 R1','Indianapolis Race 1'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-10T01:00:00+09:00',h:1},
+  {s:'tc',r:27,n:['인디애나폴리스 R2','Indianapolis Race 2'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T01:00:00+09:00',h:1},
 
   /* ───── TCR 유럽 ───── 6개 대회, 주말마다 두 경기 */
-  {s:'tceu',r:1,n:['무젤로 R1','Mugello Race 1'],c:['무젤로','Mugello'],f:'🇮🇹',t:'2026-03-21T20:00:00+09:00',h:1},
-  {s:'tceu',r:2,n:['무젤로 R2','Mugello Race 2'],c:['무젤로','Mugello'],f:'🇮🇹',t:'2026-03-22T20:00:00+09:00',h:1},
-  {s:'tceu',r:3,n:['스파 R1','Spa Race 1'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-05-16T20:00:00+09:00',h:1},
-  {s:'tceu',r:4,n:['스파 R2','Spa Race 2'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-05-17T20:00:00+09:00',h:1},
-  {s:'tceu',r:5,n:['폴 리카르 R1','Paul Ricard Race 1'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-06-06T20:00:00+09:00',h:1},
-  {s:'tceu',r:6,n:['폴 리카르 R2','Paul Ricard Race 2'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-06-07T20:00:00+09:00',h:1},
-  {s:'tceu',r:7,n:['헝가로링 R1','Hungaroring Race 1'],c:['헝가로링','Hungaroring'],f:'🇭🇺',t:'2026-07-04T20:00:00+09:00',h:1},
-  {s:'tceu',r:8,n:['헝가로링 R2','Hungaroring Race 2'],c:['헝가로링','Hungaroring'],f:'🇭🇺',t:'2026-07-05T20:00:00+09:00',h:1},
-  {s:'tceu',r:9,n:['몬차 R1','Monza Race 1'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-09-26T20:00:00+09:00',h:1},
-  {s:'tceu',r:10,n:['몬차 R2','Monza Race 2'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-09-27T20:00:00+09:00',h:1},
-  {s:'tceu',r:11,n:['바르셀로나 R1','Barcelona Race 1'],c:['바르셀로나-카탈루냐','Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-24T20:00:00+09:00',h:1},
-  {s:'tceu',r:12,n:['바르셀로나 R2','Barcelona Race 2'],c:['바르셀로나-카탈루냐','Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-25T20:00:00+09:00',h:1},
+  {s:'tc',r:1,n:['무젤로 R1','Mugello Race 1'],c:['무젤로','Mugello'],f:'🇮🇹',t:'2026-03-21T20:00:00+09:00',h:1},
+  {s:'tc',r:2,n:['무젤로 R2','Mugello Race 2'],c:['무젤로','Mugello'],f:'🇮🇹',t:'2026-03-22T20:00:00+09:00',h:1},
+  {s:'tc',r:9,n:['스파 R1','Spa Race 1'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-05-16T20:00:00+09:00',h:1},
+  {s:'tc',r:10,n:['스파 R2','Spa Race 2'],c:['스파-프랑코샹','Spa-Francorchamps'],f:'🇧🇪',t:'2026-05-17T20:00:00+09:00',h:1},
+  {s:'tc',r:11,n:['폴 리카르 R1','Paul Ricard Race 1'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-06-06T20:00:00+09:00',h:1},
+  {s:'tc',r:12,n:['폴 리카르 R2','Paul Ricard Race 2'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-06-07T20:00:00+09:00',h:1},
+  {s:'tc',r:15,n:['헝가로링 R1','Hungaroring Race 1'],c:['헝가로링','Hungaroring'],f:'🇭🇺',t:'2026-07-04T20:00:00+09:00',h:1},
+  {s:'tc',r:16,n:['헝가로링 R2','Hungaroring Race 2'],c:['헝가로링','Hungaroring'],f:'🇭🇺',t:'2026-07-05T20:00:00+09:00',h:1},
+  {s:'tc',r:20,n:['몬차 R1','Monza Race 1'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-09-26T20:00:00+09:00',h:1},
+  {s:'tc',r:22,n:['몬차 R2','Monza Race 2'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-09-27T20:00:00+09:00',h:1},
+  {s:'tc',r:32,n:['바르셀로나 R1','Barcelona Race 1'],c:['바르셀로나-카탈루냐','Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-24T20:00:00+09:00',h:1},
+  {s:'tc',r:34,n:['바르셀로나 R2','Barcelona Race 2'],c:['바르셀로나-카탈루냐','Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-25T20:00:00+09:00',h:1},
 
   /* ───── TCR 아시아 ─────
      FIA TCR 월드 투어의 극동 라운드와 함께 치릅니다. */
-  {s:'tcas',r:1,n:['인제 R1','Inje Race 1'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-03T14:00:00+09:00',h:1},
-  {s:'tcas',r:2,n:['인제 R2','Inje Race 2'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-04T13:00:00+09:00',h:1},
-  {s:'tcas',r:3,n:['인제 R3','Inje Race 3'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-04T16:00:00+09:00',h:1},
-  {s:'tcas',r:4,n:['청두 R1','Chengdu Race 1'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
-  {s:'tcas',r:5,n:['청두 R2','Chengdu Race 2'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-18T14:00:00+09:00',h:1},
-  {s:'tcas',r:6,n:['청두 R3','Chengdu Race 3'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-18T17:00:00+09:00',h:1},
-  {s:'tcas',r:7,n:['주저우 R1','Zhuzhou Race 1'],c:['후난 인터내셔널','Hunan International'],f:'🇨🇳',t:'2026-10-24T15:00:00+09:00',h:1},
-  {s:'tcas',r:8,n:['주저우 R2','Zhuzhou Race 2'],c:['후난 인터내셔널','Hunan International'],f:'🇨🇳',t:'2026-10-25T15:00:00+09:00',h:1},
-  {s:'tcas',r:9,n:['마카오 R1','Macau Race 1'],c:['기아 서킷','Guia Circuit'],f:'🇲🇴',t:'2026-11-21T15:00:00+09:00',h:1},
-  {s:'tcas',r:10,n:['마카오 R2','Macau Race 2'],c:['기아 서킷','Guia Circuit'],f:'🇲🇴',t:'2026-11-22T15:00:00+09:00',h:1},
+  {s:'tc',r:23,n:['인제 R1','Inje Race 1'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-03T14:00:00+09:00',h:1},
+  {s:'tc',r:24,n:['인제 R2','Inje Race 2'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-04T13:00:00+09:00',h:1},
+  {s:'tc',r:25,n:['인제 R3','Inje Race 3'],c:['인제 스피디움','Inje Speedium'],f:'🇰🇷',t:'2026-10-04T16:00:00+09:00',h:1},
+  {s:'tc',r:28,n:['청두 R1','Chengdu Race 1'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
+  {s:'tc',r:29,n:['청두 R2','Chengdu Race 2'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-18T14:00:00+09:00',h:1},
+  {s:'tc',r:30,n:['청두 R3','Chengdu Race 3'],c:['청두 톈푸 인터내셔널','Chengdu Tianfu International'],f:'🇨🇳',t:'2026-10-18T17:00:00+09:00',h:1},
+  {s:'tc',r:31,n:['주저우 R1','Zhuzhou Race 1'],c:['후난 인터내셔널','Hunan International'],f:'🇨🇳',t:'2026-10-24T15:00:00+09:00',h:1},
+  {s:'tc',r:33,n:['주저우 R2','Zhuzhou Race 2'],c:['후난 인터내셔널','Hunan International'],f:'🇨🇳',t:'2026-10-25T15:00:00+09:00',h:1},
+  {s:'tc',r:35,n:['마카오 R1','Macau Race 1'],c:['기아 서킷','Guia Circuit'],f:'🇲🇴',t:'2026-11-21T15:00:00+09:00',h:1},
+  {s:'tc',r:36,n:['마카오 R2','Macau Race 2'],c:['기아 서킷','Guia Circuit'],f:'🇲🇴',t:'2026-11-22T15:00:00+09:00',h:1},
 ];
 RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
@@ -2337,8 +2293,12 @@ function cleanLead(s){
 
 async function fetchNews(key){
   const feed = SERIES[key].feed;
+  /* 자기 피드가 따로 있는 시리즈는 그걸 먼저 씁니다.
+     실패하면 아래 공용 피드로 넘어갑니다 */
+  const own = SERIES[key].feedUrl && HOSTED
+    ? [{ src: SERIES[key].src || 'RSS', url: () => SERIES[key].feedUrl }] : [];
   let lastErr;
-  for(const f of FEEDS){
+  for(const f of [...own, ...FEEDS]){
     try{
       const ac = new AbortController();
       const timer = setTimeout(()=>ac.abort(), 10000);
@@ -2348,7 +2308,7 @@ async function fetchNews(key){
       const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
       const nodes = [...doc.querySelectorAll('item')];
       if(!nodes.length) throw new Error('empty');
-      return nodes.slice(0,20).map(it=>({
+      const all = nodes.map(it=>({
         title: stripTags(it.querySelector('title')?.textContent),
         desc : cleanLead(stripTags(it.querySelector('description')?.textContent)),
         link : (it.querySelector('link')?.textContent || '').split('?')[0],
@@ -2356,6 +2316,7 @@ async function fetchNews(key){
         src  : f.src,
         at   : Date.parse(it.querySelector('pubDate')?.textContent || '') || Date.now(),
       }));
+      return all.slice(0,20);
     }catch(e){ lastErr = e; }
   }
   throw lastErr;
@@ -2556,9 +2517,7 @@ function openArticle(it, title, lead){
 function buildNewsChips(){
   const box = $('#newsChips'); box.innerHTML = '';
   /* 묶음이 없는 시리즈를 먼저, GT 계열은 뒤에 모아 둡니다 */
-  const order = [...Object.keys(SERIES).filter(k => !groupOf(k)),
-                 ...Object.keys(SERIES).filter(k => groupOf(k))];
-  order.forEach(k=>{
+  Object.keys(SERIES).forEach(k=>{
     const s = SERIES[k];
     const b = el('button','chip' + (k===newsSeries?' on':''));
     b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(t('news.issues', s.name))}`;
@@ -2752,21 +2711,9 @@ function renderHomeSetup(){
       };
       return b;
     };
-    /* 묶음이 없는 시리즈를 먼저, 그다음 묶음별로 */
-    const solo = Object.keys(SERIES).filter(k => !groupOf(k));
     const grid = el('div','tgrid');
-    solo.forEach(k => grid.appendChild(mk(k)));
+    Object.keys(SERIES).forEach(k => grid.appendChild(mk(k)));
     box.appendChild(grid);
-    Object.keys(GROUPS).forEach(g=>{
-      const ks = Object.keys(SERIES).filter(k => groupOf(k) === g);
-      if(!ks.length) return;
-      const head = el('div','tgroup');
-      head.innerHTML = `<i class="sdot" style="background:${SERIES[ks[0]].color}"></i>${esc(lz3(GROUPS[g]))}`;
-      box.appendChild(head);
-      const gr = el('div','tgrid');
-      ks.forEach(k => gr.appendChild(mk(k)));
-      box.appendChild(gr);
-    });
   };
 
   /* 고른 시리즈별로 묶어서 보여주고, 팀은 여러 개 고를 수 있습니다 */
