@@ -1116,6 +1116,7 @@ ko:{
  'alert.soon':'{0} 뒤 시작 · {1}',
  'set.title':'설정','set.display':'화면 모드','set.light':'하얀색 모드','set.dark':'다크 모드',
  'set.lang':'언어','set.me':'내 정보','set.nick':'단톡방 닉네임','set.saveNick':'닉네임 저장',
+ 'set.nickLimit':'한 번 바꾸면 <b>7일 동안</b> 다시 바꿀 수 없어요.','set.nickWait':'{0} 뒤에 다시 바꿀 수 있어요.',
  'set.nickSaved':'닉네임을 저장했어요','set.data':'데이터',
  'set.clearNews':'소식 캐시 비우기 (다시 받아오기)','set.newsCleared':'소식 캐시를 비웠어요',
  'set.reset':'전체 초기화 (방·평점·설정 삭제)',
@@ -1259,6 +1260,7 @@ en:{
  'alert.soon':'starts in {0} · {1}',
  'set.title':'Settings','set.display':'Appearance','set.light':'Light','set.dark':'Dark',
  'set.lang':'Language','set.me':'Me','set.nick':'Room nickname','set.saveNick':'Save nickname',
+ 'set.nickLimit':'Once changed, you cannot change it again for <b>7 days</b>.','set.nickWait':'You can change it again in {0}.',
  'set.nickSaved':'Nickname saved','set.data':'Data',
  'set.clearNews':'Clear news cache (fetch again)','set.newsCleared':'News cache cleared',
  'set.reset':'Reset everything (rooms, ratings, settings)',
@@ -1402,6 +1404,7 @@ ja:{
  'alert.soon':'{0}後に開始 · {1}',
  'set.title':'設定','set.display':'表示モード','set.light':'ライト','set.dark':'ダーク',
  'set.lang':'言語','set.me':'マイ情報','set.nick':'チャットのニックネーム','set.saveNick':'保存',
+ 'set.nickLimit':'一度変えると<b>7日間</b>変更できません。','set.nickWait':'{0}後に変更できます。',
  'set.nickSaved':'ニックネームを保存しました','set.data':'データ',
  'set.clearNews':'ニュースキャッシュを消す（再取得）','set.newsCleared':'キャッシュを消しました',
  'set.reset':'すべて初期化（ルーム・評価・設定）',
@@ -2134,6 +2137,12 @@ function relTime(ms){
   if(m < 1440) return rtf.format(-Math.floor(m/60),'hour');
   return rtf.format(-Math.floor(m/1440),'day');
 }
+/* 이름은 한 번 바꾸면 이 기간 동안 다시 못 바꿉니다.
+   단톡방에서 서로를 알아볼 수 있어야 해서 둡니다. 처음 정할 때는 걸리지 않습니다. */
+const NICK_COOLDOWN = 7 * 24 * 3600 * 1000;   /* DAY 상수는 이 아래에서 선언되므로 직접 씁니다 */
+const nickFreeAt = ()=> (CFG.nickAt || 0) + NICK_COOLDOWN;
+const nickLocked = ()=> Date.now() < nickFreeAt();
+
 function leftTime(ms){
   const d = ms - Date.now();
   if(d <= 0) return '0' + t('alert.m');
@@ -2155,6 +2164,7 @@ let CFG = Object.assign({
   theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
   lang : sysLang,
   nick : '',
+  nickAt : 0,          /* 설정에서 이름을 마지막으로 바꾼 때 */
   lead : 30,
   subs : { f1:true, wec:true, imsa:true, dtm:true, gtwc:true },
 }, DB.get('cfg', {}));
@@ -4388,7 +4398,7 @@ function googleReturn(){
   DB.set('accts', all);
   DB.set('session', id);
   DB.set('guest', false);
-  CFG.nick = id; saveCfg();
+  if(!CFG.nick){ CFG.nick = id; saveCfg(); }   /* 처음 한 번만. 이후엔 설정에서 바꿉니다 */
   toast(t('auth.welcome', id));
   return true;
 }
@@ -4433,7 +4443,7 @@ $('#authForm').addEventListener('submit', async e=>{
     if(await pwHash(pw, acct.salt) !== acct.hash) return toast(t('auth.errWrong'));
   }
   DB.set('session', id);
-  CFG.nick = id; saveCfg();
+  if(!CFG.nick){ CFG.nick = id; saveCfg(); }   /* 처음 한 번만. 이후엔 설정에서 바꿉니다 */
   $('#auId').value = $('#auPw').value = $('#auPw2').value = '';
   closeAuth(); toast(t('auth.welcome', id));
   if(tab === 'chat') renderRooms();
@@ -4547,8 +4557,9 @@ $('#btnSettings').onclick = ()=>{
     </div>
     <div class="sec">${t('set.me')}</div>
     <label class="fl">${t('set.nick')}</label>
-    <input type="text" id="setNick" maxlength="16" value="${esc(CFG.nick)}">
-    <button class="btn flow sm" id="setNickSave">${t('set.saveNick')}</button>
+    <input type="text" id="setNick" maxlength="16" value="${esc(CFG.nick)}"${nickLocked()?' disabled':''}>
+    <button class="btn flow sm" id="setNickSave"${nickLocked()?' disabled':''}>${t('set.saveNick')}</button>
+    <div class="note">${nickLocked() ? t('set.nickWait', leftTime(nickFreeAt())) : t('set.nickLimit')}</div>
     <div class="sec">${t('net.title')}</div>
     <div class="seg c3" id="netSeg">
       <button data-m="free" class="${net().mode==='free'?'on':''}">${t('net.mFree')}</button>
@@ -4647,9 +4658,12 @@ $('#btnSettings').onclick = ()=>{
     };
   });
   $('#setNickSave').onclick = ()=>{
+    if(nickLocked()){ toast(t('set.nickWait', leftTime(nickFreeAt()))); return; }
     const v = $('#setNick').value.trim();
     if(!v){ toast(t('chat.needNick')); return; }
-    CFG.nick = v; saveCfg(); toast(t('set.nickSaved'));
+    if(v === CFG.nick){ closeSheet(); return; }      /* 그대로면 제한을 걸지 않습니다 */
+    CFG.nick = v; CFG.nickAt = Date.now(); saveCfg();
+    toast(t('set.nickSaved')); closeSheet();
   };
   $('#clearNews').onclick = ()=>{
     Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
@@ -4674,7 +4688,7 @@ switchTab('news');
 /* 구글에서 돌아온 직후면 그대로 로그인, 아니면 평소대로.
    로그인한 적도, 둘러보기를 고른 적도 없으면 첫 실행에 로그인 화면을 띄웁니다 */
 if(googleReturn())               { /* 이미 로그인됨 */ }
-else if(session())               CFG.nick = session();
+else if(session())               { if(!CFG.nick){ CFG.nick = session(); saveCfg(); } }
 else if(!DB.get('guest', false)) openAuth();
 
 setInterval(()=>{
