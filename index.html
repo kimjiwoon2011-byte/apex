@@ -1065,12 +1065,12 @@ ko:{
  'chat.note':'방은 비밀번호 없이 누구나 들어올 수 있어요. 경기 종료 후 <b>24시간 동안 채팅이 없으면 자동으로 사라집니다.</b>',
  'chat.empty':'아직 열린 방이 없어요.<br>오른쪽 아래 <b>+</b> 버튼으로 첫 방을 만들어보세요.',
  'chat.new':'새 단톡방 만들기','chat.newSub':'비밀번호 없이 누구나 들어올 수 있어요.',
- 'chat.fTitle':'방 제목 *','chat.phTitle':'예) 잔드보르트 같이 봐요',
- 'chat.fDesc':'설명','chat.phDesc':'어떤 이야기를 나눌 방인가요?',
- 'chat.fMax':'최대 인원 *','chat.fRace':'연결할 경기 (선택)','chat.noRace':'연결 안 함 (자유 방)',
+ 'chat.fTitle':'방 제목 *',
+ 'chat.fDesc':'설명',
+ 'chat.fMax':'최대 인원 *','chat.maxN':'{0}명','chat.fRace':'연결할 경기 (선택)','chat.noRace':'연결 안 함 (자유 방)',
  'chat.createNote':'경기를 연결하면 <b>그 경기가 끝난 뒤 24시간</b> 동안 채팅이 없을 때 방이 사라져요. 연결하지 않으면 마지막 채팅 기준 24시간입니다.',
  'chat.create':'방 만들기','chat.cancel':'취소',
- 'chat.needTitle':'방 제목을 입력해주세요','chat.badMax':'최대 인원은 2~500명으로 정해주세요',
+ 'chat.needTitle':'방 제목을 입력해주세요',
  'chat.nick':'어떤 이름으로 들어갈까요?','chat.nickSub':'방에서 표시될 이름이에요. 나중에 설정에서 바꿀 수 있어요.',
  'chat.nickLabel':'닉네임','chat.nickPh':'예) 스파러버','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
  'chat.full':'정원이 가득 찼어요','chat.gone':'방이 이미 사라졌어요',
@@ -1208,12 +1208,12 @@ en:{
  'chat.note':'Anyone can join — no password. A room <b>disappears if there is no chat for 24 hours after the race ends.</b>',
  'chat.empty':'No rooms yet.<br>Tap the <b>+</b> button to open the first one.',
  'chat.new':'New watch room','chat.newSub':'Anyone can join — no password.',
- 'chat.fTitle':'Room title *','chat.phTitle':'e.g. Watching Zandvoort together',
- 'chat.fDesc':'Description','chat.phDesc':'What will you talk about here?',
- 'chat.fMax':'Max people *','chat.fRace':'Link a race (optional)','chat.noRace':'No link (open room)',
+ 'chat.fTitle':'Room title *',
+ 'chat.fDesc':'Description',
+ 'chat.fMax':'Max people *','chat.maxN':'{0}','chat.fRace':'Link a race (optional)','chat.noRace':'No link (open room)',
  'chat.createNote':'If you link a race, the room disappears when there is no chat for <b>24 hours after that race ends</b>. Otherwise the 24 hours count from the last message.',
  'chat.create':'Create room','chat.cancel':'Cancel',
- 'chat.needTitle':'Please enter a room title','chat.badMax':'Max people must be between 2 and 500',
+ 'chat.needTitle':'Please enter a room title',
  'chat.nick':'What name will you use?','chat.nickSub':'This is shown in rooms. You can change it later in Settings.',
  'chat.nickLabel':'Nickname','chat.nickPh':'e.g. SpaLover','chat.ok':'OK','chat.needNick':'Please enter a nickname',
  'chat.full':'This room is full','chat.gone':'That room is already gone',
@@ -1351,12 +1351,12 @@ ja:{
  'chat.note':'パスワードなしで誰でも入れます。<b>レース終了後24時間チャットがないと自動的に消えます。</b>',
  'chat.empty':'まだルームがありません。<br>右下の<b>+</b>から作ってみましょう。',
  'chat.new':'新しい観戦ルーム','chat.newSub':'パスワードなしで誰でも入れます。',
- 'chat.fTitle':'ルーム名 *','chat.phTitle':'例）ザントフォールト一緒に見よう',
- 'chat.fDesc':'説明','chat.phDesc':'どんな話をするルームですか？',
- 'chat.fMax':'最大人数 *','chat.fRace':'レースと連携（任意）','chat.noRace':'連携しない（自由ルーム）',
+ 'chat.fTitle':'ルーム名 *',
+ 'chat.fDesc':'説明',
+ 'chat.fMax':'最大人数 *','chat.maxN':'{0}人','chat.fRace':'レースと連携（任意）','chat.noRace':'連携しない（自由ルーム）',
  'chat.createNote':'レースと連携すると、<b>そのレース終了後24時間</b>チャットがない場合に消えます。連携しない場合は最後のチャットから24時間です。',
  'chat.create':'ルームを作る','chat.cancel':'キャンセル',
- 'chat.needTitle':'ルーム名を入力してください','chat.badMax':'最大人数は2〜500人で指定してください',
+ 'chat.needTitle':'ルーム名を入力してください',
  'chat.nick':'どの名前で入りますか？','chat.nickSub':'ルームで表示される名前です。設定で変更できます。',
  'chat.nickLabel':'ニックネーム','chat.nickPh':'例）スパ好き','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
  'chat.full':'満員です','chat.gone':'このルームは既に消えました',
@@ -3985,29 +3985,38 @@ async function renderRooms(){
   });
 }
 
+const ROOM_MAXES = [5, 10, 20, 50, 100];
+const ROOM_MAX_DEFAULT = 20;
+
 function openCreateRoom(preRaceId){
+  let maxSel = ROOM_MAX_DEFAULT;
   const opts = RACES.filter(r=>r.end > Date.now() - DAY).slice(0,40)
     .map(r=>`<option value="${r.id}" ${r.id===preRaceId?'selected':''}>${esc(SERIES[r.s].name)} · ${esc(rname(r))} (${esc(fmtShort(r.ms))})</option>`).join('');
   openSheet(`
     <h2>${t('chat.new')}</h2>
     <div class="muted">${t('chat.newSub')}</div>
     <label class="fl">${t('chat.fTitle')}</label>
-    <input type="text" id="rTitle" maxlength="40" placeholder="${esc(t('chat.phTitle'))}">
+    <input type="text" id="rTitle" maxlength="40">
     <label class="fl">${t('chat.fDesc')}</label>
-    <textarea id="rDesc" maxlength="200" placeholder="${esc(t('chat.phDesc'))}"></textarea>
+    <textarea id="rDesc" maxlength="200"></textarea>
     <label class="fl">${t('chat.fMax')}</label>
-    <input type="number" id="rMax" min="2" max="500" value="20">
+    <div class="chips" id="rMaxWrap">${ROOM_MAXES.map(n=>
+      `<button class="chip${n===ROOM_MAX_DEFAULT?' on':''}" data-n="${n}">${esc(t('chat.maxN', n))}</button>`).join('')}</div>
     <label class="fl">${t('chat.fRace')}</label>
     <select id="rRace"><option value="">${esc(t('chat.noRace'))}</option>${opts}</select>
     <div class="note">${t('chat.createNote')}</div>
     <button class="btn flow" id="rCreate">${t('chat.create')}</button>
     <button class="btn ghost sm" id="rCancel">${t('chat.cancel')}</button>`);
   $('#rCancel').onclick = closeSheet;
+  $('#rMaxWrap').onclick = e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    maxSel = +b.dataset.n;
+    [...$('#rMaxWrap').children].forEach(c=> c.classList.toggle('on', c === b));
+  };
   $('#rCreate').onclick = async ()=>{
     const title = $('#rTitle').value.trim();
-    const max   = parseInt($('#rMax').value, 10);
+    const max   = maxSel;
     if(!title){ toast(t('chat.needTitle')); return; }
-    if(!(max >= 2 && max <= 500)){ toast(t('chat.badMax')); return; }
     /* 무료: 내가 만든 방 1개까지 */
     let existing = [];
     try{ existing = await CHAT.rooms(); }catch(e){ toast(t('net.err')); return; }
