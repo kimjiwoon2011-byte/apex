@@ -1440,6 +1440,9 @@ const WATCH = {
    Douglas-Peucker로 단순화해 200×200 좌표계로 옮긴 실제 코스 형상입니다.
    ══════════════════════════════════════════════════════════════ */
 const CIRCUITS = {
+mugello:'M131 41L120 98L120 115L128 119L158 118L174 126L181 140L186 157L185 167L178 175L169 175L158 160L150 161L144 164L139 176L132 180L126 177L129 156L121 148L112 143L91 143L85 144L68 157L56 162L49 161L45 157L45 150L52 146L62 144L67 141L68 136L61 126L45 118L36 120L28 136L22 138L18 136L14 127L15 120L18 113L33 97L37 95L44 97L59 104L65 110L69 111L78 111L92 102L94 97L97 91L97 84L94 77L83 74L66 82L60 82L54 77L52 68L66 32L71 26L76 25L80 27L82 33L83 43L88 54L90 57L98 59L101 58L105 50L105 43L101 34L103 24L109 24L114 27L128 20L135 21L136 29L131 41Z',
+inje:'M154 18L169 46L169 53L165 54L163 53L149 32L146 30L138 32L133 41L137 51L159 64L163 69L160 115L144 124L136 135L129 153L136 165L134 171L129 172L119 171L117 174L115 183L112 185L88 186L82 180L80 164L78 161L56 143L33 141L31 138L32 133L34 131L51 126L57 129L95 165L114 160L119 152L120 145L123 28L136 14L154 18Z',
+zhuzhou:'M111 165L125 186L129 186L125 132L122 128L115 123L94 121L91 118L98 113L99 109L103 78L102 67L98 50L100 47L105 48L110 64L110 92L114 96L117 97L120 92L121 81L112 16L109 14L103 20L91 14L77 15L75 18L86 96L84 99L72 102L71 106L111 165Z',
 sonoma:'M44 33L55 42L65 45L78 57L94 59L101 62L139 94L137 100L138 103L158 107L164 111L171 123L186 171L185 177L181 178L177 175L164 139L131 112L125 111L103 112L93 119L87 130L79 132L64 120L49 102L34 102L30 99L14 76L14 73L18 69L34 65L44 66L53 71L71 98L76 101L83 102L89 100L93 95L95 87L94 82L90 76L68 59L24 36L35 22L40 22L44 33Z',
 barber:'M97 99L125 72L126 67L119 41L120 36L124 33L129 31L134 31L139 34L142 38L143 43L140 66L136 71L88 120L87 125L92 130L99 128L119 114L161 56L166 54L174 55L181 51L186 58L184 66L146 103L139 120L68 152L59 166L54 169L46 169L23 162L17 158L14 147L14 140L18 131L25 125L31 125L45 139L53 140L97 99Z',
 sugo:'M122 106L118 115L119 120L123 122L132 120L136 117L139 110L171 91L175 92L185 104L186 109L184 112L100 139L74 143L71 140L70 135L83 107L82 104L72 91L65 88L33 96L27 96L21 93L16 88L14 82L14 74L18 67L23 62L30 59L39 57L156 72L160 76L160 87L158 90L153 91L132 90L128 93L122 106Z',
@@ -1498,6 +1501,7 @@ misano:'M98 85L94 83L91 81L82 63L80 62L78 61L70 66L40 94L38 97L38 114L35 118L32 
 };
 /* 서킷 이름(영문) → 윤곽 키 */
 const CIRCUIT_OF = [
+  [/mugello/i,'mugello'], [/inje/i,'inje'], [/hunan|zhuzhou/i,'zhuzhou'],
   [/mandalika/i,'mandalika'], [/okayama/i,'okayama'],
   [/sonoma/i,'sonoma'], [/barber/i,'barber'], [/sugo/i,'sugo'],
   [/autopolis/i,'autopolis'], [/motegi/i,'motegi'],
@@ -3616,7 +3620,11 @@ async function ntfyPoll(topic){
   const txt = (await r.text()).trim();
   if(!txt) return [];
   return txt.split('\n').map(line=>{
-    try{ return JSON.parse(JSON.parse(line).message); }catch(e){ return null; }
+    try{
+      const m = JSON.parse(line).message;
+      try{ return JSON.parse(b64dec(m)); }         /* 지금 형식 */
+      catch(e){ return JSON.parse(m); }            /* 예전에 올라간 평문 */
+    }catch(e){ return null; }
   }).filter(Boolean);
 }
 /* ── 내 기기 사본 ──
@@ -3683,8 +3691,13 @@ function exportConfigured(){
   }catch(e){ toast(t('net.exportFail')); }
 }
 
+/* ntfy는 한글이 섞인 본문을 파일 첨부로 바꿔버려서 대화가 통째로 사라집니다.
+   그래서 보낼 때 base64(ASCII)로 감싸고, 받을 때 되돌립니다. */
+const b64enc = s => btoa(String.fromCharCode.apply(null, new TextEncoder().encode(s)));
+const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b), c => c.charCodeAt(0)));
+
 async function ntfyPub(topic, obj){
-  const r = await fetch(NTFY + topic, {method:'POST', body:JSON.stringify(obj)});
+  const r = await fetch(NTFY + topic, {method:'POST', body:b64enc(JSON.stringify(obj))});
   if(r.status === 429){ const e = new Error('rate'); e.rate = true; throw e; }   /* 무료 서버 전송 제한 */
   if(!r.ok) throw new Error('HTTP ' + r.status);
 }
