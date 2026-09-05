@@ -159,7 +159,8 @@ main{padding:14px 16px 0}
 .sec{font-size:13px;font-weight:700;color:var(--tx-2);letter-spacing:.01em;
   margin:24px 4px 10px;display:flex;align-items:center;gap:8px;text-transform:none}
 .sec:first-child{margin-top:6px}
-.sec::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--br);flex:0 0 3px}
+.sec::before{content:'';width:3px;height:13px;border-radius:2px;flex:0 0 3px;
+  background:linear-gradient(180deg,var(--br),var(--br-2))}
 
 /* 인라인 아이콘 — 이모지 대신 씁니다 (OS·폰트에 따라 모양이 달라지지 않도록) */
 .ic{width:1em;height:1em;flex:0 0 auto;vertical-align:-.13em;
@@ -200,7 +201,9 @@ main{padding:14px 16px 0}
 }
 .tabs button svg{width:21px;height:21px;stroke-width:2}
 .tabs button.on{color:var(--br)}
-.tabs button.on .ib{background:var(--br-tint);transform:translateY(-1px)}
+.tabs button.on .ib{background:var(--br-tint);transform:translateY(-2px);
+  box-shadow:0 4px 12px color-mix(in srgb,var(--br) 26%,transparent)}
+.tabs button.on svg{stroke-width:2.4}
 .tabs button:active .ib{transform:scale(.88)}
 
 /* ── 칩 ── */
@@ -215,7 +218,9 @@ main{padding:14px 16px 0}
 }
 .chip:active{transform:scale(.94)}
 .chip .sdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
-.chip.on{background:var(--br);color:var(--br-ink);border-color:var(--br);box-shadow:var(--sh-br)}
+.chip.on{background:var(--cc,var(--br));color:#fff;border-color:transparent;
+  box-shadow:0 4px 16px color-mix(in srgb,var(--cc,var(--br)) 48%,transparent)}
+.chip.on .sdot{background:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.28)}
 
 .tag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;
   padding:4px 8px;border-radius:7px;background:var(--br-tint);color:var(--br);letter-spacing:.03em}
@@ -236,10 +241,12 @@ main{padding:14px 16px 0}
 
 .nitem{display:flex;gap:12px;align-items:flex-start;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--r3);padding:13px;margin-bottom:10px;
-  box-shadow:var(--sh1);animation:pop .4s var(--ease) backwards}
+  box-shadow:var(--sh1);animation:pop .4s var(--ease) backwards;
+  transition:transform .2s var(--ease),border-color .2s}
+.nitem:active{transform:scale(.985)}
 @keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.nitem .th{width:80px;height:66px;border-radius:var(--r2);object-fit:cover;flex:0 0 80px;
-  background:var(--surface-3)}
+.nitem .th{width:94px;height:71px;border-radius:var(--r2);object-fit:cover;flex:0 0 94px;
+  background:var(--surface-3);border:1px solid var(--line)}
 .nitem .nb{flex:1;min-width:0}
 /* 제목은 이제 링크가 아니라 앱 안에서 기사를 여는 버튼입니다 */
 .nitem .hl{text-decoration:none;color:inherit;display:block;width:100%;text-align:left;
@@ -275,6 +282,21 @@ main{padding:14px 16px 0}
   background:var(--br-tint);border-radius:7px;padding:4px 8px;white-space:nowrap;
   display:inline-flex;align-items:center;gap:4px}
 .nfoot .tr .ic{width:11px;height:11px;vertical-align:0}
+/* 맨 위 기사 — 사진을 크게 깔고 제목을 얹습니다 */
+.nlead{position:relative;display:block;width:100%;padding:0;text-align:left;color:inherit;
+  border:1px solid var(--line);border-radius:var(--r4);overflow:hidden;margin-bottom:14px;
+  background:var(--surface);box-shadow:var(--sh2);cursor:pointer;
+  animation:pop .45s var(--ease) backwards;transition:transform .2s var(--ease)}
+.nlead:active{transform:scale(.985)}
+.nlead>img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
+.nlead .ov{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;
+  background:linear-gradient(0deg,rgba(3,7,15,.96) 8%,rgba(3,7,15,.55) 62%,transparent)}
+.nlead h3{margin:0 0 8px;font-size:17.5px;line-height:1.35;font-weight:800;color:#fff;
+  letter-spacing:-.025em;text-shadow:0 1px 8px rgba(0,0,0,.5);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nlead .nfoot{color:rgba(255,255,255,.74)}
+.nlead .nfoot .pill{background:rgba(255,255,255,.18);backdrop-filter:blur(6px)}
+
 .skel{height:92px;border-radius:var(--r3);margin-bottom:10px;
   background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);
   background-size:200% 100%;animation:shim 1.4s linear infinite}
@@ -448,16 +470,18 @@ textarea{resize:vertical;min-height:78px}
   overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
 .cd:active{transform:scale(.985)}
 .cd .cc{background:rgba(255,255,255,.24);color:#fff}
-.cd .lbl{color:rgba(255,255,255,.88)}   /* 파란 카드 위에서는 회색 라벨이 묻힙니다 */
+.cd .lbl{color:rgba(255,255,255,.94)}   /* 파란 카드 위에서는 회색 라벨이 묻힙니다 */
 .favcard .np .lbl{color:var(--tx-3)}
 .cd .lbl{font-size:11px;font-weight:800;opacity:.92;letter-spacing:.06em;text-transform:uppercase}
 .cd .nm{font-size:22px;font-weight:800;margin:8px 0 4px;line-height:1.22;letter-spacing:-.03em}
 .cd .ci{font-size:11.5px;opacity:.9;font-weight:600}
 .cdn{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
-.cdn div{background:rgba(255,255,255,.19);border-radius:var(--r2);padding:10px 4px;text-align:center;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.cdn b{display:block;font-size:22px;font-weight:800;letter-spacing:-.04em}
-.cdn span{font-size:9.5px;opacity:.9;font-weight:700}
+.cdn div{background:rgba(255,255,255,.19);border-radius:var(--r2);padding:11px 4px 9px;text-align:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.20)}
+.cdn b{display:block;font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-.05em;
+  line-height:1.05}
+.cdn span{display:block;margin-top:4px;font-family:var(--mono);font-size:8.5px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;opacity:.85}
 
 .trow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
 .trow:last-child{border-bottom:0}
@@ -484,7 +508,8 @@ textarea{resize:vertical;min-height:78px}
 .rev .rh{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;margin-bottom:6px}
 .rev p{margin:7px 0 0;font-size:12.5px;color:var(--tx-2);line-height:1.55}
 
-.empty{text-align:center;padding:52px 24px;color:var(--tx-3);font-size:13px;line-height:1.7}
+.empty{text-align:center;padding:52px 24px;color:var(--tx-3);font-size:13px;line-height:1.7;
+  background:var(--surface-2);border:1px dashed var(--line-2);border-radius:var(--r4)}
 .empty svg{width:42px;height:42px;margin:0 auto 14px;display:block;opacity:.42;
   fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .empty b{color:var(--tx-2)}
@@ -532,16 +557,20 @@ textarea{resize:vertical;min-height:78px}
 .hero .wash{position:absolute;inset:0;opacity:.16;pointer-events:none;
   background:linear-gradient(165deg,var(--acc) 0%,transparent 62%)}
 .hero>*{position:relative}
-.hero .rnd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.hero h2{margin:0;font-size:29px;font-weight:800;letter-spacing:-.035em;line-height:1.08}
+.hero .rnd{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;padding-right:66px}
+.hero h2{margin:0;font-size:29px;font-weight:800;letter-spacing:-.035em;line-height:1.08;
+  padding-right:58px}
 .hero .circ{font-size:13px;font-weight:800;color:var(--acc);margin-top:5px;letter-spacing:-.01em}
 .hero .dt{font-size:12px;color:var(--tx-2);margin-top:3px;font-weight:600}
-.hero .cdrow{display:flex;gap:22px;margin-top:16px;align-items:flex-end}
-.hero .cdu{display:flex;flex-direction:column;gap:3px}
+.hero .cdrow{display:flex;gap:8px;margin-top:18px;align-items:stretch}
+.hero .cdu{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;
+  background:color-mix(in srgb,var(--acc) 9%,var(--surface-2));
+  border:1px solid color-mix(in srgb,var(--acc) 18%,var(--line));
+  border-radius:var(--r2);padding:10px 4px 8px;align-items:center}
 .hero .cdu b{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;
   letter-spacing:-.04em;color:var(--acc)}
-.hero .trk{position:absolute;right:-2px;top:48%;transform:translateY(-50%);
-  width:116px;height:116px;color:var(--acc);pointer-events:none;opacity:.6}
+.hero .trk{position:absolute;right:-8px;top:4px;
+  width:104px;height:104px;color:var(--acc);pointer-events:none;opacity:.30}
 /* 직계 svg = 서킷 데이터가 없을 때 쓰는 추상 리본 (3D는 .trk3d 안에 들어감) */
 .hero .trk>svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:5;
   stroke-linecap:round;stroke-linejoin:round;opacity:.38}
@@ -643,9 +672,11 @@ textarea{resize:vertical;min-height:78px}
 .ht-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   animation:fadein .6s ease}
 .ht-shade{position:absolute;inset:0;background:
-  linear-gradient(105deg,color-mix(in srgb,var(--tc) 82%,#000 18%) 4%,
-                  color-mix(in srgb,var(--tc) 40%,transparent) 42%,transparent 68%),
-  linear-gradient(0deg,rgba(6,8,12,.78),rgba(6,8,12,.05) 55%)}
+  linear-gradient(102deg,color-mix(in srgb,var(--tc) 88%,#000 12%) 0%,
+                  color-mix(in srgb,var(--tc) 62%,transparent) 34%,
+                  rgba(6,8,12,.30) 58%,transparent 82%),
+  linear-gradient(0deg,rgba(4,6,10,.86),rgba(4,6,10,.10) 58%),
+  radial-gradient(120% 90% at 4% 0%,rgba(0,0,0,.55),transparent 56%)}
 .hero-team.photo{padding-bottom:12px;min-height:186px;display:flex;flex-direction:column}
 .hero-team.photo::after{display:none}
 .ht-credit{position:relative;z-index:1;margin-top:auto;padding-top:14px;font-size:10px;
@@ -653,15 +684,24 @@ textarea{resize:vertical;min-height:78px}
 .ht-credit a{color:inherit;text-decoration:underline}
 .ht-top{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
 .ht-badge{width:52px;height:52px;border-radius:15px;flex:none;display:grid;place-items:center;
-  font-size:15px;font-weight:900;letter-spacing:.03em;color:#fff;
-  background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.34);
-  text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.04em;color:#fff;
+  background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.42);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 4px 14px rgba(0,0,0,.35);
+  text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .ht-name{min-width:0;color:#fff}
 .ht-name b{display:block;font-size:19px;font-weight:800;letter-spacing:-.01em;
   text-shadow:0 1px 4px rgba(0,0,0,.35);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ht-name span{display:block;font-size:12.5px;opacity:.82;margin-top:2px}
 .ht-num{margin-left:auto;font-size:30px;font-weight:900;color:rgba(255,255,255,.5);
   letter-spacing:-.02em;flex:none}
+/* 사진 위에 얹는 포인트·순위 — 유리판처럼 띄웁니다 */
+.ht-stats{position:relative;z-index:1;margin-top:auto;display:flex;gap:8px;padding-top:14px}
+.ht-stats>div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+  border-radius:12px;padding:7px 12px;text-align:center}
+.ht-stats b{display:block;font-family:var(--mono);font-size:15px;font-weight:700;color:#fff;
+  line-height:1.1;letter-spacing:-.03em;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.ht-stats .lbl{color:rgba(255,255,255,.66);font-size:8px;margin-top:3px}
+.hero-team.photo .ht-stats + .ht-credit{margin-top:9px;padding-top:0}
 .ht-car{position:relative;z-index:1;margin:2px -6px -4px}
 .ht-car svg{width:100%;height:auto;display:block;
   filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
@@ -681,12 +721,18 @@ textarea{resize:vertical;min-height:78px}
 .hsec .refresh{margin-left:auto}
 
 /* ── 승자 맞히기 ── */
-.gm{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);
-  padding:16px;margin-bottom:22px;box-shadow:var(--sh1);animation:pop .4s var(--ease) backwards}
-.gm-top{display:flex;align-items:center;gap:10px;margin-bottom:13px}
-.gm-rank{display:flex;align-items:baseline;gap:8px;min-width:0}
-.gm-rank b{font-size:15px;font-weight:800;letter-spacing:-.01em}
-.gm-rank span{font-size:12.5px;font-weight:800;color:var(--br)}
+.gm{position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r4);padding:0 16px 16px;margin-bottom:22px;box-shadow:var(--sh2);
+  animation:pop .4s var(--ease) backwards}
+.gm::before{content:'';position:absolute;left:0;right:0;top:0;height:104px;pointer-events:none;
+  background:linear-gradient(158deg,color-mix(in srgb,var(--br) 26%,transparent),transparent 72%)}
+.gm>*{position:relative}
+.gm-top{display:flex;align-items:center;gap:10px;
+  margin:0 -16px 14px;padding:15px 16px 13px;border-bottom:1px solid var(--line)}
+.gm-rank{display:flex;align-items:baseline;gap:9px;min-width:0}
+.gm-rank b{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.gm-rank span{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--br);
+  letter-spacing:-.02em}
 .gm-streak{margin-left:auto;flex:0 0 auto;font-size:10.5px;font-weight:800;color:#e8a13a;
   background:rgba(232,161,58,.14);border-radius:999px;padding:4px 9px}
 .gm-race{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx-2);
@@ -748,12 +794,12 @@ textarea{resize:vertical;min-height:78px}
 
 /* 서킷 지도 카드 */
 .trkcard{position:relative;overflow:hidden;border-radius:var(--r3);border:1px solid var(--line);
-  background:var(--surface-2);margin-top:14px;padding:14px 16px;min-height:132px;
-  display:flex;align-items:center;gap:10px;cursor:pointer;
+  background:var(--surface-2);margin-top:14px;padding:16px 8px 16px 18px;min-height:158px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
   transition:transform .2s var(--ease)}
 .trkcard:active{transform:scale(.985)}
-.trkcard .wash{position:absolute;inset:0;opacity:.10;
-  background:radial-gradient(circle at 78% 50%,var(--acc),transparent 62%)}
+.trkcard .wash{position:absolute;inset:0;opacity:.13;
+  background:radial-gradient(circle at 74% 50%,var(--acc),transparent 66%)}
 .trkcard>*{position:relative}
 .trkcard .info{flex:1;min-width:0}
 .trkcard .info b{display:block;font-size:14px;font-weight:800;letter-spacing:-.02em}
@@ -2524,7 +2570,8 @@ function buildNewsChips(){
   Object.keys(SERIES).forEach(k=>{
     const s = SERIES[k];
     const b = el('button','chip' + (k===newsSeries?' on':''));
-    b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(t('news.issues', s.name))}`;
+    b.style.setProperty('--cc', s.color);
+    b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(s.name)}`;
     b.onclick = ()=>{ newsSeries = k; buildNewsChips(); renderNews(); };
     box.appendChild(b);
   });
@@ -2575,19 +2622,38 @@ function paintNews(data){
   const key = newsSeries;
   data.items.forEach((it,i)=>{
     const lead = descs?.[i] || it.desc || '';
+    const title = titles?.[i] || it.title;
+
+    /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
+    if(i === 0 && it.img){
+      const b = el('button','nlead');
+      b.innerHTML = `
+        <img src="${esc(it.img)}" alt="" loading="eager" onerror="this.closest('.nlead').classList.add('noimg')">
+        <div class="ov">
+          <h3>${esc(title)}</h3>
+          <div class="nfoot">
+            <span class="pill" style="color:${s.color}">${esc(s.name)}</span>
+            <span class="src">${esc(it.src)} · ${esc(relTime(it.at))}</span>
+          </div>
+        </div>`;
+      b.onclick = ()=> openArticle({...it, series:key}, title, lead);
+      list.appendChild(b);
+      return;
+    }
+
     const a = el('article','nitem');
     a.style.animationDelay = Math.min(i,8)*28 + 'ms';
     a.innerHTML = `
       ${it.img ? `<img class="th" src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
       <div class="nb">
-        <button class="hl"><h3>${esc(titles?.[i] || it.title)}</h3></button>
+        <button class="hl"><h3>${esc(title)}</h3></button>
         ${lead ? `<p>${esc(lead)}</p>` : ''}
         <div class="nfoot">
           <span class="pill" style="color:${s.color}">${esc(s.name)}</span>
           <span class="src">${esc(it.src)} · ${esc(relTime(it.at))}</span>
         </div>
       </div>`;
-    a.querySelector('.hl').onclick = ()=> openArticle({...it, series:key}, titles?.[i] || it.title, lead);
+    a.querySelector('.hl').onclick = ()=> openArticle({...it, series:key}, title, lead);
     list.appendChild(a);
   });
 }
@@ -2834,8 +2900,11 @@ function teamCard(k, dr){
           <b>${esc(mine ? lz(mine.n) : lz(tm.n))}</b>
           <span>${esc(mine ? lz(tm.n) : SERIES[tm.s].name)}</span>
         </div>
-        ${con ? `<div class="ht-num">P${con.p}</div>` : ''}
       </div>
+      ${con ? `<div class="ht-stats">
+        <div><b>${con.pts}</b><span class="lbl">PTS</span></div>
+        <div><b>P${con.p}</b><span class="lbl">RANK</span></div>
+      </div>` : ''}
       ${ph ? `<div class="ht-credit">${t('my.credit', ph.by, ph.lic)}</div>`
            : `<div class="ht-car">${carSvg(tm.c)}</div>`}
     </div>
@@ -3492,7 +3561,7 @@ function openRace(r){
     ${ck ? `<div class="trkcard" id="trkCard" style="--acc:${s.color}">
              <span class="wash"></span>
              <span class="info"><b>${esc(rcirc(r))}</b><span class="lbl">${t('r.trackTap')}</span></span>
-             ${track3d(ck, s.color, 124, 'trk3dEl')}
+             ${track3d(ck, s.color, 150, 'trk3dEl')}
            </div>` : ''}
     <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0">
