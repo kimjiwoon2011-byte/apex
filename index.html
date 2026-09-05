@@ -3699,18 +3699,25 @@ const NTFY  = 'https://ntfy.sh/';
 const LOBBY = 'apex-motorsport-lobby-v1';
 const roomTopic = id => 'apex-motorsport-r-' + id;
 
-async function ntfyPoll(topic){
-  const r = await fetch(NTFY + topic + '/json?poll=1&since=all', {cache:'no-store'});
+/* 토픽별로 마지막에 받은 메시지 id를 기억해 두고, 다음부터는 그 뒤엣것만 받습니다.
+   전에는 2.5초마다 방의 전체 대화를 처음부터 다시 내려받아, 대화가 쌓일수록
+   무거워지고 무료 서버의 전송 한도도 빨리 썼습니다. */
+const ntfyLast = {};
+async function ntfyPoll(topic, onlyNew){
+  const since = (onlyNew && ntfyLast[topic]) ? ntfyLast[topic] : 'all';
+  const r = await fetch(NTFY + topic + '/json?poll=1&since=' + since, {cache:'no-store'});
   if(!r.ok) throw new Error('HTTP ' + r.status);
   const txt = (await r.text()).trim();
   if(!txt) return [];
-  return txt.split('\n').map(line=>{
-    try{
-      const m = JSON.parse(line).message;
-      try{ return JSON.parse(b64dec(m)); }         /* 지금 형식 */
-      catch(e){ return JSON.parse(m); }            /* 예전에 올라간 평문 */
-    }catch(e){ return null; }
-  }).filter(Boolean);
+  const out = [];
+  txt.split('\n').forEach(line=>{
+    let row; try{ row = JSON.parse(line); }catch(e){ return; }
+    if(row.id) ntfyLast[topic] = row.id;
+    if(typeof row.message !== 'string') return;
+    try{ out.push(JSON.parse(b64dec(row.message))); }                  /* 지금 형식 */
+    catch(e){ try{ out.push(JSON.parse(row.message)); }catch(e2){} }   /* 예전 평문 */
+  });
+  return out;
 }
 /* ── 내 기기 사본 ──
    무료 서버는 12시간이 지나면 대화를 지웁니다. 내가 한 번 받아둔 것은
@@ -3797,7 +3804,10 @@ async function beat(room, force){
 
 /* Supabase에 한 번만 실행하면 되는 준비 SQL.
    비밀번호 없는 공개 단톡방이라 anon 키로 읽기·쓰기를 모두 허용합니다. */
-const SETUP_SQL = `create table if not exists rooms (
+const SETUP_SQL = `-- APEX 단톡방 준비 SQL. Supabase → SQL Editor 에 붙여넣고 한 번만 실행하세요.
+-- 여러 번 실행해도 안전합니다.
+
+create table if not exists rooms (
   id            text primary key,
   title         text not null,
   descr         text,
@@ -3816,7 +3826,17 @@ create table if not exists messages (
   sys     boolean default false,
   at      int8
 );
+
+-- 방 대화를 시간순으로 빠르게 가져오기 위한 색인
 create index if not exists messages_room_idx on messages (room_id, at);
+-- 방 목록은 최근 활동순으로 보여줍니다
+create index if not exists rooms_active_idx on rooms (last_activity desc);
+
+-- 한 사람이 긴 글을 쏟아부어 무료 용량을 태우지 못하게 막습니다
+alter table messages drop constraint if exists messages_text_len;
+alter table messages add  constraint messages_text_len check (char_length(text) <= 300);
+alter table rooms    drop constraint if exists rooms_max_range;
+alter table rooms    add  constraint rooms_max_range check (max_n between 2 and 100);
 
 alter table rooms    enable row level security;
 alter table messages enable row level security;
@@ -3824,8 +3844,27 @@ alter table messages enable row level security;
 -- policies have no "create if not exists", so drop first to stay re-runnable
 drop policy if exists "open rooms"    on rooms;
 drop policy if exists "open messages" on messages;
-create policy "open rooms"    on rooms    for all using (true) with check (true);
-create policy "open messages" on messages for all using (true) with check (true);`;
+drop policy if exists "read rooms"    on rooms;
+drop policy if exists "write rooms"   on rooms;
+drop policy if exists "read messages" on messages;
+drop policy if exists "add messages"  on messages;
+drop policy if exists "drop messages" on messages;
+
+-- 비밀번호 없는 공개 방이라 읽기·쓰기를 열어 둡니다.
+create policy "read rooms"    on rooms    for select using (true);
+create policy "write rooms"   on rooms    for all    using (true) with check (true);
+create policy "read messages" on messages for select using (true);
+create policy "add messages"  on messages for insert with check (true);
+-- 지난 방을 치울 때 필요합니다. 대신 수정(update)은 아무에게도 열지 않아
+-- 남이 쓴 말을 바꿔치기할 수는 없습니다.
+create policy "drop messages" on messages for delete using (true);
+
+-- 새 대화가 실시간으로 밀려오도록 (지금은 주기적으로 받아오지만, 켜 두면 나중에 바로 씁니다)
+do $$
+begin
+  alter publication supabase_realtime add table messages;
+exception when duplicate_object then null;
+end $$;`;
 
 /* 어떤 형태로 붙여넣어도 https://xxxx.supabase.co 만 남깁니다.
    (뒤에 /rest/v1, 물음표, 슬래시, 공백이 붙어 와도 정리) */
@@ -3864,6 +3903,9 @@ async function freeMembers(roomId){
   evs.forEach(d=>{ if(d.k === 'join') set.add(d.who); else if(d.k === 'leave') set.delete(d.who); });
   return [...set];
 }
+
+/* 방마다 전체를 한 번 받았는지 (앱이 켜져 있는 동안만 기억) */
+const fullLoaded = {};
 
 const CHAT = {
   async rooms(){
@@ -3927,17 +3969,24 @@ const CHAT = {
   async msgs(roomId){
     if(!netOn()) return DB.get('msgs', {})[roomId] || [];
     if(netFree()){
-      const fresh = (await ntfyPoll(roomTopic(roomId))).map(d=>{
+      /* 한 번은 전체를 받아 사본을 채우고, 그 뒤로는 새 것만 받습니다 */
+      const fresh = (await ntfyPoll(roomTopic(roomId), fullLoaded[roomId])).map(d=>{
         if(d.k === 'msg')   return {who:d.who, text:d.text, sys:false, at:d.at};
         if(d.k === 'join')  return {sys:true, text:t('chat.joined',  d.who), at:d.at};
         if(d.k === 'leave') return {sys:true, text:t('chat.leftMsg', d.who), at:d.at};
         return null;
       }).filter(Boolean);
+      fullLoaded[roomId] = true;
       return mirrorMsgs(roomId, fresh);   /* 12시간 지나 서버에서 빠져도 남습니다 */
     }
+    /* 새로 올라온 것만 받습니다. 받은 것은 사본에 합쳐 두어
+       서버가 잠들거나 오프라인이어도 이전 대화가 남습니다. */
+    const seen = DB.get('mir-' + roomId, []);
+    const since = seen.length ? Math.max(...seen.map(m=>m.at)) : 0;
     const rows = await sb('messages?room_id=eq.' + encodeURIComponent(roomId)
+                          + (since ? '&at=gt.' + since : '')
                           + '&select=*&order=at.asc&limit=300');
-    return rows.map(m=>({ who:m.who, text:m.text, sys:m.sys, at:+m.at }));
+    return mirrorMsgs(roomId, rows.map(m=>({ who:m.who, text:m.text, sys:!!m.sys, at:+m.at })));
   },
 
   /* kind: 'msg' | 'join' | 'leave' */
