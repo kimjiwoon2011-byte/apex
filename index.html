@@ -1058,7 +1058,7 @@ ko:{
  'r.watchNote':'아이콘을 누르면 해당 서비스로 바로 이동합니다. 지역·요금제에 따라 시청 가능 여부가 다를 수 있어요.',
  'r.trackTap':'눌러서 평면으로 보기','r.trackNote':'서킷 윤곽은 실제 GPS 코스 데이터를 단순화한 것입니다.',
  'r.results':'경기 결과','r.noResults':'앱에 등록된 결과가 없어요.','r.official':'{0} 공식 결과 보기 →',
- 'r.rate':'이 경기 재미있었나요?','r.ratePh':'어떤 점이 좋았나요? 짧게 남겨보세요.',
+ 'r.rate':'이 경기 재미있었나요?',
  'r.saveRate':'평점 저장','r.pickStar':'별점을 먼저 선택해주세요','r.saved':'{0}점으로 저장했어요',
  'r.makeRoom':'이 경기 같이 볼 단톡방 만들기','r.close':'닫기','r.icsDone':'캘린더 파일을 내려받았어요',
  'chat.section':'같이 볼 사람 모여라',
@@ -1072,7 +1072,7 @@ ko:{
  'chat.create':'방 만들기','chat.cancel':'취소',
  'chat.needTitle':'방 제목을 입력해주세요',
  'chat.nick':'어떤 이름으로 들어갈까요?','chat.nickSub':'방에서 표시될 이름이에요. 나중에 설정에서 바꿀 수 있어요.',
- 'chat.nickLabel':'닉네임','chat.nickPh':'예) 스파러버','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
+ 'chat.nickLabel':'닉네임','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
  'chat.full':'정원이 가득 찼어요','chat.gone':'방이 이미 사라졌어요',
  'chat.joined':'{0}님이 들어왔어요','chat.leftMsg':'{0}님이 나갔어요',
  'chat.msgPh':'메시지 입력…','chat.send':'전송','chat.leave':'방 나가기',
@@ -1201,7 +1201,7 @@ en:{
  'r.watchNote':'Tap an icon to open that service. Availability depends on your region and plan.',
  'r.trackTap':'Tap for top-down view','r.trackNote':'Circuit outlines are simplified from real GPS course data.',
  'r.results':'Result','r.noResults':'No result stored in the app.','r.official':'View official {0} results →',
- 'r.rate':'How good was this race?','r.ratePh':'What did you like? Leave a short note.',
+ 'r.rate':'How good was this race?',
  'r.saveRate':'Save rating','r.pickStar':'Pick a star rating first','r.saved':'Saved — {0} stars',
  'r.makeRoom':'Create a watch room for this race','r.close':'Close','r.icsDone':'Calendar file downloaded',
  'chat.section':'Find people to watch with',
@@ -1215,7 +1215,7 @@ en:{
  'chat.create':'Create room','chat.cancel':'Cancel',
  'chat.needTitle':'Please enter a room title',
  'chat.nick':'What name will you use?','chat.nickSub':'This is shown in rooms. You can change it later in Settings.',
- 'chat.nickLabel':'Nickname','chat.nickPh':'e.g. SpaLover','chat.ok':'OK','chat.needNick':'Please enter a nickname',
+ 'chat.nickLabel':'Nickname','chat.ok':'OK','chat.needNick':'Please enter a nickname',
  'chat.full':'This room is full','chat.gone':'That room is already gone',
  'chat.joined':'{0} joined','chat.leftMsg':'{0} left',
  'chat.msgPh':'Type a message…','chat.send':'Send','chat.leave':'Leave room',
@@ -1344,7 +1344,7 @@ ja:{
  'r.watchNote':'アイコンを押すとサービスへ移動します。地域やプランによって視聴可否が異なります。',
  'r.trackTap':'タップで真上から表示','r.trackNote':'コース形状は実際のGPSデータを簡略化したものです。',
  'r.results':'結果','r.noResults':'アプリに登録された結果がありません。','r.official':'{0} 公式結果を見る →',
- 'r.rate':'このレース、面白かった？','r.ratePh':'よかった点を短く書いてみましょう。',
+ 'r.rate':'このレース、面白かった？',
  'r.saveRate':'評価を保存','r.pickStar':'先に星を選んでください','r.saved':'{0}点で保存しました',
  'r.makeRoom':'このレースの観戦ルームを作る','r.close':'閉じる','r.icsDone':'カレンダーファイルを保存しました',
  'chat.section':'一緒に見る人を探す',
@@ -1358,7 +1358,7 @@ ja:{
  'chat.create':'ルームを作る','chat.cancel':'キャンセル',
  'chat.needTitle':'ルーム名を入力してください',
  'chat.nick':'どの名前で入りますか？','chat.nickSub':'ルームで表示される名前です。設定で変更できます。',
- 'chat.nickLabel':'ニックネーム','chat.nickPh':'例）スパ好き','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
+ 'chat.nickLabel':'ニックネーム','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
  'chat.full':'満員です','chat.gone':'このルームは既に消えました',
  'chat.joined':'{0}さんが入室しました','chat.leftMsg':'{0}さんが退室しました',
  'chat.msgPh':'メッセージを入力…','chat.send':'送信','chat.leave':'退室する',
@@ -3551,7 +3551,7 @@ function openRace(r){
     <div class="stars" id="starRow">${[1,2,3,4,5].map(i=>
       `<button data-v="${i}" class="${rev&&rev.stars>=i?'lit':''}" aria-label="${i}">
          <svg viewBox="0 0 24 24">${PATHS.star}</svg></button>`).join('')}</div>
-    <textarea id="revText" placeholder="${esc(t('r.ratePh'))}">${esc(rev?.text || '')}</textarea>
+    <textarea id="revText">${esc(rev?.text || '')}</textarea>
     <button class="btn flow" id="saveRev">${t('r.saveRate')}</button>` : '';
 
   openSheet(`
@@ -4045,7 +4045,7 @@ function askNick(then){
     <h2>${t('chat.nick')}</h2>
     <div class="muted">${t('chat.nickSub')}</div>
     <label class="fl">${t('chat.nickLabel')}</label>
-    <input type="text" id="nkIn" maxlength="16" placeholder="${esc(t('chat.nickPh'))}">
+    <input type="text" id="nkIn" maxlength="16">
     <button class="btn flow" id="nkOk">${t('chat.ok')}</button>`);
   $('#nkIn').focus();
   $('#nkOk').onclick = ()=>{
@@ -4546,7 +4546,7 @@ $('#btnSettings').onclick = ()=>{
     </div>
     <div class="sec">${t('set.me')}</div>
     <label class="fl">${t('set.nick')}</label>
-    <input type="text" id="setNick" maxlength="16" value="${esc(CFG.nick)}" placeholder="${esc(t('chat.nickPh'))}">
+    <input type="text" id="setNick" maxlength="16" value="${esc(CFG.nick)}">
     <button class="btn flow sm" id="setNickSave">${t('set.saveNick')}</button>
     <div class="sec">${t('net.title')}</div>
     <div class="seg c3" id="netSeg">
