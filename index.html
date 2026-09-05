@@ -946,9 +946,9 @@ textarea{resize:vertical;min-height:78px}
     <div class="pills" id="authPills"></div>
     <form id="authForm" autocomplete="off">
       <label class="fl" for="auId" data-i18n="auth.id"></label>
-      <input type="text" id="auId" maxlength="16" autocomplete="username">
+      <input type="text" id="auId" maxlength="16" autocomplete="username" data-i18n-ph="auth.idPh">
       <label class="fl" for="auPw" data-i18n="auth.pw"></label>
-      <input type="password" id="auPw" maxlength="64" autocomplete="current-password">
+      <input type="password" id="auPw" maxlength="64" autocomplete="current-password" data-i18n-ph="auth.pwPh">
       <div id="auPw2Wrap" hidden>
         <label class="fl" for="auPw2" data-i18n="auth.pw2"></label>
         <input type="password" id="auPw2" maxlength="64" autocomplete="new-password">
@@ -2171,6 +2171,7 @@ const leadLabel = m => m>=1440 ? (m/1440)+t('alert.d') : m>=60 ? (m/60)+t('alert
 function syncLabels(){
   document.querySelectorAll('[data-i18n]').forEach(n=>{ n.textContent = t(n.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(n=>{ n.innerHTML = t(n.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(n=>{ n.placeholder = t(n.dataset.i18nPh); });
   const ls = $('#leadSel');       /* 드롭다운 항목도 여기서 함께 다시 만듭니다 */
   if(ls) ls.innerHTML = LEADS.map(m=>
     `<option value="${m}" ${m===CFG.lead?'selected':''}>${esc(t('alert.lead', leadLabel(m)))}</option>`).join('');
