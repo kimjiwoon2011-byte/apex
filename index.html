@@ -1120,7 +1120,7 @@ ko:{
  'set.clearNews':'소식 캐시 비우기 (다시 받아오기)','set.newsCleared':'소식 캐시를 비웠어요',
  'set.reset':'전체 초기화 (방·평점·설정 삭제)',
  'set.resetAsk':'단톡방·채팅·평점·설정이 모두 지워집니다. 계속할까요?',
- 'set.note':'소식은 Motorsport.com / Autosport 피드를 <b>3일마다</b> 자동으로 새로 받아옵니다. 제목은 자동 번역되고, <b>전문 번역</b> 링크를 누르면 기사 전체를 번역해 볼 수 있어요.<br>단톡방·평점·설정은 이 브라우저에만 저장돼요.',
+ 'set.note':'소식은 Motorsport.com / Crash.net 피드를 <b>3일마다</b> 자동으로 새로 받아옵니다. 제목은 자동 번역되고, <b>전문 번역</b> 링크를 누르면 기사 전체를 번역해 볼 수 있어요.<br>단톡방·평점·설정은 이 브라우저에만 저장돼요.',
  'set.tz':'시간대는 기기 설정({0})을 따릅니다.','set.close':'닫기',
 },
 en:{
@@ -1263,7 +1263,7 @@ en:{
  'set.clearNews':'Clear news cache (fetch again)','set.newsCleared':'News cache cleared',
  'set.reset':'Reset everything (rooms, ratings, settings)',
  'set.resetAsk':'Rooms, chats, ratings and settings will all be erased. Continue?',
- 'set.note':'News is pulled from Motorsport.com / Autosport <b>every 3 days</b>. Headlines are auto-translated; use the <b>Translate</b> link to read the full article in your language.<br>Rooms, ratings and settings live in this browser only.',
+ 'set.note':'News is pulled from Motorsport.com / Crash.net <b>every 3 days</b>. Headlines are auto-translated; use the <b>Translate</b> link to read the full article in your language.<br>Rooms, ratings and settings live in this browser only.',
  'set.tz':'Times follow your device timezone ({0}).','set.close':'Close',
 },
 ja:{
@@ -1406,7 +1406,7 @@ ja:{
  'set.clearNews':'ニュースキャッシュを消す（再取得）','set.newsCleared':'キャッシュを消しました',
  'set.reset':'すべて初期化（ルーム・評価・設定）',
  'set.resetAsk':'ルーム・チャット・評価・設定がすべて消えます。続けますか？',
- 'set.note':'ニュースは Motorsport.com / Autosport から<b>3日ごと</b>に自動取得します。タイトルは自動翻訳され、<b>全文翻訳</b>リンクで記事全体を翻訳できます。<br>ルーム・評価・設定はこのブラウザにのみ保存されます。',
+ 'set.note':'ニュースは Motorsport.com / Crash.net から<b>3日ごと</b>に自動取得します。タイトルは自動翻訳され、<b>全文翻訳</b>リンクで記事全体を翻訳できます。<br>ルーム・評価・設定はこのブラウザにのみ保存されます。',
  'set.tz':'時刻は端末のタイムゾーン（{0}）に従います。','set.close':'閉じる',
 },
 };
@@ -2319,13 +2319,16 @@ let newsSeries = 'f1';
    그래서 웹에서는 같은 주소의 프록시 경로(_redirects가 서버에서 대신 받아옴)를 먼저 쓰고,
    실패하면 직접 요청으로 넘어갑니다. */
 const HOSTED = location.protocol === 'https:' || location.protocol === 'http:';
+/* 예비 소스 Crash.net의 경로 — 시리즈 이름이 우리 것과 달라 짝을 지어 둡니다.
+   스포츠카 피드 하나가 WEC·IMSA·GT를 함께 다룹니다 */
+const CRASH_PATH = { f1:'f1', dtm:'dtm', wec:'sportscars', imsa:'sportscars',
+                     gt:'sportscars', supergt:'sportscars' };
 const FEEDS = [
   ...(HOSTED ? [
     { src:'Motorsport.com', url: f => `/api/ms/${f}/news/` },
-    { src:'Autosport',      url: f => `/api/as/${f}/news/` },
+    { src:'Crash.net',      url: f => CRASH_PATH[f] && `/api/cr/${CRASH_PATH[f]}` },
   ] : []),
   { src:'Motorsport.com', url: f => `https://www.motorsport.com/rss/${f}/news/` },
-  { src:'Autosport',      url: f => `https://www.autosport.com/rss/${f}/news/` },
 ];
 const stripTags = s => String(s||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
 
@@ -2350,9 +2353,11 @@ async function fetchNews(key){
   let lastErr;
   for(const f of [...own, ...FEEDS]){
     try{
+      const u = f.url(feed);
+      if(!u) continue;                    /* 이 시리즈에는 그 소스가 없습니다 */
       const ac = new AbortController();
       const timer = setTimeout(()=>ac.abort(), 10000);
-      const res = await fetch(f.url(feed), {signal:ac.signal});
+      const res = await fetch(u, {signal:ac.signal});
       clearTimeout(timer);
       if(!res.ok) throw new Error('HTTP '+res.status);
       const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');

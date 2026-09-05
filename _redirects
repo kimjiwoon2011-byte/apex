@@ -1,10 +1,7 @@
 # Netlify fetches these server-side so the browser never hits CORS.
 /api/ms/*  https://www.motorsport.com/rss/:splat  200
-/api/as/*  https://www.autosport.com/rss/:splat   200
-# 임시 실측용 — 예비 소스 후보
+# 예비 소스. Autosport은 넷리파이에서 부르면 405로 막혀 쓸 수 없어 Crash.net을 씁니다.
 /api/cr/*  https://www.crash.net/rss/:splat       200
-/api/mw/*  https://www.motorsportweek.com/:splat  200
-/api/rf/*  https://www.racefans.net/:splat        200
 # Touring cars have no feed on motorsport.com, so TC news comes from here.
 /api/tct/* https://www.touringcartimes.com/:splat 200
 # YouTube search — used to find the video for a race, then embed it in the app.
