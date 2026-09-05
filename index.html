@@ -1072,6 +1072,9 @@ ko:{
  'chat.create':'방 만들기','chat.cancel':'취소',
  'chat.needTitle':'방 제목을 입력해주세요',
  'chat.nick':'어떤 이름으로 들어갈까요?','chat.nickSub':'방에서 표시될 이름이에요. 나중에 설정에서 바꿀 수 있어요.',
+ 'chat.needLogin':'단톡방은 구글 로그인이 필요해요',
+ 'chat.needLoginWhy':'누가 쓴 말인지 확인돼야 사칭을 막을 수 있어요. 구글은 이메일과 이름만 알려줍니다.',
+ 'chat.httpsOnly':'구글 로그인은 <b>https 주소</b>에서만 됩니다. 파일을 직접 열지 말고 배포된 주소로 들어와 주세요.',
  'chat.nickLabel':'닉네임','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
  'chat.full':'정원이 가득 찼어요','chat.gone':'방이 이미 사라졌어요',
  'chat.joined':'{0}님이 들어왔어요','chat.leftMsg':'{0}님이 나갔어요',
@@ -1216,6 +1219,9 @@ en:{
  'chat.create':'Create room','chat.cancel':'Cancel',
  'chat.needTitle':'Please enter a room title',
  'chat.nick':'What name will you use?','chat.nickSub':'This is shown in rooms. You can change it later in Settings.',
+ 'chat.needLogin':'Rooms need a Google sign-in',
+ 'chat.needLoginWhy':'Knowing who wrote what is how we keep people from posing as someone else. Google only shares your email and name.',
+ 'chat.httpsOnly':'Google sign-in only works over <b>https</b>. Open the deployed address instead of the file itself.',
  'chat.nickLabel':'Nickname','chat.ok':'OK','chat.needNick':'Please enter a nickname',
  'chat.full':'This room is full','chat.gone':'That room is already gone',
  'chat.joined':'{0} joined','chat.leftMsg':'{0} left',
@@ -1360,6 +1366,9 @@ ja:{
  'chat.create':'ルームを作る','chat.cancel':'キャンセル',
  'chat.needTitle':'ルーム名を入力してください',
  'chat.nick':'どの名前で入りますか？','chat.nickSub':'ルームで表示される名前です。設定で変更できます。',
+ 'chat.needLogin':'チャットはGoogleログインが必要です',
+ 'chat.needLoginWhy':'誰が書いたか分かることで、なりすましを防げます。Googleはメールと名前だけを伝えます。',
+ 'chat.httpsOnly':'Googleログインは<b>https</b>でのみ使えます。ファイルを直接開かず、公開アドレスから入ってください。',
  'chat.nickLabel':'ニックネーム','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
  'chat.full':'満員です','chat.gone':'このルームは既に消えました',
  'chat.joined':'{0}さんが入室しました','chat.leftMsg':'{0}さんが退室しました',
@@ -2203,7 +2212,7 @@ function switchTab(name){
   tab = name;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.tab===name));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='p-'+name));
-  $('#fab').style.display = name==='chat' ? 'grid' : 'none';
+  $('#fab').style.display = (name==='chat' && googleUser()) ? 'grid' : 'none';
   $('#hdrTitle').textContent = t('title.'+name);
   syncLabels();
   if(name==='news')  renderNews();
@@ -4010,7 +4019,31 @@ const CHAT = {
   },
 };
 
+/* 로그인하지 않았으면 방 목록 대신 안내를 보여줍니다 */
+function chatGate(){
+  const box = $('#roomList');
+  $('#chatNetNote').innerHTML = '';
+  box.innerHTML = `
+    <div class="empty">
+      ${ic('user')}
+      <b>${esc(t('chat.needLogin'))}</b><br>
+      ${esc(t('chat.needLoginWhy'))}
+      ${googleOk()
+        ? `<button class="btn google" id="gateGoogle" style="margin-top:16px">
+             <svg viewBox="0 0 48 48" aria-hidden="true">
+               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.28-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.55 10.78l7.98-6.19z"/>
+               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+             </svg><span>${esc(t('auth.google'))}</span>
+           </button>`
+        : `<div class="note" style="text-align:left;margin-top:14px">${t('chat.httpsOnly')}</div>`}
+    </div>`;
+  const g = $('#gateGoogle'); if(g) g.onclick = googleStart;
+}
+
 async function renderRooms(){
+  if(!googleUser()) return chatGate();
   const box = $('#roomList');
   $('#chatNetNote').innerHTML = netOn()
     ? t('chat.onlineNote') + '<br>' + t('chat.publicWarn')
@@ -4054,6 +4087,7 @@ const ROOM_MAXES = [5, 10, 20, 50, 100];
 const ROOM_MAX_DEFAULT = 20;
 
 function openCreateRoom(preRaceId){
+  if(!googleUser()){ toast(t('chat.needLogin')); switchTab('chat'); return; }
   let maxSel = ROOM_MAX_DEFAULT;
   const opts = RACES.filter(r=>r.end > Date.now() - DAY).slice(0,40)
     .map(r=>`<option value="${r.id}" ${r.id===preRaceId?'selected':''}>${esc(SERIES[r.s].name)} · ${esc(rname(r))} (${esc(fmtShort(r.ms))})</option>`).join('');
@@ -4116,6 +4150,7 @@ function askNick(then){
 }
 
 async function enterRoom(id, known){
+  if(!googleUser()){ toast(t('chat.needLogin')); switchTab('chat'); return; }
   if(!CFG.nick){ askNick(()=>enterRoom(id, known)); return; }
   let rooms;
   try{ rooms = await CHAT.rooms(); }catch(e){ toast(t('net.err')); return; }
@@ -4444,12 +4479,23 @@ function googleReturn(){
   const all  = accounts();
   let id = Object.keys(all).find(k => all[k].email === email) || googleId(email, meta.name || meta.full_name);
   all[id] = { google:true, email, at: all[id] ? all[id].at : Date.now() };
+  /* 나중에 Supabase에 "누가 썼는지"를 증명할 때 쓸 토큰도 함께 둡니다 */
+  DB.set('gtok', { tok: q.get('access_token') || '', ref: q.get('refresh_token') || '',
+                   exp: Date.now() + (+q.get('expires_in') || 3600) * 1000, email });
   DB.set('accts', all);
   DB.set('session', id);
   DB.set('guest', false);
   if(!CFG.nick){ CFG.nick = id; saveCfg(); }   /* 처음 한 번만. 이후엔 설정에서 바꿉니다 */
   toast(t('auth.welcome', id));
   return true;
+}
+
+/* 단톡방은 구글 로그인만 받습니다. 아이디/비번 계정은 이 기기에만 있는 것이라
+   서버가 "정말 그 사람인지" 확인해 줄 수 없어, 남의 이름으로 글을 쓸 수 있습니다. */
+function googleUser(){
+  const id = session(); if(!id) return null;
+  const acct = accounts()[id];
+  return (acct && acct.google) ? id : null;
 }
 
 function buildAuthPills(){
@@ -4743,14 +4789,14 @@ else if(!DB.get('guest', false)) openAuth();
 setInterval(()=>{
   if(tab === 'alert') paintCountdown();
   if(tab === 'cal' && calMode === 'cal') renderHero();   /* 남은 시간이 실시간으로 줄어들도록 */
-  if(tab === 'chat' && !netOn()){
+  if(tab === 'chat' && googleUser() && !netOn()){
     const before = DB.get('rooms', []).length;
     if(pruneRooms().length !== before) renderRooms();
   }
 }, 1000);
 /* 온라인일 때 방 목록을 주기적으로 새로고침 (시트가 열려 있으면 건너뜀) */
 setInterval(()=>{
-  if(tab === 'chat' && netOn() && !$('#scrim').classList.contains('open')) renderRooms();
+  if(tab === 'chat' && googleUser() && netOn() && !$('#scrim').classList.contains('open')) renderRooms();
 }, 6000);
 setInterval(checkAlerts, 30000);
 checkAlerts();
