@@ -275,6 +275,14 @@ main{padding:14px 16px 0}
 .arttitle{margin:0 0 12px;font-size:19px;line-height:1.36;font-weight:800;letter-spacing:-.015em}
 .artlead{margin:0 0 6px;font-size:14px;line-height:1.72;color:var(--tx-2)}
 .terms{display:grid;gap:9px}
+/* 기사 댓글 */
+.cmt{border-bottom:1px solid var(--line);padding:11px 2px}
+.cmt:last-of-type{border-bottom:0}
+.cmt b{font-size:12.5px;font-weight:800}
+.cmt .tm{font-size:10px;color:var(--tx-3);margin-left:7px}
+.cmt p{margin:5px 0 0;font-size:13px;line-height:1.55;color:var(--tx-2);word-break:break-word}
+#cmtBox .cin{border-top:1px solid var(--line);margin-top:6px}
+#cmtBox .cin button{width:56px}
 .term{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);padding:12px 13px}
 .term b{display:block;font-size:12.5px;font-weight:800;color:var(--br);margin-bottom:4px}
 .term span{display:block;font-size:12px;line-height:1.6;color:var(--tx-2)}
@@ -338,6 +346,8 @@ main{padding:14px 16px 0}
 .cardn .ft{display:flex;align-items:center;gap:8px;font-size:10.5px;
   color:rgba(255,255,255,.7);font-weight:600}
 .cardn .ft .pill{background:rgba(255,255,255,.18);border-radius:6px;padding:3px 7px;font-weight:800}
+.cardn .ft .cn{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-weight:800}
+.cardn .ft .cn .ic{width:12px;height:12px;vertical-align:0}
 
 /* 표지 — 아래 1/3을 비워 두는 인스타 관행을 따릅니다 */
 .cardn.cover{background:linear-gradient(160deg,var(--cc),color-mix(in srgb,var(--cc) 30%,#05080f))}
@@ -1157,6 +1167,9 @@ ko:{
  'chat.nickLabel':'닉네임','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
  'chat.full':'정원이 가득 찼어요','chat.gone':'방이 이미 사라졌어요',
  'chat.joined':'{0}님이 들어왔어요','chat.leftMsg':'{0}님이 나갔어요',
+ 'cmt.title':'댓글','cmt.none':'첫 댓글을 남겨보세요.','cmt.loading':'댓글 불러오는 중…',
+ 'cmt.ph':'댓글 쓰기…','cmt.fail':'댓글을 불러오지 못했어요.',
+ 'cmt.needLogin':'댓글을 쓰려면 <b>구글 로그인</b>이 필요해요. 단톡방 탭에서 로그인할 수 있어요.',
  'chat.photo':'사진 보내기','chat.sending':'사진 올리는 중…',
  'chat.tooBig':'사진이 너무 커요 (3MB까지)','chat.notImg':'사진만 보낼 수 있어요',
  'chat.msgPh':'메시지 입력…','chat.send':'전송','chat.leave':'방 나가기',
@@ -1310,6 +1323,9 @@ en:{
  'chat.nickLabel':'Nickname','chat.ok':'OK','chat.needNick':'Please enter a nickname',
  'chat.full':'This room is full','chat.gone':'That room is already gone',
  'chat.joined':'{0} joined','chat.leftMsg':'{0} left',
+ 'cmt.title':'Comments','cmt.none':'Be the first to comment.','cmt.loading':'Loading comments…',
+ 'cmt.ph':'Write a comment…','cmt.fail':'Could not load comments.',
+ 'cmt.needLogin':'You need to <b>sign in with Google</b> to comment. Sign in from the Rooms tab.',
  'chat.photo':'Send a photo','chat.sending':'Uploading…',
  'chat.tooBig':'That photo is too big (3MB max)','chat.notImg':'Images only',
  'chat.msgPh':'Type a message…','chat.send':'Send','chat.leave':'Leave room',
@@ -1463,6 +1479,9 @@ ja:{
  'chat.nickLabel':'ニックネーム','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
  'chat.full':'満員です','chat.gone':'このルームは既に消えました',
  'chat.joined':'{0}さんが入室しました','chat.leftMsg':'{0}さんが退室しました',
+ 'cmt.title':'コメント','cmt.none':'最初のコメントを書いてみましょう。','cmt.loading':'コメントを読み込み中…',
+ 'cmt.ph':'コメントを書く…','cmt.fail':'コメントを読み込めませんでした。',
+ 'cmt.needLogin':'コメントには<b>Googleログイン</b>が必要です。チャットタブからログインできます。',
  'chat.photo':'写真を送る','chat.sending':'アップロード中…',
  'chat.tooBig':'写真が大きすぎます（3MBまで）','chat.notImg':'画像のみ送れます',
  'chat.msgPh':'メッセージを入力…','chat.send':'送信','chat.leave':'退室する',
@@ -2832,9 +2851,41 @@ function openArticle(it, title, lead){
     ${terms}
     <div class="note">${t('art.note')}</div>
     <a class="btn flow artlink" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${t('art.full')}</a>
+    <div class="sec">${t('cmt.title')}</div>
+    <div id="cmtBox"><div class="muted">${t('cmt.loading')}</div></div>
     <button class="btn ghost sm" id="artClose">${t('r.close')}</button>`);
 
   $('#artClose').onclick = closeSheet;
+
+  /* 댓글 — 읽기는 누구나, 쓰기는 구글 로그인한 사람만 */
+  const art = artId(it);
+  async function drawCmt(){
+    const b = $('#cmtBox'); if(!b) return;
+    let list;
+    try{ list = await CMT.list(art); }
+    catch(e){ b.innerHTML = `<div class="muted">${t('cmt.fail')}</div>`; return; }
+    const me = googleUser();
+    b.innerHTML =
+      (list.length
+        ? list.map(c => `<div class="cmt"><b>${esc(c.who)}</b><span class="tm num">${fmtTime(c.at)}</span><p>${esc(c.text)}</p></div>`).join('')
+        : `<div class="muted">${t('cmt.none')}</div>`)
+      + (me
+        ? `<div class="cin"><input type="text" id="cmtIn" maxlength="300" placeholder="${esc(t('cmt.ph'))}"><button class="flow" id="cmtSend">${t('chat.send')}</button></div>`
+        : `<div class="note">${t('cmt.needLogin')}</div>`);
+    const send = $('#cmtSend'), inp = $('#cmtIn');
+    if(send && inp){
+      const go = async () => {
+        const v = inp.value.trim(); if(!v) return;
+        send.disabled = true;
+        try{ await CMT.add(art, CFG.nick, v); inp.value = ''; await drawCmt(); }
+        catch(e){ toast(t('net.err')); }
+        finally{ const s = $('#cmtSend'); if(s) s.disabled = false; }
+      };
+      send.onclick = go;
+      inp.addEventListener('keydown', e => { if(e.key === 'Enter') go(); });
+    }
+  }
+  drawCmt();
 }
 
 function buildNewsView(){
@@ -2887,6 +2938,16 @@ function paintDeck(data, titles, descs){
   });
 
   /* 점을 눌러서도, 화살표로도 넘어갑니다 — 손가락 스와이프가 안 먹는 경우가 있어서 */
+  /* 카드에 댓글 수를 한 번의 요청으로 붙입니다 */
+  CMT.counts(items.map(artId)).then(n=>{
+    items.forEach((it,i)=>{
+      const c = n[artId(it)];
+      if(!c) return;
+      const ft = deck.children[i+1] && deck.children[i+1].querySelector('.ft');
+      if(ft) ft.insertAdjacentHTML('beforeend', `<span class="cn">${ic('chat')}${c}</span>`);
+    });
+  });
+
   const bar  = el('div','deckbar');
   const prev = el('button','prev'); prev.type='button';
   prev.setAttribute('aria-label', t('news.prev')); prev.innerHTML = ic('chev');
@@ -4433,6 +4494,34 @@ function chatGate(){
     </div>`;
   const g = $('#gateGoogle'); if(g) g.onclick = googleStart;
 }
+
+/* 기사마다 댓글. 기사 주소를 그대로 열쇠로 씁니다 */
+const artId = it => String(it.link || it.title || (String(it.at) + it.src)).slice(0, 400);
+
+const CMT = {
+  async list(art){
+    if(!netSb()) return [];
+    const rows = await sb('comments?art=eq.' + encodeURIComponent(art)
+                          + '&select=*&order=at.asc&limit=100');
+    return rows.map(c => ({ id:c.id, who:c.who, text:c.text, at:+c.at }));
+  },
+  async add(art, who, text){
+    if(!netSb()) throw new Error('no-server');
+    await sb('comments', { method:'POST',
+      body: JSON.stringify({ art, who, text, at: Date.now() }) });
+  },
+  /* 목록에 보이는 기사들의 댓글 수를 한 번에 받아옵니다 */
+  async counts(arts){
+    if(!netSb() || !arts.length) return {};
+    try{
+      const q = arts.map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
+      const rows = await sb('comments?art=in.(' + q + ')&select=art');
+      const n = {};
+      rows.forEach(r => { n[r.art] = (n[r.art] || 0) + 1; });
+      return n;
+    }catch(e){ return {}; }
+  },
+};
 
 async function renderRooms(){
   if(!googleUser()) return chatGate();
