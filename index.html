@@ -2514,7 +2514,55 @@ const HEAD_FIX = [
   [/[.]$/, ''],                    /* 우리말 제목에는 마침표를 찍지 않습니다 */
 ];
 /* 화면에 뿌릴 때 쓰는 제목. 한국어일 때만 기사 제목투로 다듬습니다 */
-const hl = s => L === 'ko' ? headline(koFix(postNames(s))) : String(s || '');
+const hl = s => L === 'ko' ? reorder(headline(koFix(postNames(s)))) : String(s || '');
+
+/* 우리말 기사 제목이 쓰는 어순으로 바꿉니다.
+   번역기는 영어 어순을 그대로 두기 때문에 아무리 어미를 고쳐도 번역투가 남습니다.
+   ① 큰따옴표가 앞에 오면 말한 사람을 앞으로 (영어는 "말" - 사람, 우리말은 사람 "말")
+   ② 맨 앞 이름 뒤의 조사를 쉼표로 (르클레르는 → 르클레르,)
+   ③ 붙임말 정리 (~에 대한 → 없앰, ~와의 → ~와) */
+/* NAME_MAP 이 이 아래에서 만들어지므로, 처음 쓸 때 한 번만 계산합니다 */
+let _koNames = null;
+function koNames(){
+  if(_koNames) return _koNames;
+  const set = new Set();
+  for(const [, ko] of NAME_MAP) if(/^[가-힣]/.test(ko)) set.add(ko);
+  return (_koNames = [...set].sort((a,b)=> b.length - a.length));
+}
+
+/* 문장 앞에서 아는 이름과 그 뒤 조사를 떼어 냅니다. 없으면 null */
+function peelName(s){
+  for(const n of koNames()){
+    if(!s.startsWith(n)) continue;
+    const m = s.slice(n.length).match(/^(는|은|이|가)\s+/);
+    if(m) return { name:n, rest: s.slice(n.length + m[0].length) };
+  }
+  return null;
+}
+
+function reorder(s){
+  let out = String(s || '');
+
+  /* ① "말" - 사람이 …  →  사람 "말", … */
+  const q = out.match(/^["“]([^"”]{2,60})["”]\s*[-–—]\s*(.+)$/);
+  if(q){
+    const p = peelName(q[2]);
+    out = p ? p.name + ' "' + q[1] + '", ' + p.rest
+            : q[2] + ' "' + q[1] + '"';
+  }
+
+  /* ② 맨 앞 이름 뒤 조사를 쉼표로 */
+  const p2 = peelName(out);
+  if(p2) out = p2.name + ', ' + p2.rest;
+
+  /* ③ 제목에서 잘 안 쓰는 붙임말 */
+  return out
+    .replace(/에 대한 /g, ' ')
+    .replace(/([가-힣])과의 /g, '$1과 ')
+    .replace(/([가-힣])와의 /g, '$1와 ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
 function headline(s){
   let out = String(s || '').trim();
@@ -2522,7 +2570,7 @@ function headline(s){
     const next = out.replace(re, to).trim();
     if(next !== out){ out = next; break; }   /* 한 번만 손봅니다 */
   }
-  return out.replace(/s+([,·])/g, '$1').trim();
+  return out.replace(/\s+([,·])/g, '$1').trim();
 }
 
 /* 이름 사전이 못 잡는, 자주 나오는 고유명사 */
@@ -2532,6 +2580,9 @@ const EXTRA_NAMES = [
   ['Zandvoort','잔드보르트'], ['Silverstone','실버스톤'], ['Spa','스파'],
   ['Le Mans','르망'], ['Daytona','데이토나'], ['Sebring','세브링'],
   ['Yuki Tsunoda','츠노다 유키'], ['Tsunoda','츠노다'],
+  ['Fred Vasseur','프레드 바쇠르'], ['Vasseur','바쇠르'],
+  ['Toto Wolff','토토 볼프'], ['Christian Horner','크리스티안 호너'],
+  ['Andrea Stella','안드레아 스텔라'], ['Zak Brown','잭 브라운'],
   ['Monza','몬차'], ['Suzuka','스즈카'], ['Interlagos','인터라고스'],
   ['Mercedes','메르세데스'], ['Ferrari','페라리'], ['McLaren','맥라렌'],
 ];
@@ -2566,7 +2617,7 @@ const NAME_MAP = (()=>{
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
     .sort((a,b) => b[0].length - a[0].length)
-    .map(([en,ko]) => [new RegExp('\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\async function translateTitles(titles, target){') + '\\b', 'g'), ko]);
+    .map(([en,ko]) => [new RegExp('\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, m => '\\' + m) + '\\b', 'g'), ko]);
 })();
 
 /* 번역이 끝난 한국어 문장에 남은 영어 이름만 한국어로 바꿉니다.
