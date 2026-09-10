@@ -130,6 +130,10 @@ button,input,textarea,select{font-family:inherit;letter-spacing:inherit}
 }
 .hdr.stuck{border-bottom-color:var(--line)}
 .hdr-bar{display:flex;align-items:center;height:38px}
+.hdr-bar .logo{margin-right:auto}
+.icon-btn[disabled]{opacity:.4}
+.icon-btn.spin svg{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;letter-spacing:.02em}
 .logo-mark{
   width:28px;height:28px;border-radius:9px;display:grid;place-items:center;color:#fff;
@@ -137,7 +141,7 @@ button,input,textarea,select{font-family:inherit;letter-spacing:inherit}
 }
 .logo-mark svg{width:17px;height:17px;fill:currentColor}
 .icon-btn{
-  margin-left:auto;width:36px;height:36px;border:1px solid var(--line);border-radius:12px;
+  margin-left:8px;width:36px;height:36px;border:1px solid var(--line);border-radius:12px;
   background:var(--surface);color:var(--tx-2);display:grid;place-items:center;cursor:pointer;
   transition:transform .18s var(--ease),background .2s
 }
@@ -232,6 +236,10 @@ main{padding:14px 16px 0}
 
 /* ═══════════════════════════  소식  ═══════════════════════════ */
 .nmeta{display:flex;align-items:center;gap:9px;margin:2px 2px 12px;font-size:11.5px;color:var(--tx-3)}
+/* 보기 전환과 마지막 갱신 시각을 한 줄에 둡니다 */
+.nbar{display:flex;align-items:center;gap:10px;margin:0 2px 12px}
+.nbar .pills{margin:0;flex:1;max-width:220px}
+.nbar b{font-size:11.5px;color:var(--tx-3);font-weight:700;white-space:nowrap}
 .nmeta b{color:var(--tx-2);font-weight:700}
 .refresh{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--br);
   font-size:11.5px;font-weight:800;border-radius:999px;padding:7px 13px;cursor:pointer;
@@ -871,6 +879,13 @@ textarea{resize:vertical;min-height:78px}
       <div class="logo"><span class="logo-mark">
         <svg viewBox="0 0 24 24"><path d="M12 3 3.2 20.4a.6.6 0 0 0 .53.9h4.02l4.25-8.6 4.25 8.6h4.02a.6.6 0 0 0 .53-.9z"/></svg>
       </span>APEX</div>
+      <button class="icon-btn" id="btnRefreshNews" data-i18n-aria="news.refresh" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.4 3.9"/>
+          <path d="M21 4v5h-5M3 20v-5h5"/>
+        </svg>
+      </button>
       <button class="icon-btn" id="btnSettings" aria-label="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="12" cy="12" r="3"/>
@@ -885,10 +900,9 @@ textarea{resize:vertical;min-height:78px}
     <!-- 1. 소식 -->
     <section class="panel active" id="p-news">
       <div class="chips" id="newsChips"></div>
-      <div class="pills" id="newsView"></div>
-      <div class="nmeta">
-        <b id="newsFresh"></b><span id="newsNext"></span>
-        <button class="refresh" id="btnRefreshNews" data-i18n="news.refresh"></button>
+      <div class="nbar">
+        <div class="pills" id="newsView"></div>
+        <b id="newsFresh"></b>
       </div>
       <div id="newsList"></div>
     </section>
@@ -1050,9 +1064,9 @@ ko:{
  'gm.streak':'{0}연속 적중 중',
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
  'news.issues':'{0} 이슈','news.vList':'목록','news.vCard':'카드뉴스',
- 'news.cards':'장','news.coverTitle':'이번 주 {0} 소식','news.swipe':'옆으로 넘겨보세요',
+ 'news.cards':'장','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
  'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
- 'news.updated':'{0} 갱신','news.next':'다음 자동 갱신 {0}','news.failedShort':'불러오기 실패',
+ 'news.updated':'{0} 업데이트','news.failedShort':'불러오기 실패',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
  'news.stale':'갱신 실패 — 저장된 소식을 보여줍니다','news.empty':'표시할 소식이 없어요.',
  'news.translate':'전문 번역','time.now':'방금',
@@ -1198,8 +1212,8 @@ en:{
  'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
- 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.coverTitle':'{0} this week','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
- 'news.updated':'Updated {0}','news.next':'Next refresh {0}','news.failedShort':'Failed to load',
+ 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.updated':'Updated {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
  'news.translate':'Translate','time.now':'just now',
@@ -1345,8 +1359,8 @@ ja:{
  'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
- 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.coverTitle':'今週の{0}','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
- 'news.updated':'{0}に更新','news.next':'次回更新 {0}','news.failedShort':'読み込み失敗',
+ 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.updated':'{0}に更新','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
  'news.translate':'全文翻訳','time.now':'たった今',
@@ -2149,6 +2163,7 @@ const PATHS = {
   check:'<path d="M20 6 9 17l-5-5"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 19 5-5 4 4 3-3 4 4"/>',
   news :'<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9h4"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/>',
+  sync :'<path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.4 3.9"/><path d="M21 4v5h-5M3 20v-5h5"/>',
   wifi :'<path d="M5 12.55a11 11 0 0 1 14 0M2 8.82a16 16 0 0 1 20 0M8.5 16.2a6 6 0 0 1 7 0"/><circle cx="12" cy="20" r="1"/>',
 };
 const ic = (k, cls) => `<svg class="ic ${cls||''}" viewBox="0 0 24 24" aria-hidden="true">${PATHS[k]}</svg>`;
@@ -2237,6 +2252,7 @@ function syncLabels(){
   document.querySelectorAll('[data-i18n]').forEach(n=>{ n.textContent = t(n.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(n=>{ n.innerHTML = t(n.dataset.i18nHtml); });
   document.querySelectorAll('[data-i18n-ph]').forEach(n=>{ n.placeholder = t(n.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(n=>{ n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
   const ls = $('#leadSel');       /* 드롭다운 항목도 여기서 함께 다시 만듭니다 */
   if(ls) ls.innerHTML = LEADS.map(m=>
     `<option value="${m}" ${m===CFG.lead?'selected':''}>${esc(t('alert.lead', leadLabel(m)))}</option>`).join('');
@@ -2259,6 +2275,7 @@ function switchTab(name){
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.tab===name));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='p-'+name));
   $('#fab').style.display = (name==='chat' && googleUser()) ? 'grid' : 'none';
+  $('#btnRefreshNews').hidden = name !== 'news';
   $('#hdrTitle').textContent = t('title.'+name);
   syncLabels();
   if(name==='news')  renderNews();
@@ -2737,7 +2754,7 @@ async function renderNews(force){
 
   if(!cache) list.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
   $('#newsFresh').textContent = t('news.loading');
-  $('#btnRefreshNews').disabled = true;
+  $('#btnRefreshNews').disabled = true; $('#btnRefreshNews').classList.add('spin');
   try{
     const items = await fetchNews(key);
     const data = { at: Date.now(), items };
@@ -2750,16 +2767,14 @@ async function renderNews(force){
     if(cache){ paintNews(cache); toast(t('news.stale')); }
     else{
       $('#newsFresh').textContent = t('news.failedShort');
-      $('#newsNext').textContent = '';
       list.innerHTML = `<div class="empty">${ic('wifi')}${t('news.failed')}</div>`;
     }
-  }finally{ $('#btnRefreshNews').disabled = false; }
+  }finally{ $('#btnRefreshNews').disabled = false; $('#btnRefreshNews').classList.remove('spin'); }
 }
 
 function paintNews(data){
   const s = SERIES[newsSeries];
   $('#newsFresh').textContent = t('news.updated', relTime(data.at));
-  $('#newsNext').textContent  = t('news.next', fmtShort(data.at + NEWS_TTL));
   const list = $('#newsList'); list.innerHTML = '';
   if(!data.items.length){ list.innerHTML = `<div class="empty">${ic('news')}${t('news.empty')}</div>`; return; }
   const titles = data.tr?.[L] || null;      // 번역된 제목이 있으면 그걸 씁니다
@@ -3895,7 +3910,7 @@ function exportConfigured(){
     ['#newsList','#cgrid','#raceList','#roomList','#stList','#subList','#myStats',
      '#myReviews','#favWrap','#sheet','#heroCard','#cdCard','#newsChips','#calChips',
      '#calPills','#stPills','#authPills','#leadSel','#chatNetNote','#calTitle','#listTitle',
-     '#newsFresh','#newsNext','#permTxt','#hdrTitle','#toast']
+     '#newsFresh','#permTxt','#hdrTitle','#toast']
       .forEach(sel=>{ const el = doc.querySelector(sel); if(el) el.innerHTML = ''; });
     doc.removeAttribute('data-theme');
     const sc = doc.querySelector('#scrim');   if(sc) sc.className = 'scrim';
