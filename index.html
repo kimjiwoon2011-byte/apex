@@ -520,7 +520,16 @@ textarea{resize:vertical;min-height:78px}
 .msg .tm{font-size:9.5px;opacity:.62;margin-top:5px;display:block;text-align:right}
 .msg.sys{align-self:center;background:var(--surface-3);color:var(--tx-3);font-size:10.5px;
   max-width:100%;text-align:center;padding:5px 12px;border-radius:999px;font-weight:700}
-.cin{display:flex;gap:9px;padding-top:11px;border-top:1px solid var(--line)}
+.cin{display:flex;gap:9px;padding-top:11px;border-top:1px solid var(--line);align-items:center}
+.cin .pick{flex:0 0 40px;width:40px;height:40px;border-radius:var(--r2);cursor:pointer;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--tx-2);display:grid;place-items:center;
+  transition:transform .18s var(--ease),background .2s}
+.cin .pick:active{transform:scale(.9);background:var(--surface-3)}
+.cin .pick:disabled{opacity:.45}
+.cin .pick svg{width:19px;height:19px}
+/* 대화 속 사진 */
+.msg .mimg{display:block;max-width:100%;width:210px;border-radius:11px;margin:2px 0 6px;
+  background:var(--surface-3)}
 .cin input{flex:1}
 .cin button{border:0;border-radius:var(--r2);width:52px;color:#fff;font-weight:800;cursor:pointer;
   font-size:12.5px;transition:transform .18s var(--ease)}
@@ -1148,6 +1157,8 @@ ko:{
  'chat.nickLabel':'닉네임','chat.ok':'확인','chat.needNick':'닉네임을 입력해주세요',
  'chat.full':'정원이 가득 찼어요','chat.gone':'방이 이미 사라졌어요',
  'chat.joined':'{0}님이 들어왔어요','chat.leftMsg':'{0}님이 나갔어요',
+ 'chat.photo':'사진 보내기','chat.sending':'사진 올리는 중…',
+ 'chat.tooBig':'사진이 너무 커요 (3MB까지)','chat.notImg':'사진만 보낼 수 있어요',
  'chat.msgPh':'메시지 입력…','chat.send':'전송','chat.leave':'방 나가기',
  'chat.localNote':'지금은 채팅이 <b>이 기기에만</b> 저장돼요. 설정 → 단톡방 서버에서 Supabase를 연결하면 실제로 여러 사람과 대화할 수 있어요.',
  'chat.onlineNote':'서버에 연결돼 있어요. 같은 서버를 쓰는 사람과 <b>실시간으로</b> 대화합니다.',
@@ -1299,6 +1310,8 @@ en:{
  'chat.nickLabel':'Nickname','chat.ok':'OK','chat.needNick':'Please enter a nickname',
  'chat.full':'This room is full','chat.gone':'That room is already gone',
  'chat.joined':'{0} joined','chat.leftMsg':'{0} left',
+ 'chat.photo':'Send a photo','chat.sending':'Uploading…',
+ 'chat.tooBig':'That photo is too big (3MB max)','chat.notImg':'Images only',
  'chat.msgPh':'Type a message…','chat.send':'Send','chat.leave':'Leave room',
  'chat.localNote':'Chat is stored <b>on this device only</b>. Connect Supabase in Settings → Chat server to talk with real people.',
  'chat.onlineNote':'Connected to a server. You are chatting <b>live</b> with everyone on the same server.',
@@ -1450,6 +1463,8 @@ ja:{
  'chat.nickLabel':'ニックネーム','chat.ok':'決定','chat.needNick':'ニックネームを入力してください',
  'chat.full':'満員です','chat.gone':'このルームは既に消えました',
  'chat.joined':'{0}さんが入室しました','chat.leftMsg':'{0}さんが退室しました',
+ 'chat.photo':'写真を送る','chat.sending':'アップロード中…',
+ 'chat.tooBig':'写真が大きすぎます（3MBまで）','chat.notImg':'画像のみ送れます',
  'chat.msgPh':'メッセージを入力…','chat.send':'送信','chat.leave':'退室する',
  'chat.localNote':'チャットは<b>この端末にのみ</b>保存されます。設定→チャットサーバーでSupabaseを接続すると実際に複数人で話せます。',
  'chat.onlineNote':'サーバーに接続中です。同じサーバーの人と<b>リアルタイムで</b>会話します。',
@@ -1536,7 +1551,8 @@ const SERIES = {
           results:'https://www.gt-world-challenge-europe.com/results' },
   /* TCR 투어링카도 마찬가지. 전용 뉴스 피드가 없어 GT 피드를 함께 쓰되,
      nk로 투어링카 기사만 걸러냅니다 */
-  tc:   { name:'TC',   full:['TCR 투어링카','TCR Touring Car'],              color:'#f97316', feed:'gt',
+  tc:   { name:'TC',   noNews:true,   /* 출처에 사진이 없어 소식에서는 뺍니다 */
+          full:['TCR 투어링카','TCR Touring Car'],              color:'#f97316', feed:'gt',
           feedUrl:'/api/tct/feed/', src:'TouringCarTimes',
           results:'https://tcr-series.com/' },
 };
@@ -2419,6 +2435,7 @@ const NEWS_TTL = 3*24*3600*1000;
 let newsSeries = 'f1';
 /* 소식 보는 방식 — 목록 또는 카드뉴스 */
 let newsView = DB.get('newsView', 'list');
+if(SERIES[newsSeries]?.noNews) newsSeries = 'f1';
 
 /* 뉴스 RSS 받아오는 경로.
    파일로 열 때(file://)는 Origin이 null이라 두 매체가 직접 허용해줍니다.
@@ -2918,7 +2935,7 @@ function paintDeck(data, titles, descs){
 function buildNewsChips(){
   const box = $('#newsChips'); box.innerHTML = '';
   /* 묶음이 없는 시리즈를 먼저, GT 계열은 뒤에 모아 둡니다 */
-  Object.keys(SERIES).forEach(k=>{
+  Object.keys(SERIES).filter(k=>!SERIES[k].noNews).forEach(k=>{
     const s = SERIES[k];
     const b = el('button','chip' + (k===newsSeries?' on':''));
     b.style.setProperty('--cc', s.color);
@@ -3192,6 +3209,7 @@ function renderHomeSetup(){
 async function homeNews(my){
   const out = [];
   for(const s of my.series){
+    if(SERIES[s]?.noNews) continue;      /* 출처에 사진이 없어 소식에서 뺀 시리즈 */
     let c = DB.get('news3-'+s, null);
     if(!c || Date.now() - c.at > NEWS_TTL){
       try{ c = { at:Date.now(), items: await fetchNews(s) }; DB.set('news3-'+s, c); }
@@ -4060,7 +4078,7 @@ async function ntfyPoll(topic, onlyNew){
 /* ── 내 기기 사본 ──
    무료 서버는 12시간이 지나면 대화를 지웁니다. 내가 한 번 받아둔 것은
    이 기기에 남겨두고 서버 응답과 합쳐서 보여줍니다. 그래서 대화가 안 사라집니다. */
-const msgKey = m => (m.sys ? 's' : 'm') + '|' + (m.who || '') + '|' + m.text + '|' + m.at;
+const msgKey = m => (m.sys ? 's' : 'm') + '|' + (m.who || '') + '|' + m.text + '|' + (m.img || '') + '|' + m.at;
 function mirrorMsgs(roomId, fresh){
   const map = new Map();
   DB.get('mir-' + roomId, []).concat(fresh).forEach(m => map.set(msgKey(m), m));
@@ -4213,6 +4231,50 @@ function normUrl(raw){
   try{ return new URL(s).origin; }catch(e){ return ''; }
 }
 
+/* 사진 한 장 최대 크기. 무료 저장소가 1GB라 넉넉히 잡아도 수천 장은 들어갑니다 */
+const IMG_MAX_BYTES = 3 * 1024 * 1024;
+const IMG_MAX_SIDE  = 1280;
+
+/* 사진을 줄입니다. GIF는 움직임이 사라지므로 손대지 않습니다 */
+function shrinkImage(file){
+  return new Promise((res, rej)=>{
+    if(file.type === 'image/gif'){ res(file); return; }
+    const fr = new FileReader();
+    fr.onerror = ()=> rej(new Error('read'));
+    fr.onload = ()=>{
+      const im = new Image();
+      im.onerror = ()=> rej(new Error('decode'));
+      im.onload = ()=>{
+        const k = Math.min(1, IMG_MAX_SIDE / Math.max(im.width, im.height));
+        const cv = el('canvas');
+        cv.width  = Math.round(im.width  * k);
+        cv.height = Math.round(im.height * k);
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        cv.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.82);
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* 저장소에 올리고 공개 주소를 돌려줍니다 */
+async function uploadImage(file){
+  const n = net();
+  if(n.mode !== 'sb') throw new Error('no-storage');
+  const blob = await shrinkImage(file);
+  if(blob.size > IMG_MAX_BYTES) throw new Error('too-big');
+  const ext  = blob.type === 'image/gif' ? 'gif' : 'jpg';
+  const name = Date.now().toString(36) + Math.random().toString(36).slice(2,8) + '.' + ext;
+  const base = n.url.replace(/\/+$/, '');
+  const res  = await fetch(base + '/storage/v1/object/chat/' + name, {
+    method:'POST',
+    headers:{ apikey:n.key, Authorization:'Bearer ' + n.key, 'Content-Type':blob.type },
+    body: blob });
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0,120));
+  return base + '/storage/v1/object/public/chat/' + name;
+}
+
 async function sb(path, opt){
   const n = net();
   /* 예전 anon 키(JWT, eyJ...)는 Bearer로도 보내야 하지만
@@ -4324,7 +4386,7 @@ const CHAT = {
     const rows = await sb('messages?room_id=eq.' + encodeURIComponent(roomId)
                           + (since ? '&at=gt.' + since : '')
                           + '&select=*&order=at.asc&limit=300');
-    return mirrorMsgs(roomId, rows.map(m=>({ who:m.who, text:m.text, sys:!!m.sys, at:+m.at })));
+    return mirrorMsgs(roomId, rows.map(m=>({ who:m.who, text:m.text, sys:!!m.sys, at:+m.at, img:m.img || '' })));
   },
 
   /* kind: 'msg' | 'join' | 'leave' */
@@ -4343,7 +4405,8 @@ const CHAT = {
     const text = kind === 'msg' ? payload.text
                : t(kind === 'join' ? 'chat.joined' : 'chat.leftMsg', payload.who);
     await sb('messages', {method:'POST', body:JSON.stringify(
-      {room_id:roomId, who:kind==='msg' ? payload.who : null, text, sys:kind!=='msg', at})});
+      {room_id:roomId, who:kind==='msg' ? payload.who : null, text, sys:kind!=='msg', at,
+       img: payload.img || null})});
     if(kind === 'msg') await CHAT.patch(roomId, {lastActivity:at});
   },
 };
@@ -4528,6 +4591,8 @@ async function enterRoom(id, known){
     <div class="cwrap">
       <div class="clog" id="chatLog"></div>
       <div class="cin">
+        ${netSb() ? `<button class="pick" id="msgPick" aria-label="${esc(t('chat.photo'))}">${ic('image')}</button>
+        <input type="file" id="msgFile" accept="image/*" hidden>` : ''}
         <input type="text" id="msgIn" maxlength="300" placeholder="${esc(t('chat.msgPh'))}">
         <button class="flow" id="msgSend">${t('chat.send')}</button>
       </div>
@@ -4547,6 +4612,7 @@ async function enterRoom(id, known){
       ? `<div class="msg sys">${esc(m.text)}</div>`
       : `<div class="msg ${m.who===CFG.nick?'me':'other'}"${m.wait?' style="opacity:.55"':''}>
            ${m.who===CFG.nick?'':`<span class="who">${esc(m.who)}</span>`}
+           ${m.img?`<img class="mimg" src="${esc(m.img)}" alt="" loading="lazy">`:''}
            ${esc(m.text)}<span class="tm num">${fmtTime(m.at)}</span></div>`).join('');
     if(atBottom || force) log.scrollTop = log.scrollHeight;
     const tb = $('#ttlBadge');
@@ -4588,6 +4654,26 @@ async function enterRoom(id, known){
     }
     await paint(true);
   };
+  const pick = $('#msgPick'), file = $('#msgFile');
+  if(pick && file){
+    pick.onclick = ()=> file.click();
+    file.onchange = async ()=>{
+      const f = file.files && file.files[0];
+      file.value = '';
+      if(!f) return;
+      if(!/^image\//.test(f.type)){ toast(t('chat.notImg')); return; }
+      pick.disabled = true; toast(t('chat.sending'));
+      try{
+        const url = await uploadImage(f);
+        const mine = {who:CFG.nick, text:'', img:url, at:Date.now(), wait:true};
+        pending.push(mine); draw(lastMsgs.concat(pending), true);
+        await CHAT.send(room.id, 'msg', {who:CFG.nick, text:'', img:url}, room);
+        await paint(true);
+      }catch(e){
+        toast(t(String(e.message).includes('too-big') ? 'chat.tooBig' : 'net.err'));
+      }finally{ pick.disabled = false; }
+    };
+  }
   $('#msgSend').onclick = send;
   $('#msgIn').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
   $('#closeRoom').onclick = ()=>{ clearInterval(poll); closeSheet(); renderRooms(); };
