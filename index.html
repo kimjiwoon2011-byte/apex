@@ -302,6 +302,49 @@ main{padding:14px 16px 0}
   background-size:200% 100%;animation:shim 1.4s linear infinite}
 @keyframes shim{to{background-position:-200% 0}}
 
+/* ── 카드뉴스 (좌우로 넘기는 캐러셀) ── */
+.deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;padding:2px 0 4px;margin:0 -16px;padding-left:16px;padding-right:16px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.deck::-webkit-scrollbar{display:none}
+.cardn{flex:0 0 calc(100% - 8px);scroll-snap-align:center;position:relative;
+  aspect-ratio:4/5;border-radius:var(--r4);overflow:hidden;border:1px solid var(--line);
+  background:var(--surface-3);box-shadow:var(--sh2);cursor:pointer;padding:0;text-align:left;
+  color:inherit;transition:transform .2s var(--ease)}
+.cardn:active{transform:scale(.985)}
+.cardn>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cardn .sc{position:absolute;inset:0;background:
+  linear-gradient(0deg,rgba(3,7,15,.96) 22%,rgba(3,7,15,.45) 58%,rgba(3,7,15,.30))}
+/* 안전 여백 — 인스타 4:5 기준 상하 6%, 좌우 5.5% */
+.cardn .in{position:absolute;inset:0;padding:6% 5.5%;display:flex;flex-direction:column;color:#fff}
+.cardn .hd{display:flex;align-items:center;gap:7px}
+.cardn .no{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:700;
+  color:rgba(255,255,255,.72)}
+.cardn .bd{margin-top:auto}
+.cardn h3{margin:0 0 10px;font-size:22px;line-height:1.3;font-weight:800;letter-spacing:-.03em;
+  text-shadow:0 2px 12px rgba(0,0,0,.6);
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cardn p{margin:0 0 12px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.86);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cardn .ft{display:flex;align-items:center;gap:8px;font-size:10.5px;
+  color:rgba(255,255,255,.7);font-weight:600}
+.cardn .ft .pill{background:rgba(255,255,255,.18);border-radius:6px;padding:3px 7px;font-weight:800}
+
+/* 표지 — 아래 1/3을 비워 두는 인스타 관행을 따릅니다 */
+.cardn.cover{background:linear-gradient(160deg,var(--cc),color-mix(in srgb,var(--cc) 30%,#05080f))}
+.cardn.cover .in{justify-content:flex-start}
+.cardn.cover .big{font-size:34px;font-weight:900;letter-spacing:-.045em;line-height:1.1;margin:18px 0 12px}
+.cardn.cover .lead{font-size:13.5px;line-height:1.65;color:rgba(255,255,255,.88);max-width:90%}
+.cardn.cover .swipe{position:absolute;left:5.5%;bottom:6%;font-size:12px;font-weight:800;
+  color:rgba(255,255,255,.9);display:flex;align-items:center;gap:7px}
+.cardn.cover .swipe .ar{animation:nudge 1.4s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
+
+.dots{display:flex;justify-content:center;gap:6px;margin:12px 0 2px;flex-wrap:wrap}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2);display:block;
+  transition:background .25s,width .25s}
+.dots i.on{background:var(--br);width:18px;border-radius:3px}
+
 /* ═══════════════════════════  캘린더  ═══════════════════════════ */
 .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .calhd strong{font-size:17px;font-weight:800;letter-spacing:-.02em}
@@ -842,6 +885,7 @@ textarea{resize:vertical;min-height:78px}
     <!-- 1. 소식 -->
     <section class="panel active" id="p-news">
       <div class="chips" id="newsChips"></div>
+      <div class="pills" id="newsView"></div>
       <div class="nmeta">
         <b id="newsFresh"></b><span id="newsNext"></span>
         <button class="refresh" id="btnRefreshNews" data-i18n="news.refresh"></button>
@@ -1005,7 +1049,9 @@ ko:{
  'gm.hit':'적중! +{0} 포인트','gm.miss':'아쉬워요, 다음 기회에','gm.answer':'정답은 {0}',
  'gm.streak':'{0}연속 적중 중',
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
- 'news.issues':'{0} 이슈','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
+ 'news.issues':'{0} 이슈','news.vList':'목록','news.vCard':'카드뉴스',
+ 'news.cards':'장','news.coverTitle':'이번 주 {0} 소식','news.swipe':'옆으로 넘겨보세요',
+ 'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 갱신','news.next':'다음 자동 갱신 {0}','news.failedShort':'불러오기 실패',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
  'news.stale':'갱신 실패 — 저장된 소식을 보여줍니다','news.empty':'표시할 소식이 없어요.',
@@ -1152,7 +1198,7 @@ en:{
  'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
- 'news.issues':'{0}','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.coverTitle':'{0} this week','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
  'news.updated':'Updated {0}','news.next':'Next refresh {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
@@ -1299,7 +1345,7 @@ ja:{
  'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
- 'news.issues':'{0}','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.coverTitle':'今週の{0}','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
  'news.updated':'{0}に更新','news.next':'次回更新 {0}','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
@@ -2332,6 +2378,8 @@ const TERMS = [
 
 const NEWS_TTL = 3*24*3600*1000;
 let newsSeries = 'f1';
+/* 소식 보는 방식 — 목록 또는 카드뉴스 */
+let newsView = DB.get('newsView', 'list');
 
 /* 뉴스 RSS 받아오는 경로.
    파일로 열 때(file://)는 Origin이 null이라 두 매체가 직접 허용해줍니다.
@@ -2589,6 +2637,77 @@ function openArticle(it, title, lead){
   $('#artClose').onclick = closeSheet;
 }
 
+function buildNewsView(){
+  const box = $('#newsView'); box.innerHTML = '';
+  [['list','news.vList'],['card','news.vCard']].forEach(([k,key])=>{
+    const b = el('button', k===newsView ? 'on' : '');
+    b.type = 'button'; b.textContent = t(key);
+    b.onclick = ()=>{ newsView = k; DB.set('newsView', k); buildNewsView(); renderNews(); };
+    box.appendChild(b);
+  });
+}
+
+/* 좌우로 넘기는 카드뉴스. 인스타 캐러셀 규격(4:5, 표지 + 한 장에 한 소식)을 따랐습니다 */
+function paintDeck(data, titles, descs){
+  const s = SERIES[newsSeries], list = $('#newsList');
+  const items = data.items.slice(0, 10);          /* 인스타도 한 묶음에 10~20장입니다 */
+  const deck = el('div','deck');
+
+  const cover = el('button','cardn cover');
+  cover.style.setProperty('--cc', s.color);
+  cover.innerHTML = `
+    <div class="in">
+      <div class="hd"><span class="tag solid" style="background:rgba(255,255,255,.22)">${esc(s.name)}</span>
+        <span class="no">${items.length}${t('news.cards')}</span></div>
+      <div class="big">${esc(t('news.coverTitle', s.name))}</div>
+      <div class="lead">${esc(t('news.coverSub'))}</div>
+    </div>
+    <div class="swipe">${t('news.swipe')}<span class="ar">${ic('chev')}</span></div>`;
+  deck.appendChild(cover);
+
+  items.forEach((it,i)=>{
+    const title = titles?.[i] || it.title;
+    const lead  = descs?.[i] || it.desc || '';
+    const c = el('button','cardn');
+    c.innerHTML = `
+      ${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+      <span class="sc"></span>
+      <div class="in">
+        <div class="hd"><span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>
+          <span class="no">${i+1} / ${items.length}</span></div>
+        <div class="bd">
+          <h3>${esc(title)}</h3>
+          ${lead ? `<p>${esc(lead)}</p>` : ''}
+          <div class="ft"><span class="pill">${esc(it.src)}</span><span>${esc(relTime(it.at))}</span></div>
+        </div>
+      </div>`;
+    c.onclick = ()=> openArticle({...it, series:newsSeries}, title, lead);
+    deck.appendChild(c);
+  });
+
+  const dots = el('div','dots');
+  for(let i=0; i<=items.length; i++) dots.appendChild(el('i', i===0 ? 'on' : ''));
+
+  list.innerHTML = ''; list.appendChild(deck); list.appendChild(dots);
+
+  /* 어느 장을 보고 있는지 표시 — 스크롤 위치로 가장 가까운 카드를 고릅니다 */
+  let tick;
+  deck.onscroll = ()=>{
+    clearTimeout(tick);
+    tick = setTimeout(()=>{
+      /* offsetLeft는 덱이 아니라 페이지 기준이라 어긋납니다. 화면 좌표로 비교합니다 */
+      const mid = deck.getBoundingClientRect().left + deck.clientWidth / 2;
+      let near = 0, best = Infinity;
+      [...deck.children].forEach((c,i)=>{
+        const r = c.getBoundingClientRect();
+        const d = Math.abs(r.left + r.width/2 - mid);
+        if(d < best){ best = d; near = i; }
+      });
+      [...dots.children].forEach((d,i)=> d.classList.toggle('on', i===near));
+    }, 60);
+  };
+}
+
 function buildNewsChips(){
   const box = $('#newsChips'); box.innerHTML = '';
   /* 묶음이 없는 시리즈를 먼저, GT 계열은 뒤에 모아 둡니다 */
@@ -2604,6 +2723,7 @@ function buildNewsChips(){
 
 async function renderNews(force){
   buildNewsChips();
+  buildNewsView();
   const key = newsSeries, list = $('#newsList');
   const cache = DB.get('news3-'+key, null);
   const fresh = cache && (Date.now() - cache.at < NEWS_TTL);
@@ -2645,6 +2765,7 @@ function paintNews(data){
   const titles = data.tr?.[L] || null;      // 번역된 제목이 있으면 그걸 씁니다
   const descs  = data.trd?.[L] || null;     // 리드 문단 번역
   const key = newsSeries;
+  if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
     const lead = descs?.[i] || it.desc || '';
     const title = titles?.[i] || it.title;
