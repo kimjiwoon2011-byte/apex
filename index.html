@@ -311,11 +311,12 @@ main{padding:14px 16px 0}
 @keyframes shim{to{background-position:-200% 0}}
 
 /* ── 카드뉴스 (좌우로 넘기는 캐러셀) ── */
-.deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;padding:2px 0 4px;margin:0 -16px;padding-left:16px;padding-right:16px;
+.deck{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x proximity;scroll-padding-left:16px;overscroll-behavior-x:contain;
+  padding:2px 16px 4px;margin:0 -16px;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .deck::-webkit-scrollbar{display:none}
-.cardn{flex:0 0 calc(100% - 8px);scroll-snap-align:center;position:relative;
+.cardn{flex:0 0 calc(100% - 34px);scroll-snap-align:start;position:relative;
   aspect-ratio:4/5;border-radius:var(--r4);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-3);box-shadow:var(--sh2);cursor:pointer;padding:0;text-align:left;
   color:inherit;transition:transform .2s var(--ease)}
@@ -348,10 +349,19 @@ main{padding:14px 16px 0}
 .cardn.cover .swipe .ar{animation:nudge 1.4s ease-in-out infinite}
 @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 
-.dots{display:flex;justify-content:center;gap:6px;margin:12px 0 2px;flex-wrap:wrap}
-.dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2);display:block;
-  transition:background .25s,width .25s}
-.dots i.on{background:var(--br);width:18px;border-radius:3px}
+/* 손가락으로 안 넘어갈 때를 위한 화살표 */
+.deckbar{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 2px}
+.deckbar button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);color:var(--tx-2);display:grid;place-items:center;cursor:pointer;
+  box-shadow:var(--sh1);flex:0 0 34px;transition:transform .18s var(--ease),background .2s}
+.deckbar button:active{transform:scale(.88);background:var(--surface-3)}
+.deckbar button:disabled{opacity:.3}
+.deckbar button svg{width:17px;height:17px}
+.deckbar button.prev svg{transform:rotate(180deg)}
+.dots{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:0}
+.dots button{width:6px;height:6px;border-radius:50%;background:var(--line-2);border:0;padding:0;
+  display:block;cursor:pointer;transition:background .25s,width .25s}
+.dots button.on{background:var(--br);width:18px;border-radius:3px}
 
 /* ═══════════════════════════  캘린더  ═══════════════════════════ */
 .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -1064,7 +1074,7 @@ ko:{
  'gm.streak':'{0}연속 적중 중',
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
  'news.issues':'{0} 이슈','news.vList':'목록','news.vCard':'카드뉴스',
- 'news.cards':'장','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
+ 'news.cards':'장','news.prev':'이전','news.next2':'다음','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
  'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 업데이트','news.failedShort':'불러오기 실패',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
@@ -1212,7 +1222,7 @@ en:{
  'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
- 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
  'news.updated':'Updated {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
@@ -1359,7 +1369,7 @@ ja:{
  'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
- 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
  'news.updated':'{0}に更新','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
@@ -2784,27 +2794,50 @@ function paintDeck(data, titles, descs){
     deck.appendChild(c);
   });
 
+  /* 점을 눌러서도, 화살표로도 넘어갑니다 — 손가락 스와이프가 안 먹는 경우가 있어서 */
+  const bar  = el('div','deckbar');
+  const prev = el('button','prev'); prev.type='button';
+  prev.setAttribute('aria-label', t('news.prev')); prev.innerHTML = ic('chev');
+  const next = el('button','next'); next.type='button';
+  next.setAttribute('aria-label', t('news.next2')); next.innerHTML = ic('chev');
   const dots = el('div','dots');
-  for(let i=0; i<=items.length; i++) dots.appendChild(el('i', i===0 ? 'on' : ''));
+  const total = items.length + 1;
+  for(let i = 0; i < total; i++){
+    const b = el('button', i === 0 ? 'on' : '');
+    b.type = 'button'; b.setAttribute('aria-label', String(i + 1));
+    b.onclick = () => goTo(i);
+    dots.appendChild(b);
+  }
+  bar.appendChild(prev); bar.appendChild(dots); bar.appendChild(next);
 
-  list.innerHTML = ''; list.appendChild(deck); list.appendChild(dots);
+  list.innerHTML = ''; list.appendChild(deck); list.appendChild(bar);
 
-  /* 어느 장을 보고 있는지 표시 — 스크롤 위치로 가장 가까운 카드를 고릅니다 */
-  let tick;
-  deck.onscroll = ()=>{
-    clearTimeout(tick);
-    tick = setTimeout(()=>{
-      /* offsetLeft는 덱이 아니라 페이지 기준이라 어긋납니다. 화면 좌표로 비교합니다 */
-      const mid = deck.getBoundingClientRect().left + deck.clientWidth / 2;
-      let near = 0, best = Infinity;
-      [...deck.children].forEach((c,i)=>{
-        const r = c.getBoundingClientRect();
-        const d = Math.abs(r.left + r.width/2 - mid);
-        if(d < best){ best = d; near = i; }
-      });
-      [...dots.children].forEach((d,i)=> d.classList.toggle('on', i===near));
-    }, 60);
+  /* 지금 몇 번째인지 — 옮길 때와 같은 기준(스크롤 위치)으로 재야 어긋나지 않습니다 */
+  const current = () => {
+    const base = deck.children[0].offsetLeft, x = deck.scrollLeft;
+    let near = 0, best = Infinity;
+    [...deck.children].forEach((c, i) => {
+      const d = Math.abs((c.offsetLeft - base) - x);
+      if(d < best){ best = d; near = i; }
+    });
+    return near;
   };
+  function goTo(i){
+    const c = deck.children[i]; if(!c) return;
+    deck.scrollTo({ left: c.offsetLeft - deck.children[0].offsetLeft, behavior:'smooth' });
+  }
+  function mark(){
+    const n = current();
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', i === n));
+    prev.disabled = n === 0;
+    next.disabled = n >= total - 1;
+  }
+  prev.onclick = () => goTo(current() - 1);
+  next.onclick = () => goTo(current() + 1);
+
+  let tick;
+  deck.onscroll = () => { clearTimeout(tick); tick = setTimeout(mark, 80); };
+  mark();
 }
 
 function buildNewsChips(){
