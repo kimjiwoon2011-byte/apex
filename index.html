@@ -279,7 +279,7 @@ main{padding:14px 16px 0}
 .term b{display:block;font-size:12.5px;font-weight:800;color:var(--br);margin-bottom:4px}
 .term span{display:block;font-size:12px;line-height:1.6;color:var(--tx-2)}
 .artlink{display:block;text-align:center;text-decoration:none;line-height:1.2}
-.nitem h3{margin:0 0 6px;font-size:14px;line-height:1.42;font-weight:700;letter-spacing:-.015em;
+.nitem h3{margin:0 0 6px;font-size:15.5px;line-height:1.42;font-weight:700;letter-spacing:-.015em;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .nitem p{margin:0 0 8px;font-size:11.5px;line-height:1.5;color:var(--tx-2);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -299,7 +299,7 @@ main{padding:14px 16px 0}
 .nlead>img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
 .nlead .ov{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;
   background:linear-gradient(0deg,rgba(3,7,15,.96) 8%,rgba(3,7,15,.55) 62%,transparent)}
-.nlead h3{margin:0 0 8px;font-size:17.5px;line-height:1.35;font-weight:800;color:#fff;
+.nlead h3{margin:0 0 8px;font-size:20px;line-height:1.35;font-weight:800;color:#fff;
   letter-spacing:-.025em;text-shadow:0 1px 8px rgba(0,0,0,.5);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nlead .nfoot{color:rgba(255,255,255,.74)}
@@ -329,11 +329,11 @@ main{padding:14px 16px 0}
 .cardn .no{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:700;
   color:rgba(255,255,255,.72)}
 .cardn .bd{margin-top:auto}
-.cardn h3{margin:0 0 10px;font-size:22px;line-height:1.3;font-weight:800;letter-spacing:-.03em;
+.cardn h3{margin:0 0 10px;font-size:27px;line-height:1.24;font-weight:800;letter-spacing:-.035em;
   text-shadow:0 2px 12px rgba(0,0,0,.6);
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.cardn p{margin:0 0 12px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.86);
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cardn p{margin:0 0 12px;font-size:12.5px;line-height:1.55;color:rgba(255,255,255,.8);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cardn .ft{display:flex;align-items:center;gap:8px;font-size:10.5px;
   color:rgba(255,255,255,.7);font-weight:600}
 .cardn .ft .pill{background:rgba(255,255,255,.18);border-radius:6px;padding:3px 7px;font-weight:800}
@@ -2494,8 +2494,36 @@ const KO_FIX = [
   [/구덩이 정거장|구덩이 스톱/g, '피트스톱'],
   [/안전차/g, '세이프티카'],
   [/자격 예선|예선 자격/g, '예선'],
+  /* 롱런(장거리 주행 페이스)을 '달리기'로 옮겨 놓아 무슨 말인지 알 수 없었습니다 */
+  [/장거리 달리기|긴 달리기/g, '롱런'],
+  [/팀 동료/g, '팀메이트'],
+  [/타이어 화합물|고무 화합물/g, '타이어 컴파운드'],
+  [/노란색 깃발/g, '옐로 플래그'], [/빨간 깃발|적색 깃발/g, '레드 플래그'],
+  [/연습 세션/g, '연습 주행'],
+  [/그리드 페널티/g, '그리드 강등'],
 ];
 const koFix = s => KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || ''));
+
+/* 제목 전용 다듬기 — 종결어미를 걷어내고 마침표를 뗍니다 */
+const HEAD_FIX = [
+  [/아닙니다([.!?]?)$/, '아니다'],
+  [/합니다([.!?]?)$/,   '한다'],
+  [/됩니다([.!?]?)$/,   '된다'],
+  [/입니다([.!?]?)$/,   '이다'],   /* 받아들입니다 → 받아들이다 */
+  [/습니다([.!?]?)$/,   '다'],     /* 느렸습니다 → 느렸다, 했습니다 → 했다 */
+  [/[.]$/, ''],                    /* 우리말 제목에는 마침표를 찍지 않습니다 */
+];
+/* 화면에 뿌릴 때 쓰는 제목. 한국어일 때만 기사 제목투로 다듬습니다 */
+const hl = s => L === 'ko' ? headline(koFix(postNames(s))) : String(s || '');
+
+function headline(s){
+  let out = String(s || '').trim();
+  for(const [re, to] of HEAD_FIX){
+    const next = out.replace(re, to).trim();
+    if(next !== out){ out = next; break; }   /* 한 번만 손봅니다 */
+  }
+  return out.replace(/s+([,·])/g, '$1').trim();
+}
 
 /* 이름 사전이 못 잡는, 자주 나오는 고유명사 */
 const EXTRA_NAMES = [
@@ -2503,6 +2531,9 @@ const EXTRA_NAMES = [
   ['Kevin Estre','케빈 에스트르'], ['Calum Nicholas','칼럼 니컬러스'],
   ['Zandvoort','잔드보르트'], ['Silverstone','실버스톤'], ['Spa','스파'],
   ['Le Mans','르망'], ['Daytona','데이토나'], ['Sebring','세브링'],
+  ['Yuki Tsunoda','츠노다 유키'], ['Tsunoda','츠노다'],
+  ['Monza','몬차'], ['Suzuka','스즈카'], ['Interlagos','인터라고스'],
+  ['Mercedes','메르세데스'], ['Ferrari','페라리'], ['McLaren','맥라렌'],
 ];
 
 /* 기계 번역은 사람·팀 이름을 영어로 남겨 두는 일이 잦습니다("Mercedes의 감독").
@@ -2683,7 +2714,7 @@ function paintDeck(data, titles, descs){
   deck.appendChild(cover);
 
   items.forEach((it,i)=>{
-    const title = titles?.[i] || it.title;
+    const title = hl(titles?.[i] || it.title);
     const lead  = descs?.[i] || it.desc || '';
     const c = el('button','cardn');
     c.innerHTML = `
@@ -2783,7 +2814,7 @@ function paintNews(data){
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
     const lead = descs?.[i] || it.desc || '';
-    const title = titles?.[i] || it.title;
+    const title = hl(titles?.[i] || it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
     if(i === 0 && it.img){
@@ -3007,7 +3038,7 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: c.tr?.[L]?.[i] || it.title,
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: hl(c.tr?.[L]?.[i] || it.title),
                                         td: c.trd?.[L]?.[i] || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
