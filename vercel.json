@@ -7,6 +7,10 @@
       "destination": "https://www.motorsport.com/rss/:path*/"
     },
     {
+      "source": "/api/as/:path*",
+      "destination": "https://www.autosport.com/rss/:path*/"
+    },
+    {
       "source": "/api/cr/:path*",
       "destination": "https://www.crash.net/rss/:path*"
     },
@@ -17,18 +21,6 @@
     {
       "source": "/api/yt/:path*",
       "destination": "https://www.youtube.com/:path*"
-    },
-    {
-      "source": "/api/as/:path*",
-      "destination": "https://www.autosport.com/rss/:path*/"
-    },
-    {
-      "source": "/api/mw/:path*",
-      "destination": "https://www.motorsportweek.com/:path*/"
-    },
-    {
-      "source": "/api/rf/:path*",
-      "destination": "https://www.racefans.net/:path*/"
     }
   ]
 }
