@@ -2733,7 +2733,7 @@ function nameGlossary(lines){
     if(!m || seen.has(ko)) continue;
     seen.add(ko);
     out.push(m[0] + ' = ' + ko);
-    if(out.length >= 25) break;
+    if(out.length >= 40) break;
   }
   return out;
 }
@@ -2793,7 +2793,7 @@ async function smartText(lines, kind){
   for(const model of OR_MODELS){
     try{
       const ac = new AbortController();
-      const timer = setTimeout(()=>ac.abort(), 30000);   /* 오래 매달리지 않고 다음 모델로 */
+      const timer = setTimeout(()=>ac.abort(), kind === 'lead' ? 50000 : 30000);
       const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
         headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
         body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 3000,   /* 모델이 추론에 800토큰쯤 먼저 씁니다 */
@@ -2863,6 +2863,7 @@ async function ensureTitles(key, data){
       if(T){ data.hs[L] = T; data.tr[L] = data.tr[L] || T; DB.set('news3-'+key, data); ok++; }
     }else ok++;
     if(!data.hsd[L]){
+      await new Promise(r => setTimeout(r, 1500));   /* 연달아 부르면 제한이 걸립니다 */
       const D = await smartText(leads, 'lead');
       if(D){ data.hsd[L] = D; data.trd[L] = data.trd[L] || D; DB.set('news3-'+key, data); ok++; }
     }else ok++;
