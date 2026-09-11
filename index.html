@@ -2792,6 +2792,9 @@ const OR_SYS = [
   '입력  [4] Porsche Penske leadership speaks out on IMSA performance ::: Management expressed strong frustration over disappointing results.',
   '출력  [4] 시즌 성적 부진에 ::: 포르쉐 수뇌부 작심 발언 ::: 펜스케 경영진, 올 시즌 결과에 강한 불만',
   '',
+  '위 보기는 형식을 보여줄 뿐이다. 보기에 나온 문구를 그대로 쓰지 마라.',
+  '기사마다 내용이 다르므로 세 줄도 기사마다 달라야 한다.',
+  '',
   '── 절대 규칙 ──',
   '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·횟수·날짜를 만들지 마라.',
   '- 배경이 원문에 없으면 훅을 빈칸으로 둔다. 억지로 지어내지 마라.',
@@ -2812,8 +2815,12 @@ const aiResting   = ()=> Date.now() < aiRestUntil();
 
 /* 형식을 지켰는지 봅니다. 어기면 그 한 건만 버리고 기존 번역으로 메웁니다.
    모델이 규칙을 흘려듣는 일이 잦아 마지막에 한 번 더 거릅니다. */
+/* 프롬프트의 보기를 그대로 베껴 오는 일이 있어 막습니다 */
+const OR_SAMPLES = ['마드링 절도사건','르클레르 시력 이상','해밀턴 "특혜 요구 안 했다"','포르쉐 수뇌부 작심 발언'];
+
 function cardOk(c){
   if(!c || !c.p) return false;
+  if(OR_SAMPLES.includes(c.p)) return false;      /* 보기 그대로면 버립니다 */
   const bad = s => /[.!]$/.test(s) || /[\u4e00-\u9fff]/.test(s) || /(습니다|입니다|합니다)$/.test(s);
   if(c.p.length > 20 || bad(c.p)) return false;         /* 핵심은 짧고 명사로 */
   if(c.h && (c.h.length > 22 || bad(c.h))) return false;
