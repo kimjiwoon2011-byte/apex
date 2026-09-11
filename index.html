@@ -325,11 +325,13 @@ main{padding:14px 16px 0}
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .deck::-webkit-scrollbar{display:none}
 .cardn{flex:0 0 calc(100% - 34px);scroll-snap-align:start;position:relative;
+  background-image:linear-gradient(150deg,var(--cc,#2b3a55),#0a0f1a 78%);
   aspect-ratio:4/5;border-radius:var(--r4);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-3);box-shadow:var(--sh2);cursor:pointer;padding:0;text-align:left;
   color:inherit;transition:transform .2s var(--ease)}
 .cardn:active{transform:scale(.985)}
-.cardn>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cardn>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:50% 28%}
 .cardn .sc{position:absolute;inset:0;background:
   linear-gradient(0deg,rgba(3,7,15,.96) 22%,rgba(3,7,15,.45) 58%,rgba(3,7,15,.30))}
 /* 안전 여백 — 인스타 4:5 기준 상하 6%, 좌우 5.5% */
@@ -351,10 +353,13 @@ main{padding:14px 16px 0}
 
 /* 카드뉴스 세 단 — 훅(작게) · 핵심(크게) · 설명(작게).
    릴스 카드처럼 지나가며 봐도 무슨 일인지 알아보게 만듭니다 */
-.cardn .hook{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.02em;
-  margin:0 0 4px;text-shadow:0 2px 10px rgba(0,0,0,.65)}
-.cardn .punch{font-size:36px;font-weight:900;line-height:1.1;letter-spacing:-.045em;
-  margin:0 0 10px;text-shadow:0 2px 16px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.6);
+.cardn .hook{font-size:15px;font-weight:900;color:#fff;letter-spacing:-.025em;
+  margin:0 0 5px;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.cardn .punch{font-size:37px;font-weight:900;line-height:1.08;letter-spacing:-.05em;
+  color:#5aa9ff;margin:0 0 10px;
+  /* 시스템 글꼴은 900이 끝이라, 획을 덧그려 더 굵게 보이게 합니다 */
+  -webkit-text-stroke:.9px #5aa9ff;paint-order:stroke fill;
+  text-shadow:0 2px 18px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.7);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cardn .line{font-size:13px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.9);
   margin:0 0 12px;text-shadow:0 1px 6px rgba(0,0,0,.6);
@@ -3033,6 +3038,20 @@ function buildNewsView(){
 }
 
 /* 좌우로 넘기는 카드뉴스. 인스타 캐러셀 규격(4:5, 표지 + 한 장에 한 소식)을 따랐습니다 */
+/* 카드 사진 고르기
+   - 못 불러오면 뺍니다
+   - 너무 작으면(가로 400 미만) 늘리면 흐릿해지므로 뺍니다
+   - 세로로 긴 사진은 4:5 칸에서 얼굴이 잘리기 쉬워 가운데로 잡습니다
+   사진을 빼면 아래 시리즈 색 배경이 드러납니다 */
+function fitPhoto(img){
+  img.onerror = ()=> img.remove();
+  img.onload = ()=>{
+    const w = img.naturalWidth, ht = img.naturalHeight;
+    if(w < 400){ img.remove(); return; }
+    if(ht > w) img.style.objectPosition = '50% 50%';   /* 세로 사진 */
+  };
+}
+
 function paintDeck(data, titles, descs){
   const s = SERIES[newsSeries], list = $('#newsList');
   const nice  = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
@@ -3066,7 +3085,7 @@ function paintDeck(data, titles, descs){
          ${lead ? `<p>${esc(lead)}</p>` : ''}`;
     const c = el('button','cardn');
     c.innerHTML = `
-      ${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+      ${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy">` : ''}
       <span class="sc"></span>
       <div class="in">
         <div class="hd"><span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>
@@ -3076,6 +3095,8 @@ function paintDeck(data, titles, descs){
           <div class="ft"><span class="pill">${esc(it.src)}</span><span>${esc(relTime(it.at))}</span></div>
         </div>
       </div>`;
+    c.style.setProperty('--cc', s.color);
+    const im = c.querySelector('img'); if(im) fitPhoto(im);
     c.onclick = ()=> openArticle({...it, series:newsSeries}, title, lead);
     deck.appendChild(c);
   });
