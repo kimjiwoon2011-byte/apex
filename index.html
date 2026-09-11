@@ -2702,8 +2702,10 @@ function polish(s){
    (저장소가 공개라 넣으면 남이 가져다 씁니다) */
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OR_MODELS = [
-  'inclusionai/ling-3.0-flash-fin:free',      /* 실측 1.5~2.5초 */
-  'nvidia/nemotron-3-ultra-550b-a55b:free',   /* 품질은 좋지만 과부하가 잦습니다 */
+  'inclusionai/ling-3.0-flash-fin:free',      /* InclusionAI · 실측 1.5~2.5초 */
+  'nex-agi/nex-n2.5-mini:free',               /* Nex AGI · 4.7초, 이름 표기 정확 */
+  'dots-studio/dots-3-note-preview:free',     /* dots · 9.5초 */
+  'nvidia/nemotron-3-ultra-550b-a55b:free',   /* NVIDIA · 품질은 좋지만 과부하가 잦습니다 */
   'google/gemma-4-31b-it:free',
 ];
 const orKey = ()=> DB.get('orkey', '');
@@ -2786,7 +2788,7 @@ async function smartBoth(titles, leads){
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
         if(res.status === 429 && tryN === 0){       /* 호출이 몰리면 쉬었다 한 번 더 */
-          await new Promise(r => setTimeout(r, 12000));
+          await new Promise(r => setTimeout(r, 20000));
           continue;
         }
         if(!res.ok) break;
