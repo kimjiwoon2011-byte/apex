@@ -2709,21 +2709,7 @@ const OR_MODELS = [
 const orKey = ()=> DB.get('orkey', '');
 
 /* 프롬프트를 고칠 때마다 올립니다. 기기에 저장된 옛 결과를 버리게 하는 표시입니다 */
-const HL_VER = 2;
-
-const OR_SYS = [
-  '너는 한국 모터스포츠 매체의 제목 담당 기자다.',
-  '영어 원문이나 기계번역된 제목을 받아서, 한국 기사 제목으로 옮겨 쓴다.',
-  '영어가 들어오면 한국어로 번역한다. 영어를 그대로 남기지 마라.',
-  '',
-  '규칙:',
-  '- 사실을 새로 지어내지 마라. 주어진 제목에 있는 내용만 쓴다.',
-  '- 30자 안팎으로 짧게. 조사와 군더더기를 덜어낸다.',
-  '- 사람 이름은 성만 써도 된다 (샤를 르클레르 → 르클레르).',
-  '- 따옴표 안의 말은 살린다.',
-  '- 존댓말 금지. 마침표 금지.',
-  '- 생각 과정을 쓰지 마라. 입력 순서 그대로, 한 줄에 하나씩, 제목만 출력한다.',
-].join('\n');
+const HL_VER = 3;
 
 /* 모델이 모르는 이름을 멋대로 옮깁니다 (Charles Leclerc → "찰리 르블랑").
    원문에 나오는 이름만 골라 올바른 한국어 표기를 함께 알려줍니다. */
@@ -2754,90 +2740,70 @@ function orParse(text, n){
   return got >= Math.ceil(n * 0.6) ? out : null;
 }
 
-const OR_SYS_TITLE = [
-  '너는 한국 모터스포츠 매체의 제목 담당 기자다.',
-  '영어 원문이나 기계번역된 제목을 받아서, 한국 기사 제목으로 옮겨 쓴다.',
-  '영어가 들어오면 한국어로 번역한다. 영어 문장을 그대로 남기지 마라.',
-  '',
-  '절대 규칙:',
-  '- 원문에 없는 내용을 덧붙이지 마라. 숫자, 순위, 횟수, 날짜를 지어내지 마라.',
-  '- 뜻이 확실하지 않으면 덧붙이지 말고 짧게 줄여라.',
-  '- 사람·팀·서킷 이름은 아래 표기표를 그대로 써라.',
-  '- 표기표에 없는 이름은 영어 원문 그대로 두어라. 한글 표기를 지어내지 마라.',
-  '',
-  '형식:',
-  '- 30자 안팎으로 짧게. 조사와 군더더기를 덜어낸다.',
-  '- 따옴표 안의 말은 살린다. 존댓말 금지. 마침표 금지. 한자 쓰지 마라.',
-  '- 입력은 [1] [2] 처럼 번호가 붙어 있다. 출력도 반드시 같은 번호를 붙여라.',
-  '- 번호 하나당 한 줄. 서로 합치지 마라.',
-  '- 생각 과정을 쓰지 마라. 번호와 제목만 출력한다.',
-].join('\n');
+/* 제목과 본문을 한 번에 옮깁니다. 따로 부르면 무료 모델이 호출 제한(429)을
+   걸어 뒤엣것이 실패합니다. 시리즈가 여섯이라 호출 수를 줄이는 게 중요합니다. */
+const OR_SEP = ' ::: ';
 
-const OR_SYS_LEAD = [
-  '너는 한국 모터스포츠 매체의 기자다.',
-  '영어 원문이나 기계번역된 기사 요약을 받아서, 한국 기사로 옮겨 쓴다.',
-  '영어가 들어오면 한국어로 번역한다. 영어 문장을 그대로 남기지 마라.',
+const OR_SYS = [
+  '너는 한국 모터스포츠 매체 기자다.',
+  '영어 기사의 제목과 요약을 받아서 한국 기사로 옮겨 쓴다.',
+  '영어 문장을 그대로 남기지 마라.',
   '',
   '절대 규칙:',
-  '- 원문에 없는 내용을 덧붙이지 마라. 숫자, 순위, 횟수, 날짜를 지어내지 마라.',
+  '- 원문에 없는 내용을 덧붙이지 마라. 숫자·순위·횟수·날짜를 지어내지 마라.',
   '- 원문에 없는 배경 설명을 넣지 마라. 모르는 것은 쓰지 마라.',
-  '- 뜻이 확실하지 않으면 그 부분을 빼고 확실한 것만 써라.',
-  '- 사람·팀·서킷 이름은 아래 표기표를 그대로 써라.',
+  '- 뜻이 확실하지 않으면 덧붙이지 말고 줄여라.',
+  '- 사람·팀·서킷 이름은 표기표를 그대로 써라.',
   '- 표기표에 없는 이름은 영어 원문 그대로 두어라. 한글 표기를 지어내지 마라.',
   '',
   '형식:',
-  '- 2~3문장. 번역투를 덜어낸다 (~에 대한, ~하는 것이다, ~로부터).',
-  '- 모터스포츠를 잘 모르는 사람도 알아듣게 쉬운 말로 쓴다.',
-  '- 존댓말(~습니다)로 쓴다. 한자 쓰지 마라.',
-  '- 입력은 [1] [2] 처럼 번호가 붙어 있다. 출력도 반드시 같은 번호를 붙여라.',
-  '- 번호 하나당 한 줄. 기사끼리 합치지 마라.',
-  '- 생각 과정을 쓰지 마라. 번호와 본문만 출력한다.',
+  '- 입력 한 줄은  [번호] 제목 ::: 요약  이다.',
+  '- 출력도 같은 번호와 같은 ::: 구분으로 한 줄에 하나씩 쓴다.',
+  '- 제목: 30자 안팎, 조사와 군더더기를 덜어낸다. 존댓말 금지. 마침표 금지.',
+  '- 요약: 2~3문장. 존댓말(~습니다). 모터스포츠를 모르는 사람도 알아듣게 쉬운 말로.',
+  '- 한자 쓰지 마라. 기사끼리 합치지 마라.',
+  '- 생각 과정을 쓰지 마라. 번호와 내용만 출력한다.',
 ].join('\n');
 
-/* 제목·본문을 기사체로 다시 씁니다. 안 되면 null — 부르는 쪽에서 규칙 결과를 씁니다 */
-async function smartText(lines, kind){
+/* 제목·본문을 한 번에 다시 씁니다. 안 되면 null — 부르는 쪽에서 기존 번역을 씁니다 */
+async function smartBoth(titles, leads){
   const key = orKey();
-  if(!key || !lines.length) return null;
-  const sys = kind === 'lead' ? OR_SYS_LEAD : OR_SYS_TITLE;
-  const body = lines.map((s, i) => '[' + (i + 1) + '] ' + s).join('\n');
-  const glos = nameGlossary(lines);
+  if(!key || !titles.length) return null;
+  const body = titles.map((s, i) => '[' + (i + 1) + '] ' + s + OR_SEP + (leads[i] || '-')).join('\n');
+  const glos = nameGlossary(titles.concat(leads));
   const msg  = glos.length
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' + body
     : body;
+
   for(const model of OR_MODELS){
-    try{
-      const ac = new AbortController();
-      const timer = setTimeout(()=>ac.abort(), kind === 'lead' ? 50000 : 30000);
-      const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
-        headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-        body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 3000,   /* 모델이 추론에 800토큰쯤 먼저 씁니다 */
-          messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
-      clearTimeout(timer);
-      if(res.status === 429){          /* 호출이 몰리면 잠깐 쉬었다 한 번 더 */
-        await new Promise(r => setTimeout(r, 9000));
-        const ac2 = new AbortController();
-        const t2 = setTimeout(()=>ac2.abort(), kind === 'lead' ? 50000 : 30000);
-        const res2 = await fetch(OR_URL, { method:'POST', signal:ac2.signal,
+    for(let tryN = 0; tryN < 2; tryN++){
+      try{
+        const ac = new AbortController();
+        const timer = setTimeout(()=>ac.abort(), 60000);
+        const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-          body: JSON.stringify({ model, temperature:0.3,
-            max_tokens: kind === 'lead' ? 4000 : 3000,
-            messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
-        clearTimeout(t2);
-        if(!res2.ok) continue;
-        const j2 = await res2.json();
-        const o2 = orParse(j2?.choices?.[0]?.message?.content, lines.length);
-        if(o2) return o2;
-        continue;
-      }
-      if(!res.ok) continue;
-      const j = await res.json();
-      const out = orParse(j?.choices?.[0]?.message?.content, lines.length);
-      if(out) return out;
-    }catch(e){ /* 다음 모델로 */ }
+          body: JSON.stringify({ model, temperature:0.3, max_tokens:6000,
+            messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
+        clearTimeout(timer);
+        if(res.status === 429 && tryN === 0){       /* 호출이 몰리면 쉬었다 한 번 더 */
+          await new Promise(r => setTimeout(r, 12000));
+          continue;
+        }
+        if(!res.ok) break;
+        const j = await res.json();
+        const got = orParse(j?.choices?.[0]?.message?.content, titles.length);
+        if(got) return got.map(s => {
+          if(!s) return null;
+          const i = s.indexOf(':::');
+          return i < 0 ? { t:s.trim(), d:'' }
+                       : { t:s.slice(0, i).trim(), d:s.slice(i + 3).trim() };
+        });
+        break;
+      }catch(e){ break; }
+    }
   }
   return null;
 }
-const smartTitles = lines => smartText(lines, 'title');
 
 
 async function translateTitles(titles, target){
@@ -2887,20 +2853,18 @@ async function ensureTitles(key, data){
   const titles = data.items.map(i => i.title || '-');
   const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
 
-  /* 1순위 — AI가 영어 원문을 바로 한국어 기사체로 옮깁니다.
+  /* 1순위 — AI가 영어 원문을 한 번에 한국어 기사로 옮깁니다.
      구글 번역 공개 엔드포인트는 자주 막혀서(429) 이쪽을 먼저 씁니다. */
   if(L === 'ko' && orKey()){
-    let ok = 0;
-    if(!data.hs[L]){
-      const T = await smartText(titles, 'title');
-      if(T){ data.hs[L] = T; data.tr[L] = data.tr[L] || T; DB.set('news3-'+key, data); ok++; }
-    }else ok++;
-    if(!data.hsd[L]){
-      await new Promise(r => setTimeout(r, 6000));   /* 연달아 부르면 제한이 걸립니다 */
-      const D = await smartText(leads, 'lead');
-      if(D){ data.hsd[L] = D; data.trd[L] = data.trd[L] || D; DB.set('news3-'+key, data); ok++; }
-    }else ok++;
-    if(ok === 2) return true;
+    const both = await smartBoth(titles, leads);
+    if(both){
+      data.hs[L]  = both.map(x => x && x.t ? x.t : null);
+      data.hsd[L] = both.map(x => x && x.d ? x.d : null);
+      data.tr[L]  = data.tr[L]  || data.hs[L].map((s, i) => s || titles[i]);
+      data.trd[L] = data.trd[L] || data.hsd[L].map((s, i) => s || leads[i]);
+      DB.set('news3-'+key, data);
+      return true;
+    }
   }
 
   /* 2순위 — 구글 번역. 제목과 리드를 한 번에 보내 요청 횟수를 줄입니다 */
