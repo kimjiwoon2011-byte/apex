@@ -1170,7 +1170,7 @@ ko:{
  'cmt.title':'댓글','cmt.none':'첫 댓글을 남겨보세요.','cmt.loading':'댓글 불러오는 중…',
  'cmt.ph':'댓글 쓰기…','cmt.fail':'댓글을 불러오지 못했어요.',
  'cmt.needLogin':'댓글을 쓰려면 <b>구글 로그인</b>이 필요해요. 단톡방 탭에서 로그인할 수 있어요.',
- 'chat.photo':'사진 보내기','chat.sending':'사진 올리는 중…',
+ 'chat.photo':'사진 · GIF 보내기','chat.sending':'사진 올리는 중…',
  'chat.tooBig':'사진이 너무 커요 (3MB까지)','chat.notImg':'사진만 보낼 수 있어요',
  'chat.msgPh':'메시지 입력…','chat.send':'전송','chat.leave':'방 나가기',
  'chat.localNote':'지금은 채팅이 <b>이 기기에만</b> 저장돼요. 설정 → 단톡방 서버에서 Supabase를 연결하면 실제로 여러 사람과 대화할 수 있어요.',
@@ -1326,7 +1326,7 @@ en:{
  'cmt.title':'Comments','cmt.none':'Be the first to comment.','cmt.loading':'Loading comments…',
  'cmt.ph':'Write a comment…','cmt.fail':'Could not load comments.',
  'cmt.needLogin':'You need to <b>sign in with Google</b> to comment. Sign in from the Rooms tab.',
- 'chat.photo':'Send a photo','chat.sending':'Uploading…',
+ 'chat.photo':'Send a photo or GIF','chat.sending':'Uploading…',
  'chat.tooBig':'That photo is too big (3MB max)','chat.notImg':'Images only',
  'chat.msgPh':'Type a message…','chat.send':'Send','chat.leave':'Leave room',
  'chat.localNote':'Chat is stored <b>on this device only</b>. Connect Supabase in Settings → Chat server to talk with real people.',
@@ -1482,7 +1482,7 @@ ja:{
  'cmt.title':'コメント','cmt.none':'最初のコメントを書いてみましょう。','cmt.loading':'コメントを読み込み中…',
  'cmt.ph':'コメントを書く…','cmt.fail':'コメントを読み込めませんでした。',
  'cmt.needLogin':'コメントには<b>Googleログイン</b>が必要です。チャットタブからログインできます。',
- 'chat.photo':'写真を送る','chat.sending':'アップロード中…',
+ 'chat.photo':'写真・GIFを送る','chat.sending':'アップロード中…',
  'chat.tooBig':'写真が大きすぎます（3MBまで）','chat.notImg':'画像のみ送れます',
  'chat.msgPh':'メッセージを入力…','chat.send':'送信','chat.leave':'退室する',
  'chat.localNote':'チャットは<b>この端末にのみ</b>保存されます。設定→チャットサーバーでSupabaseを接続すると実際に複数人で話せます。',
@@ -2721,39 +2721,72 @@ const OR_SYS = [
   '- 생각 과정을 쓰지 마라. 입력 순서 그대로, 한 줄에 하나씩, 제목만 출력한다.',
 ].join('\n');
 
-/* 모델이 생각을 늘어놓거나 줄 수가 안 맞으면 버립니다 */
+/* 모델이 기사를 합치거나 순서를 흐트러뜨리는 일이 잦아, 번호표를 붙여 보내고
+   같은 번호로 되받습니다. 하나라도 빠지면 통째로 버리고 다음 모델로 넘어갑니다. */
 function orParse(text, n){
-  const lines = String(text || '').split('\n')
-    .map(s => s.replace(/^\s*[-*\d.)\s]+/, '').trim())
-    .filter(s => s && s.length <= 90);
-  if(lines.length !== n) return null;
-  if(lines.some(s => /^(Here|Let|We |I |Okay|First|Draft|Input|Output|\*\*)/i.test(s))) return null;
-  return lines;
+  const out = new Array(n).fill(null);
+  const re = /\[(\d+)\]\s*([\s\S]*?)(?=\n?\[\d+\]|$)/g;
+  let m;
+  while((m = re.exec(String(text || '')))){
+    const i = +m[1] - 1, v = m[2].replace(/\s+/g, ' ').trim();
+    if(i >= 0 && i < n && v) out[i] = v;
+  }
+  return out.every(Boolean) ? out : null;
 }
 
-/* 제목을 기사체로 다시 씁니다. 안 되면 null — 부르는 쪽에서 규칙 결과를 씁니다 */
-async function smartTitles(titles){
+const OR_SYS_TITLE = [
+  '너는 한국 모터스포츠 매체의 제목 담당 기자다.',
+  '기계번역된 어색한 제목을 받아서, 한국 기사 제목처럼 자연스럽게 다시 쓴다.',
+  '',
+  '규칙:',
+  '- 사실을 새로 지어내지 마라. 주어진 제목에 있는 내용만 쓴다.',
+  '- 30자 안팎으로 짧게. 조사와 군더더기를 덜어낸다.',
+  '- 사람 이름은 성만 써도 된다 (샤를 르클레르 → 르클레르).',
+  '- 따옴표 안의 말은 살린다. 존댓말 금지. 마침표 금지. 한자 쓰지 마라.',
+  '- 입력은 [1] [2] 처럼 번호가 붙어 있다. 출력도 반드시 같은 번호를 붙여라.',
+  '- 번호 하나당 한 줄. 서로 합치지 마라.',
+  '- 생각 과정을 쓰지 마라. 번호와 제목만 출력한다.',
+].join('\n');
+
+const OR_SYS_LEAD = [
+  '너는 한국 모터스포츠 매체의 기자다.',
+  '기계번역된 어색한 기사 요약을 받아서, 한국 기사처럼 자연스럽게 다시 쓴다.',
+  '',
+  '규칙:',
+  '- 사실을 새로 지어내지 마라. 주어진 내용만 쓴다.',
+  '- 2~3문장. 번역투를 덜어낸다 (~에 대한, ~하는 것이다, ~로부터).',
+  '- 모터스포츠를 잘 모르는 사람도 알아듣게 쉬운 말로 쓴다.',
+  '- 존댓말(~습니다)로 쓴다. 한자 쓰지 마라.',
+  '- 입력은 [1] [2] 처럼 번호가 붙어 있다. 출력도 반드시 같은 번호를 붙여라.',
+  '- 번호 하나당 한 줄. 기사끼리 합치지 마라.',
+  '- 생각 과정을 쓰지 마라. 번호와 본문만 출력한다.',
+].join('\n');
+
+/* 제목·본문을 기사체로 다시 씁니다. 안 되면 null — 부르는 쪽에서 규칙 결과를 씁니다 */
+async function smartText(lines, kind){
   const key = orKey();
-  if(!key || !titles.length) return null;
+  if(!key || !lines.length) return null;
+  const sys = kind === 'lead' ? OR_SYS_LEAD : OR_SYS_TITLE;
+  const body = lines.map((s, i) => '[' + (i + 1) + '] ' + s).join('\n');
   for(const model of OR_MODELS){
     try{
       const ac = new AbortController();
-      const timer = setTimeout(()=>ac.abort(), 45000);   /* 20개 다시 쓰는 데 30초 넘게 걸립니다 */
+      const timer = setTimeout(()=>ac.abort(), 60000);
       const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
         headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-        body: JSON.stringify({ model, temperature:0.3, max_tokens:900, messages:[
-          { role:'system', content: OR_SYS },
-          { role:'user',   content: titles.join('\n') },
-        ]})});
+        body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 1200,
+          messages:[ { role:'system', content: sys }, { role:'user', content: body } ]})});
       clearTimeout(timer);
       if(!res.ok) continue;
       const j = await res.json();
-      const out = orParse(j?.choices?.[0]?.message?.content, titles.length);
+      const out = orParse(j?.choices?.[0]?.message?.content, lines.length);
       if(out) return out;
     }catch(e){ /* 다음 모델로 */ }
   }
   return null;
 }
+const smartTitles = lines => smartText(lines, 'title');
+
 
 async function translateTitles(titles, target){
   const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
@@ -2806,10 +2839,12 @@ async function ensureTitles(key, data){
       data.tr[L]  = out.slice(0, titles.length);
       data.trd[L] = out.slice(titles.length);
       DB.set('news3-'+key, data);
-      if(L === 'ko'){
-        data.hs ||= {};
-        const nice = await smartTitles(data.tr[L].map(hl));
+      if(L === 'ko' && orKey()){
+        data.hs ||= {}; data.hsd ||= {};
+        const nice = await smartText(data.tr[L].map(hl), 'title');
         if(nice){ data.hs[L] = nice; DB.set('news3-'+key, data); }
+        const body = await smartText(data.trd[L], 'lead');
+        if(body){ data.hsd[L] = body; DB.set('news3-'+key, data); }
       }
       return true;
     }
@@ -2902,7 +2937,8 @@ function buildNewsView(){
 /* 좌우로 넘기는 카드뉴스. 인스타 캐러셀 규격(4:5, 표지 + 한 장에 한 소식)을 따랐습니다 */
 function paintDeck(data, titles, descs){
   const s = SERIES[newsSeries], list = $('#newsList');
-  const nice = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
+  const nice  = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
+  const niced = data.hsd?.[L] || null;     /* 다시 쓴 본문 */
   const items = data.items.slice(0, 10);          /* 인스타도 한 묶음에 10~20장입니다 */
   const deck = el('div','deck');
 
@@ -2920,7 +2956,7 @@ function paintDeck(data, titles, descs){
 
   items.forEach((it,i)=>{
     const title = nice?.[i] || hl(titles?.[i] || it.title);
-    const lead  = descs?.[i] || it.desc || '';
+    const lead  = niced?.[i] || descs?.[i] || it.desc || '';
     const c = el('button','cardn');
     c.innerHTML = `
       ${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
@@ -3047,12 +3083,13 @@ function paintNews(data){
   const list = $('#newsList'); list.innerHTML = '';
   if(!data.items.length){ list.innerHTML = `<div class="empty">${ic('news')}${t('news.empty')}</div>`; return; }
   const nice   = data.hs?.[L] || null;      // 기사체로 다시 쓴 제목이 있으면 우선
+  const niced  = data.hsd?.[L] || null;     // 다시 쓴 본문
   const titles = data.tr?.[L] || null;      // 번역된 제목이 있으면 그걸 씁니다
   const descs  = data.trd?.[L] || null;     // 리드 문단 번역
   const key = newsSeries;
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
-    const lead = descs?.[i] || it.desc || '';
+    const lead = niced?.[i] || descs?.[i] || it.desc || '';
     const title = nice?.[i] || hl(titles?.[i] || it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
@@ -4691,7 +4728,7 @@ async function enterRoom(id, known){
       <div class="clog" id="chatLog"></div>
       <div class="cin">
         ${netSb() ? `<button class="pick" id="msgPick" aria-label="${esc(t('chat.photo'))}">${ic('image')}</button>
-        <input type="file" id="msgFile" accept="image/*" hidden>` : ''}
+        <input type="file" id="msgFile" accept="image/gif,image/jpeg,image/png,image/webp,image/*" hidden>` : ''}
         <input type="text" id="msgIn" maxlength="300" placeholder="${esc(t('chat.msgPh'))}">
         <button class="flow" id="msgSend">${t('chat.send')}</button>
       </div>
