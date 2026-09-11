@@ -2778,9 +2778,13 @@ function aiLock(fn){
   return run;
 }
 
+/* 하루 한도를 다 쓰면 풀리는 시각까지 AI를 건너뜁니다 */
+const aiRestUntil = ()=> +DB.get('aiRest', 0) || 0;
+const aiResting   = ()=> Date.now() < aiRestUntil();
+
 async function smartBoth(titles, leads){
   const key = orKey();
-  if(!key || !titles.length) return null;
+  if(!key || !titles.length || aiResting()) return null;
   const body = titles.map((s, i) => '[' + (i + 1) + '] ' + s + OR_SEP + (leads[i] || '-')).join('\n');
   const glos = nameGlossary(titles.concat(leads));
   const msg  = glos.length
@@ -2799,9 +2803,22 @@ async function smartBoth(titles, leads){
           body: JSON.stringify({ model, temperature:0.3, max_tokens:6000,
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
-        if(res.status === 429 && tryN === 0 && Date.now() + 25000 < deadline){
-          await new Promise(r => setTimeout(r, 20000));   /* 호출이 몰리면 쉬었다 한 번 더 */
-          continue;
+        if(res.status === 429){
+          let daily = false, until = 0;
+          try{
+            const e = await res.clone().json();
+            const meta = e?.error?.metadata || {};
+            daily = /per-day|daily/i.test(String(e?.error?.message || '') + (meta.limit_source || ''));
+            until = +((meta.headers || {})['X-RateLimit-Reset']) || 0;
+          }catch(e){}
+          if(daily){                       /* 오늘치를 다 썼습니다 */
+            DB.set('aiRest', until || (Date.now() + 3600000));
+            return null;
+          }
+          if(tryN === 0 && Date.now() + 25000 < deadline){
+            await new Promise(r => setTimeout(r, 20000));   /* 잠깐 몰린 것뿐 */
+            continue;
+          }
         }
         if(!res.ok) break;
         const j = await res.json();
