@@ -2838,7 +2838,9 @@ async function smartBoth(titles, leads){
 
 
 async function translateTitles(titles, target){
-  const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl='
+  /* 브라우저가 직접 부르면 구글이 막아 버립니다. 올려둔 사이트에서는 서버를 거칩니다 */
+  const base = HOSTED ? '/api/tr/translate_a/single' : 'https://translate.googleapis.com/translate_a/single';
+  const url = base + '?client=gtx&sl=en&tl='
             + target + '&dt=t&q=' + encodeURIComponent(titles.map(enFix).join('\n'));
   /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
   let res;

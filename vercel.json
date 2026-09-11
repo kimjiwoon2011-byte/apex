@@ -3,6 +3,10 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/tr/:path*",
+      "destination": "https://translate.googleapis.com/:path*"
+    },
+    {
       "source": "/api/ms/:path*",
       "destination": "https://www.motorsport.com/rss/:path*/"
     },

@@ -4,6 +4,8 @@
 # (넷리파이에선 autosport 이 405, Vercel 에선 crash.net 이 500)
 /api/as/*  https://www.autosport.com/rss/:splat   200
 /api/cr/*  https://www.crash.net/rss/:splat       200
+# 번역기도 서버에서 대신 부릅니다 (브라우저가 직접 부르면 구글이 막습니다)
+/api/tr/*  https://translate.googleapis.com/:splat  200
 # Touring cars have no feed on motorsport.com, so TC news comes from here.
 /api/tct/* https://www.touringcartimes.com/:splat 200
 # YouTube search — used to find the video for a race, then embed it in the app.
