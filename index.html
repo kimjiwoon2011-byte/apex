@@ -2710,7 +2710,8 @@ const orKey = ()=> DB.get('orkey', '');
 
 const OR_SYS = [
   '너는 한국 모터스포츠 매체의 제목 담당 기자다.',
-  '기계번역된 어색한 제목을 받아서, 한국 기사 제목처럼 자연스럽게 다시 쓴다.',
+  '영어 원문이나 기계번역된 제목을 받아서, 한국 기사 제목으로 옮겨 쓴다.',
+  '영어가 들어오면 한국어로 번역한다. 영어를 그대로 남기지 마라.',
   '',
   '규칙:',
   '- 사실을 새로 지어내지 마라. 주어진 제목에 있는 내용만 쓴다.',
@@ -2750,7 +2751,8 @@ const OR_SYS_TITLE = [
 
 const OR_SYS_LEAD = [
   '너는 한국 모터스포츠 매체의 기자다.',
-  '기계번역된 어색한 기사 요약을 받아서, 한국 기사처럼 자연스럽게 다시 쓴다.',
+  '영어 원문이나 기계번역된 기사 요약을 받아서, 한국 기사로 옮겨 쓴다.',
+  '영어가 들어오면 한국어로 번역한다. 영어를 그대로 남기지 마라.',
   '',
   '규칙:',
   '- 사실을 새로 지어내지 마라. 주어진 내용만 쓴다.',
@@ -2824,28 +2826,37 @@ async function translateTitles(titles, target){
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
 async function ensureTitles(key, data){
   if(L === 'en' || !data.items.length) return false;
-  data.tr ||= {}; data.trd ||= {};
-  if(data.tr[L] && data.trd[L]) return false;
+  data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {};
+  if(data.hs[L] && data.hsd[L]) return false;              /* AI 결과가 이미 있음 */
+  if(data.tr[L] && data.trd[L] && !(L === 'ko' && orKey())) return false;
 
-  /* 제목과 리드를 한 번의 요청으로 함께 보냅니다.
-     번역기는 짧은 시간에 여러 번 부르면 잠시 차단해 버리므로,
-     요청 횟수를 줄이는 것이 가장 확실한 대비책입니다.
-     빈 줄은 세그먼트 경계를 흐트러뜨려서 '-'로 채웁니다. */
+  /* 빈 줄은 경계를 흐트러뜨려서 '-'로 채웁니다 */
   const titles = data.items.map(i => i.title || '-');
   const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
+
+  /* 1순위 — AI가 영어 원문을 바로 한국어 기사체로 옮깁니다.
+     구글 번역 공개 엔드포인트는 자주 막혀서(429) 이쪽을 먼저 씁니다. */
+  if(L === 'ko' && orKey()){
+    let ok = 0;
+    if(!data.hs[L]){
+      const T = await smartText(titles, 'title');
+      if(T){ data.hs[L] = T; data.tr[L] = data.tr[L] || T; DB.set('news3-'+key, data); ok++; }
+    }else ok++;
+    if(!data.hsd[L]){
+      const D = await smartText(leads, 'lead');
+      if(D){ data.hsd[L] = D; data.trd[L] = data.trd[L] || D; DB.set('news3-'+key, data); ok++; }
+    }else ok++;
+    if(ok === 2) return true;
+  }
+
+  /* 2순위 — 구글 번역. 제목과 리드를 한 번에 보내 요청 횟수를 줄입니다 */
+  if(data.tr[L] && data.trd[L]) return false;
   try{
     const out = await translateTitles([...titles, ...leads], L);
     if(out.length === titles.length + leads.length){
       data.tr[L]  = out.slice(0, titles.length);
       data.trd[L] = out.slice(titles.length);
       DB.set('news3-'+key, data);
-      if(L === 'ko' && orKey()){
-        data.hs ||= {}; data.hsd ||= {};
-        const nice = await smartText(data.tr[L].map(hl), 'title');
-        if(nice){ data.hs[L] = nice; DB.set('news3-'+key, data); }
-        const body = await smartText(data.trd[L], 'lead');
-        if(body){ data.hsd[L] = body; DB.set('news3-'+key, data); }
-      }
       return true;
     }
   }catch(e){ /* 아래에서 제목만이라도 살려 봅니다 */ }
@@ -2955,7 +2966,7 @@ function paintDeck(data, titles, descs){
   deck.appendChild(cover);
 
   items.forEach((it,i)=>{
-    const title = nice?.[i] || hl(titles?.[i] || it.title);
+    const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
     const lead  = niced?.[i] || descs?.[i] || it.desc || '';
     const c = el('button','cardn');
     c.innerHTML = `
@@ -3090,7 +3101,7 @@ function paintNews(data){
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
     const lead = niced?.[i] || descs?.[i] || it.desc || '';
-    const title = nice?.[i] || hl(titles?.[i] || it.title);
+    const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
     if(i === 0 && it.img){
@@ -3315,8 +3326,8 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: hl(c.tr?.[L]?.[i] || it.title),
-                                        td: c.trd?.[L]?.[i] || it.desc || '' }));
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: (c.hs?.[L]?.[i]) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
+                                        td: (c.hsd?.[L]?.[i]) || c.trd?.[L]?.[i] || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
 
