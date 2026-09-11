@@ -2768,6 +2768,16 @@ const OR_SYS = [
 ].join('\n');
 
 /* 제목·본문을 한 번에 다시 씁니다. 안 되면 null — 부르는 쪽에서 기존 번역을 씁니다 */
+/* AI 호출은 한 번에 하나만. 미리받기와 화면 요청이 동시에 부르면
+   서로 호출 제한을 잡아먹어 둘 다 실패합니다. 순서대로 줄을 세웁니다.
+   화면이 기다리는 요청(급한 것)을 미리받기보다 먼저 처리합니다. */
+let aiQueue = Promise.resolve();
+function aiLock(fn){
+  const run = aiQueue.then(fn, fn);
+  aiQueue = run.then(()=>{}, ()=>{});
+  return run;
+}
+
 async function smartBoth(titles, leads){
   const key = orKey();
   if(!key || !titles.length) return null;
@@ -2860,7 +2870,7 @@ async function ensureTitles(key, data){
   /* 1순위 — AI가 영어 원문을 한 번에 한국어 기사로 옮깁니다.
      구글 번역 공개 엔드포인트는 자주 막혀서(429) 이쪽을 먼저 씁니다. */
   if(L === 'ko' && orKey()){
-    const both = await smartBoth(titles, leads);
+    const both = await aiLock(()=> smartBoth(titles, leads));
     if(both){
       data.hs[L]  = both.map(x => x && x.t ? x.t : null);
       data.hsd[L] = both.map(x => x && x.d ? x.d : null);
