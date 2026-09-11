@@ -2777,18 +2777,20 @@ async function smartBoth(titles, leads){
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' + body
     : body;
 
+  const deadline = Date.now() + 90000;   /* 전체 상한. 넘으면 기존 번역으로 */
   for(const model of OR_MODELS){
+    if(Date.now() > deadline) break;
     for(let tryN = 0; tryN < 2; tryN++){
       try{
         const ac = new AbortController();
-        const timer = setTimeout(()=>ac.abort(), 60000);
+        const timer = setTimeout(()=>ac.abort(), 45000);
         const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
           body: JSON.stringify({ model, temperature:0.3, max_tokens:6000,
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
-        if(res.status === 429 && tryN === 0){       /* 호출이 몰리면 쉬었다 한 번 더 */
-          await new Promise(r => setTimeout(r, 20000));
+        if(res.status === 429 && tryN === 0 && Date.now() + 25000 < deadline){
+          await new Promise(r => setTimeout(r, 20000));   /* 호출이 몰리면 쉬었다 한 번 더 */
           continue;
         }
         if(!res.ok) break;
@@ -3074,6 +3076,32 @@ function buildNewsChips(){
   });
 }
 
+/* 시리즈를 미리 한국어로 옮겨 둡니다. 칩을 눌렀을 때 기다리지 않도록.
+   무료 모델은 호출 제한이 있어 한 번에 하나씩, 넉넉히 쉬어 가며 처리합니다.
+   이미 받아 둔 시리즈는 건너뜁니다. */
+let preBusy = false;
+async function prefetchNews(){
+  if(preBusy || L !== 'ko' || !orKey()) return;
+  preBusy = true;
+  try{
+    for(const k of Object.keys(SERIES)){
+      if(SERIES[k].noNews) continue;
+      let c = DB.get('news3-'+k, null);
+      const fresh = c && Date.now() - c.at < NEWS_TTL;
+      if(fresh && c.hv === HL_VER && c.hs?.[L] && c.hsd?.[L]) continue;   /* 이미 됨 */
+      if(!fresh){
+        try{ c = { at: Date.now(), items: await fetchNews(k) }; DB.set('news3-'+k, c); }
+        catch(e){ continue; }
+      }
+      try{
+        const done = await ensureTitles(k, c);
+        if(done && newsSeries === k && tab === 'news') paintNews(c);
+      }catch(e){}
+      await new Promise(r => setTimeout(r, 25000));   /* 호출 제한을 피해 천천히 */
+    }
+  }finally{ preBusy = false; }
+}
+
 async function renderNews(force){
   buildNewsChips();
   buildNewsView();
@@ -3157,6 +3185,9 @@ function paintNews(data){
   });
 }
 $('#btnRefreshNews').onclick = ()=> renderNews(true);
+
+/* 첫 화면이 뜬 뒤 나머지 시리즈를 조용히 미리 받아 둡니다 */
+setTimeout(prefetchNews, 20000);
 
 /* ══════════════════════════════════════════════════════════════
    1-2. 마이홈 — 관심 시리즈 · 응원팀 · 응원선수
