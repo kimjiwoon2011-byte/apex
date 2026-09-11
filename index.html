@@ -3079,7 +3079,7 @@ function paintDeck(data, titles, descs){
     /* 카드 문구가 있으면 훅·핵심·설명 세 단으로, 없으면 제목+요약으로 */
     const body = (card && card.p)
       ? `${card.h ? `<div class="hook">${esc(card.h)}</div>` : ''}
-         <div class="punch" style="color:${s.color}">${esc(card.p)}</div>
+         <div class="punch">${esc(card.p)}</div>
          ${card.d ? `<div class="line">${esc(card.d)}</div>` : ''}`
       : `<h3>${esc(title)}</h3>
          ${lead ? `<p>${esc(lead)}</p>` : ''}`;
