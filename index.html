@@ -2796,7 +2796,7 @@ async function smartText(lines, kind){
       const timer = setTimeout(()=>ac.abort(), 30000);   /* 오래 매달리지 않고 다음 모델로 */
       const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
         headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-        body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 1200,
+        body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 3000,   /* 모델이 추론에 800토큰쯤 먼저 씁니다 */
           messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
       clearTimeout(timer);
       if(!res.ok) continue;
