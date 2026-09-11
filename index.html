@@ -2722,17 +2722,33 @@ const OR_SYS = [
   '- 생각 과정을 쓰지 마라. 입력 순서 그대로, 한 줄에 하나씩, 제목만 출력한다.',
 ].join('\n');
 
-/* 모델이 기사를 합치거나 순서를 흐트러뜨리는 일이 잦아, 번호표를 붙여 보내고
-   같은 번호로 되받습니다. 하나라도 빠지면 통째로 버리고 다음 모델로 넘어갑니다. */
+/* 모델이 모르는 이름을 멋대로 옮깁니다 (Charles Leclerc → "찰리 르블랑").
+   원문에 나오는 이름만 골라 올바른 한국어 표기를 함께 알려줍니다. */
+function nameGlossary(lines){
+  const hay = lines.join(' ');
+  const seen = new Set(), out = [];
+  for(const [re, ko] of NAME_MAP){
+    re.lastIndex = 0;
+    const m = re.exec(hay);
+    if(!m || seen.has(ko)) continue;
+    seen.add(ko);
+    out.push(m[0] + ' = ' + ko);
+    if(out.length >= 25) break;
+  }
+  return out;
+}
+
+/* 번호가 몇 개 빠져도 받은 것만 씁니다. 빠진 자리는 null 로 두고
+   화면에서 기존 번역으로 자동으로 메웁니다. */
 function orParse(text, n){
   const out = new Array(n).fill(null);
   const re = /\[(\d+)\]\s*([\s\S]*?)(?=\n?\[\d+\]|$)/g;
-  let m;
+  let m, got = 0;
   while((m = re.exec(String(text || '')))){
     const i = +m[1] - 1, v = m[2].replace(/\s+/g, ' ').trim();
-    if(i >= 0 && i < n && v) out[i] = v;
+    if(i >= 0 && i < n && v && !out[i]){ out[i] = v; got++; }
   }
-  return out.every(Boolean) ? out : null;
+  return got >= Math.ceil(n * 0.6) ? out : null;
 }
 
 const OR_SYS_TITLE = [
@@ -2770,6 +2786,10 @@ async function smartText(lines, kind){
   if(!key || !lines.length) return null;
   const sys = kind === 'lead' ? OR_SYS_LEAD : OR_SYS_TITLE;
   const body = lines.map((s, i) => '[' + (i + 1) + '] ' + s).join('\n');
+  const glos = nameGlossary(lines);
+  const msg  = glos.length
+    ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' + body
+    : body;
   for(const model of OR_MODELS){
     try{
       const ac = new AbortController();
@@ -2777,7 +2797,7 @@ async function smartText(lines, kind){
       const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
         headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
         body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 1200,
-          messages:[ { role:'system', content: sys }, { role:'user', content: body } ]})});
+          messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
       clearTimeout(timer);
       if(!res.ok) continue;
       const j = await res.json();
