@@ -4108,6 +4108,13 @@ const SB_AUTH = 'https://nlwfmhrhbgzvvenztejn.supabase.co';
 
 /* 모드: free = 키 없이 바로(ntfy.sh) · sb = 내 Supabase · off = 이 기기만.
    저장된 설정이 있으면 그게 우선, 없으면 위 DEFAULT_NET을 씁니다. */
+/* 예전 무료 서버(ntfy) 시절 설정이 남아 있으면 지금 서버를 못 씁니다.
+   직접 넣은 주소·키가 없다면 옛 설정이므로 버리고 기본값을 따릅니다. */
+(function(){
+  const saved = DB.get('net', null);
+  if(saved && saved.mode === 'free' && !saved.url && !saved.key) DB.del('net');
+})();
+
 const net     = ()=> Object.assign({}, DEFAULT_NET, DB.get('net', {}));
 const netSb   = ()=>{ const n = net(); return n.mode === 'sb' && !!(n.url && n.key); };
 const netFree = ()=> net().mode === 'free';
