@@ -2724,7 +2724,7 @@ const OR_MODELS = [
 const orKey = ()=> DB.get('orkey', '');
 
 /* 프롬프트를 고칠 때마다 올립니다. 기기에 저장된 옛 결과를 버리게 하는 표시입니다 */
-const HL_VER = 4;
+const HL_VER = 5;
 
 /* 모델이 모르는 이름을 멋대로 옮깁니다 (Charles Leclerc → "찰리 르블랑").
    원문에 나오는 이름만 골라 올바른 한국어 표기를 함께 알려줍니다. */
@@ -2761,30 +2761,60 @@ const OR_SEP = ' ::: ';
 
 const OR_SYS = [
   '너는 한국 모터스포츠 카드뉴스를 만드는 기자다.',
-  '영어 기사를 받아서, 한눈에 알아볼 수 있는 카드 문구 세 줄로 만든다.',
+  '영어 기사를 받아, 지나가며 봐도 무슨 일인지 알아보게 세 줄로 만든다.',
   '',
-  '세 줄의 역할:',
-  '1) 훅 — 왜 지금 중요한지 짧은 배경. 12자 안팎. 예) "개최 2주 남았는데"',
-  '2) 핵심 — 무슨 일인지 한 방에. 10자 안팎. 명사로 끝낸다. 예) "마드링 절도사건"',
-  '3) 설명 — 사실 한 줄. 35자 안팎. 예) "스페인 경찰, 발전기 케이블 대량 도난 인정"',
+  '── 세 줄의 형식 ──',
+  '훅   : 왜 지금 중요한지 짧은 배경. 8~14자. 없으면 빈칸으로 둔다.',
+  '핵심 : 무슨 일인지 한 방에. 6~12자. 반드시 명사로 끝낸다.',
+  '설명 : 사실 한 줄. 20~35자. 누가·무엇을 담는다.',
   '',
-  '절대 규칙:',
+  '── 기사 종류별로 이렇게 쓴다 ──',
+  '사건·사고  훅=언제/어떤 상황인지   핵심=무슨 사건인지',
+  '발언·인터뷰 훅=어떤 상황에서 나온 말 핵심=말한 사람 + 한 마디',
+  '결과·성적  훅=어느 대회/세션      핵심=누가 어떻게 됐는지',
+  '발표·변경  훅=무엇에 관한 것      핵심=무엇이 바뀌는지',
+  '',
+  '── 보기 ──',
+  '입력  [1] Madrid F1 track hit by cable theft two weeks before race ::: Spanish police confirmed a large theft of generator cables at the Madring circuit.',
+  '출력  [1] 개최 2주 남았는데 ::: 마드링 절도사건 ::: 스페인 경찰, 발전기 케이블 대량 도난 인정',
+  '',
+  '입력  [2] Leclerc explains vision issue after Monza crash ::: Ferrari driver Charles Leclerc said his vision issue was very short. He lost control on lap 2.',
+  '출력  [2] 몬차 충돌 그 후 ::: 르클레르 시력 이상 ::: 2랩 조종 잃고 배리어 충돌, "아주 잠깐이었다"',
+  '',
+  '입력  [3] Hamilton says he never asked Ferrari for priority over Leclerc ::: Lewis Hamilton denied requesting preferential treatment.',
+  '출력  [3] 팀 내 서열 논란에 ::: 해밀턴 "특혜 요구 안 했다" ::: 르클레르보다 우대해달라 한 적 없다고 밝혀',
+  '',
+  '입력  [4] Porsche Penske leadership speaks out on IMSA performance ::: Management expressed strong frustration over disappointing results.',
+  '출력  [4] 시즌 성적 부진에 ::: 포르쉐 수뇌부 작심 발언 ::: 펜스케 경영진, 올 시즌 결과에 강한 불만',
+  '',
+  '── 절대 규칙 ──',
   '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·횟수·날짜를 만들지 마라.',
-  '- 뜻이 확실하지 않으면 덧붙이지 말고 줄여라.',
+  '- 배경이 원문에 없으면 훅을 빈칸으로 둔다. 억지로 지어내지 마라.',
   '- 사람·팀·서킷 이름은 표기표를 그대로 써라.',
   '- 표기표에 없는 이름은 영어 원문 그대로 두어라.',
-  '- 존댓말 금지. 마침표 금지. 한자 금지.',
+  '- 존댓말 금지. 마침표 금지. 한자 금지. 느낌표 금지.',
   '',
-  '형식:',
-  '- 입력 한 줄은  [번호] 제목 ::: 요약  이다.',
-  '- 출력 한 줄은  [번호] 훅 ::: 핵심 ::: 설명  이다.',
-  '- 번호 하나당 한 줄. 서로 합치지 마라.',
+  '── 출력 형식 ──',
+  '- 입력 한 줄은  [번호] 제목 ::: 요약',
+  '- 출력 한 줄은  [번호] 훅 ::: 핵심 ::: 설명',
+  '- 번호 하나당 한 줄. 서로 합치지 마라. 번호를 빠뜨리지 마라.',
   '- 생각 과정을 쓰지 마라. 번호와 세 줄만 출력한다.',
 ].join('\n');
 
 /* 하루 한도를 다 쓰면 풀리는 시각까지 AI를 건너뜁니다 */
 const aiRestUntil = ()=> +DB.get('aiRest', 0) || 0;
 const aiResting   = ()=> Date.now() < aiRestUntil();
+
+/* 형식을 지켰는지 봅니다. 어기면 그 한 건만 버리고 기존 번역으로 메웁니다.
+   모델이 규칙을 흘려듣는 일이 잦아 마지막에 한 번 더 거릅니다. */
+function cardOk(c){
+  if(!c || !c.p) return false;
+  const bad = s => /[.!]$/.test(s) || /[\u4e00-\u9fff]/.test(s) || /(습니다|입니다|합니다)$/.test(s);
+  if(c.p.length > 20 || bad(c.p)) return false;         /* 핵심은 짧고 명사로 */
+  if(c.h && (c.h.length > 22 || bad(c.h))) return false;
+  if(c.d && (c.d.length > 60 || /[\u4e00-\u9fff]/.test(c.d))) return false;
+  return true;
+}
 
 async function smartBoth(titles, leads){
   const key = orKey();
@@ -2831,8 +2861,8 @@ async function smartBoth(titles, leads){
           if(!s) return null;
           const p = s.split(':::').map(x => x.trim());
           if(p.length < 2) return null;
-          /* 훅 · 핵심 · 설명 */
-          return { h:p[0] || '', p:p[1] || '', d:p[2] || '' };
+          const card = { h:p[0] || '', p:p[1] || '', d:p[2] || '' };
+          return cardOk(card) ? card : null;      /* 형식을 어기면 버립니다 */
         });
         break;
       }catch(e){ break; }
