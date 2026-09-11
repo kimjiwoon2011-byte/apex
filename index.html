@@ -2799,6 +2799,22 @@ async function smartText(lines, kind){
         body: JSON.stringify({ model, temperature:0.3, max_tokens: kind === 'lead' ? 4000 : 3000,   /* 모델이 추론에 800토큰쯤 먼저 씁니다 */
           messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
       clearTimeout(timer);
+      if(res.status === 429){          /* 호출이 몰리면 잠깐 쉬었다 한 번 더 */
+        await new Promise(r => setTimeout(r, 9000));
+        const ac2 = new AbortController();
+        const t2 = setTimeout(()=>ac2.abort(), kind === 'lead' ? 50000 : 30000);
+        const res2 = await fetch(OR_URL, { method:'POST', signal:ac2.signal,
+          headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
+          body: JSON.stringify({ model, temperature:0.3,
+            max_tokens: kind === 'lead' ? 4000 : 3000,
+            messages:[ { role:'system', content: sys }, { role:'user', content: msg } ]})});
+        clearTimeout(t2);
+        if(!res2.ok) continue;
+        const j2 = await res2.json();
+        const o2 = orParse(j2?.choices?.[0]?.message?.content, lines.length);
+        if(o2) return o2;
+        continue;
+      }
       if(!res.ok) continue;
       const j = await res.json();
       const out = orParse(j?.choices?.[0]?.message?.content, lines.length);
@@ -2863,7 +2879,7 @@ async function ensureTitles(key, data){
       if(T){ data.hs[L] = T; data.tr[L] = data.tr[L] || T; DB.set('news3-'+key, data); ok++; }
     }else ok++;
     if(!data.hsd[L]){
-      await new Promise(r => setTimeout(r, 1500));   /* 연달아 부르면 제한이 걸립니다 */
+      await new Promise(r => setTimeout(r, 6000));   /* 연달아 부르면 제한이 걸립니다 */
       const D = await smartText(leads, 'lead');
       if(D){ data.hsd[L] = D; data.trd[L] = data.trd[L] || D; DB.set('news3-'+key, data); ok++; }
     }else ok++;
