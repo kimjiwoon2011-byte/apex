@@ -2854,53 +2854,53 @@ async function translateTitles(titles, target){
 }
 
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
-async function ensureTitles(key, data){
+/* 구글 번역을 먼저 해서 한국어를 바로 띄우고, AI 다듬기는 뒤에서 이어 붙입니다.
+   AI를 먼저 기다리면 최대 90초 동안 영어가 그대로 보입니다.
+   onStep 이 불리면 화면을 다시 그립니다 (두 번: 구글 직후, AI 직후). */
+async function ensureTitles(key, data, onStep){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {};
-  if(data.hv !== HL_VER){        /* 프롬프트가 바뀌었으면 옛 결과를 버립니다 */
+  if(data.hv !== HL_VER){        /* 기준이 바뀌었으면 옛 AI 결과를 버립니다 */
     data.hs = {}; data.hsd = {}; data.hv = HL_VER;
   }
-  if(data.hs[L] && data.hsd[L]) return false;              /* AI 결과가 이미 있음 */
-  if(data.tr[L] && data.trd[L] && !(L === 'ko' && orKey())) return false;
 
-  /* 빈 줄은 경계를 흐트러뜨려서 '-'로 채웁니다 */
   const titles = data.items.map(i => i.title || '-');
   const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
+  let changed = false;
 
-  /* 1순위 — AI가 영어 원문을 한 번에 한국어 기사로 옮깁니다.
-     구글 번역 공개 엔드포인트는 자주 막혀서(429) 이쪽을 먼저 씁니다. */
-  if(L === 'ko' && orKey()){
+  /* 1단계 — 구글 번역 (보통 2초). 일단 한국어로 읽히게 만듭니다 */
+  if(!data.tr[L] || !data.trd[L]){
+    try{
+      const out = await translateTitles([...titles, ...leads], L);
+      if(out.length === titles.length + leads.length){
+        data.tr[L]  = out.slice(0, titles.length);
+        data.trd[L] = out.slice(titles.length);
+        DB.set('news3-'+key, data);
+        changed = true;
+        if(onStep) onStep();
+      }
+    }catch(e){
+      try{                                  /* 제목만이라도 살려 봅니다 */
+        data.tr[L] = await translateTitles(titles, L);
+        DB.set('news3-'+key, data);
+        changed = true;
+        if(onStep) onStep();
+      }catch(e2){}
+    }
+  }
+
+  /* 2단계 — AI가 기사체로 다시 씁니다. 실패해도 1단계 결과가 남습니다 */
+  if(L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
     const both = await aiLock(()=> smartBoth(titles, leads));
     if(both){
       data.hs[L]  = both.map(x => x && x.t ? x.t : null);
       data.hsd[L] = both.map(x => x && x.d ? x.d : null);
-      data.tr[L]  = data.tr[L]  || data.hs[L].map((s, i) => s || titles[i]);
-      data.trd[L] = data.trd[L] || data.hsd[L].map((s, i) => s || leads[i]);
       DB.set('news3-'+key, data);
-      return true;
+      changed = true;
+      if(onStep) onStep();
     }
   }
-
-  /* 2순위 — 구글 번역. 제목과 리드를 한 번에 보내 요청 횟수를 줄입니다 */
-  if(data.tr[L] && data.trd[L]) return false;
-  try{
-    const out = await translateTitles([...titles, ...leads], L);
-    if(out.length === titles.length + leads.length){
-      data.tr[L]  = out.slice(0, titles.length);
-      data.trd[L] = out.slice(titles.length);
-      DB.set('news3-'+key, data);
-      return true;
-    }
-  }catch(e){ /* 아래에서 제목만이라도 살려 봅니다 */ }
-
-  if(!data.tr[L]){
-    try{
-      data.tr[L] = await translateTitles(titles, L);
-      DB.set('news3-'+key, data);
-      return true;
-    }catch(e){}
-  }
-  return false;
+  return changed;
 }
 /* 기사 읽기 — 밖으로 나가지 않고 앱 안에서 봅니다.
    언론사 기사 페이지는 봇 차단(403)이라 본문을 가져올 수 없고, 전문을 그대로 옮기는 것도
@@ -3104,8 +3104,7 @@ async function prefetchNews(){
         catch(e){ continue; }
       }
       try{
-        const done = await ensureTitles(k, c);
-        if(done && newsSeries === k && tab === 'news') paintNews(c);
+        await ensureTitles(k, c, ()=>{ if(newsSeries === k && tab === 'news') paintNews(c); });
       }catch(e){}
       await new Promise(r => setTimeout(r, 25000));   /* 호출 제한을 피해 천천히 */
     }
@@ -3122,7 +3121,7 @@ async function renderNews(force){
   if(cache){
     paintNews(cache);
     /* 캐시는 있는데 이 언어 번역만 없는 경우 — 받아와서 다시 그립니다 */
-    ensureTitles(key, cache).then(ok=>{ if(ok && newsSeries===key) paintNews(cache); });
+    ensureTitles(key, cache, ()=>{ if(newsSeries === key) paintNews(cache); });
   }
   if(fresh && !force) return;
 
@@ -3134,7 +3133,7 @@ async function renderNews(force){
     const data = { at: Date.now(), items };
     DB.set('news3-'+key, data);
     if(newsSeries === key) paintNews(data);
-    await ensureTitles(key, data);
+    await ensureTitles(key, data, ()=>{ if(newsSeries === key) paintNews(data); });
     if(newsSeries === key) paintNews(data);
   }catch(e){
     if(newsSeries !== key) return;
