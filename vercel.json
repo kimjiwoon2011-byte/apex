@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/api/ms/:path*",
+      "destination": "https://www.motorsport.com/rss/:path*/"
+    },
+    {
+      "source": "/api/as/:path*",
+      "destination": "https://www.autosport.com/rss/:path*/"
+    },
+    {
+      "source": "/api/cr/:path*",
+      "destination": "https://www.crash.net/rss/:path*"
+    },
+    {
+      "source": "/api/tct/:path*",
+      "destination": "https://www.touringcartimes.com/:path*/"
+    },
+    {
+      "source": "/api/yt/:path*",
+      "destination": "https://www.youtube.com/:path*"
+    }
+  ]
+}

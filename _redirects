@@ -1,6 +1,8 @@
 # Netlify fetches these server-side so the browser never hits CORS.
 /api/ms/*  https://www.motorsport.com/rss/:splat  200
-# 예비 소스. Autosport은 넷리파이에서 부르면 405로 막혀 쓸 수 없어 Crash.net을 씁니다.
+# 예비 소스 둘. 호스팅마다 막히는 곳이 달라서 둘 다 둡니다
+# (넷리파이에선 autosport 이 405, Vercel 에선 crash.net 이 500)
+/api/as/*  https://www.autosport.com/rss/:splat   200
 /api/cr/*  https://www.crash.net/rss/:splat       200
 # Touring cars have no feed on motorsport.com, so TC news comes from here.
 /api/tct/* https://www.touringcartimes.com/:splat 200

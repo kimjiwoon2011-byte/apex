@@ -1,0 +1,21 @@
+# 무료 Supabase는 7일간 요청이 없으면 프로젝트를 재웁니다.
+# 잠들면 단톡방과 구글 로그인이 둘 다 멈추므로, 이틀에 한 번 가볍게 찔러 깨워 둡니다.
+# 여기 쓰는 키는 index.html 에도 그대로 들어 있는 공개용(publishable) 키입니다.
+name: keep supabase awake
+
+on:
+  schedule:
+    - cron: '17 3 */2 * *'   # 이틀에 한 번 (UTC 03:17)
+  workflow_dispatch:          # 필요하면 손으로도 돌릴 수 있게
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 단톡방 서버에 요청 한 번
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            -H 'apikey: sb_publishable_7CfWUlT7GDETfQwp3Ga-tw_Z6cN-up4' \
+            'https://nlwfmhrhbgzvvenztejn.supabase.co/rest/v1/rooms?select=id&limit=1')
+          echo "rooms 조회 → HTTP $code"
+          test "$code" = "200"
