@@ -349,6 +349,19 @@ main{padding:14px 16px 0}
 .cardn .ft .cn{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-weight:800}
 .cardn .ft .cn .ic{width:12px;height:12px;vertical-align:0}
 
+/* 카드뉴스 세 단 — 훅(작게) · 핵심(크게) · 설명(작게).
+   릴스 카드처럼 지나가며 봐도 무슨 일인지 알아보게 만듭니다 */
+.cardn .hook{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.02em;
+  margin:0 0 4px;text-shadow:0 2px 10px rgba(0,0,0,.65)}
+.cardn .punch{font-size:36px;font-weight:900;line-height:1.1;letter-spacing:-.045em;
+  margin:0 0 10px;text-shadow:0 2px 16px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.6);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cardn .line{font-size:13px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.9);
+  margin:0 0 12px;text-shadow:0 1px 6px rgba(0,0,0,.6);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 글자가 많아 아래쪽 그늘을 조금 더 올립니다 */
+.cardn .sc{background:linear-gradient(0deg,rgba(3,7,15,.97) 30%,rgba(3,7,15,.55) 62%,rgba(3,7,15,.28))}
+
 /* 표지 — 아래 1/3을 비워 두는 인스타 관행을 따릅니다 */
 .cardn.cover{background:linear-gradient(160deg,var(--cc),color-mix(in srgb,var(--cc) 30%,#05080f))}
 .cardn.cover .in{justify-content:flex-start}
@@ -2711,7 +2724,7 @@ const OR_MODELS = [
 const orKey = ()=> DB.get('orkey', '');
 
 /* 프롬프트를 고칠 때마다 올립니다. 기기에 저장된 옛 결과를 버리게 하는 표시입니다 */
-const HL_VER = 3;
+const HL_VER = 4;
 
 /* 모델이 모르는 이름을 멋대로 옮깁니다 (Charles Leclerc → "찰리 르블랑").
    원문에 나오는 이름만 골라 올바른 한국어 표기를 함께 알려줍니다. */
@@ -2747,36 +2760,27 @@ function orParse(text, n){
 const OR_SEP = ' ::: ';
 
 const OR_SYS = [
-  '너는 한국 모터스포츠 매체 기자다.',
-  '영어 기사의 제목과 요약을 받아서 한국 기사로 옮겨 쓴다.',
-  '영어 문장을 그대로 남기지 마라.',
+  '너는 한국 모터스포츠 카드뉴스를 만드는 기자다.',
+  '영어 기사를 받아서, 한눈에 알아볼 수 있는 카드 문구 세 줄로 만든다.',
+  '',
+  '세 줄의 역할:',
+  '1) 훅 — 왜 지금 중요한지 짧은 배경. 12자 안팎. 예) "개최 2주 남았는데"',
+  '2) 핵심 — 무슨 일인지 한 방에. 10자 안팎. 명사로 끝낸다. 예) "마드링 절도사건"',
+  '3) 설명 — 사실 한 줄. 35자 안팎. 예) "스페인 경찰, 발전기 케이블 대량 도난 인정"',
   '',
   '절대 규칙:',
-  '- 원문에 없는 내용을 덧붙이지 마라. 숫자·순위·횟수·날짜를 지어내지 마라.',
-  '- 원문에 없는 배경 설명을 넣지 마라. 모르는 것은 쓰지 마라.',
+  '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·횟수·날짜를 만들지 마라.',
   '- 뜻이 확실하지 않으면 덧붙이지 말고 줄여라.',
   '- 사람·팀·서킷 이름은 표기표를 그대로 써라.',
-  '- 표기표에 없는 이름은 영어 원문 그대로 두어라. 한글 표기를 지어내지 마라.',
+  '- 표기표에 없는 이름은 영어 원문 그대로 두어라.',
+  '- 존댓말 금지. 마침표 금지. 한자 금지.',
   '',
   '형식:',
   '- 입력 한 줄은  [번호] 제목 ::: 요약  이다.',
-  '- 출력도 같은 번호와 같은 ::: 구분으로 한 줄에 하나씩 쓴다.',
-  '- 제목: 30자 안팎, 조사와 군더더기를 덜어낸다. 존댓말 금지. 마침표 금지.',
-  '- 요약: 2~3문장. 존댓말(~습니다). 모터스포츠를 모르는 사람도 알아듣게 쉬운 말로.',
-  '- 한자 쓰지 마라. 기사끼리 합치지 마라.',
-  '- 생각 과정을 쓰지 마라. 번호와 내용만 출력한다.',
+  '- 출력 한 줄은  [번호] 훅 ::: 핵심 ::: 설명  이다.',
+  '- 번호 하나당 한 줄. 서로 합치지 마라.',
+  '- 생각 과정을 쓰지 마라. 번호와 세 줄만 출력한다.',
 ].join('\n');
-
-/* 제목·본문을 한 번에 다시 씁니다. 안 되면 null — 부르는 쪽에서 기존 번역을 씁니다 */
-/* AI 호출은 한 번에 하나만. 미리받기와 화면 요청이 동시에 부르면
-   서로 호출 제한을 잡아먹어 둘 다 실패합니다. 순서대로 줄을 세웁니다.
-   화면이 기다리는 요청(급한 것)을 미리받기보다 먼저 처리합니다. */
-let aiQueue = Promise.resolve();
-function aiLock(fn){
-  const run = aiQueue.then(fn, fn);
-  aiQueue = run.then(()=>{}, ()=>{});
-  return run;
-}
 
 /* 하루 한도를 다 쓰면 풀리는 시각까지 AI를 건너뜁니다 */
 const aiRestUntil = ()=> +DB.get('aiRest', 0) || 0;
@@ -2825,9 +2829,10 @@ async function smartBoth(titles, leads){
         const got = orParse(j?.choices?.[0]?.message?.content, titles.length);
         if(got) return got.map(s => {
           if(!s) return null;
-          const i = s.indexOf(':::');
-          return i < 0 ? { t:s.trim(), d:'' }
-                       : { t:s.slice(0, i).trim(), d:s.slice(i + 3).trim() };
+          const p = s.split(':::').map(x => x.trim());
+          if(p.length < 2) return null;
+          /* 훅 · 핵심 · 설명 */
+          return { h:p[0] || '', p:p[1] || '', d:p[2] || '' };
         });
         break;
       }catch(e){ break; }
@@ -2878,9 +2883,9 @@ async function translateTitles(titles, target){
    onStep 이 불리면 화면을 다시 그립니다 (두 번: 구글 직후, AI 직후). */
 async function ensureTitles(key, data, onStep){
   if(L === 'en' || !data.items.length) return false;
-  data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {};
+  data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
   if(data.hv !== HL_VER){        /* 기준이 바뀌었으면 옛 AI 결과를 버립니다 */
-    data.hs = {}; data.hsd = {}; data.hv = HL_VER;
+    data.hs = {}; data.hsd = {}; data.hc = {}; data.hv = HL_VER;
   }
 
   const titles = data.items.map(i => i.title || '-');
@@ -2912,7 +2917,8 @@ async function ensureTitles(key, data, onStep){
   if(L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
     const both = await aiLock(()=> smartBoth(titles, leads));
     if(both){
-      data.hs[L]  = both.map(x => x && x.t ? x.t : null);
+      data.hc[L]  = both;                                  /* 카드용 세 줄 */
+      data.hs[L]  = both.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
       data.hsd[L] = both.map(x => x && x.d ? x.d : null);
       DB.set('news3-'+key, data);
       changed = true;
@@ -3001,6 +3007,7 @@ function paintDeck(data, titles, descs){
   const s = SERIES[newsSeries], list = $('#newsList');
   const nice  = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
   const niced = data.hsd?.[L] || null;     /* 다시 쓴 본문 */
+  const cards = data.hc?.[L] || null;      /* 카드용 훅·핵심·설명 */
   const items = data.items.slice(0, 10);          /* 인스타도 한 묶음에 10~20장입니다 */
   const deck = el('div','deck');
 
@@ -3019,6 +3026,14 @@ function paintDeck(data, titles, descs){
   items.forEach((it,i)=>{
     const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
     const lead  = niced?.[i] || descs?.[i] || it.desc || '';
+    const card  = cards?.[i];
+    /* 카드 문구가 있으면 훅·핵심·설명 세 단으로, 없으면 제목+요약으로 */
+    const body = (card && card.p)
+      ? `${card.h ? `<div class="hook">${esc(card.h)}</div>` : ''}
+         <div class="punch" style="color:${s.color}">${esc(card.p)}</div>
+         ${card.d ? `<div class="line">${esc(card.d)}</div>` : ''}`
+      : `<h3>${esc(title)}</h3>
+         ${lead ? `<p>${esc(lead)}</p>` : ''}`;
     const c = el('button','cardn');
     c.innerHTML = `
       ${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
@@ -3027,8 +3042,7 @@ function paintDeck(data, titles, descs){
         <div class="hd"><span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>
           <span class="no">${i+1} / ${items.length}</span></div>
         <div class="bd">
-          <h3>${esc(title)}</h3>
-          ${lead ? `<p>${esc(lead)}</p>` : ''}
+          ${body}
           <div class="ft"><span class="pill">${esc(it.src)}</span><span>${esc(relTime(it.at))}</span></div>
         </div>
       </div>`;
