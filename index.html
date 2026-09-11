@@ -640,20 +640,10 @@ textarea{resize:vertical;min-height:78px}
 .favcard .np{text-align:right;flex:0 0 auto}
 .favcard .np b{display:block;font-family:var(--mono);font-size:17px;font-weight:700;line-height:1}
 
-/* 캘린더 미리보기 · 요금제 */
+/* 캘린더 미리보기 */
 .widprev{margin-top:14px;border-radius:var(--r3);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-2);line-height:0}
 .widprev svg{width:100%;height:auto;display:block}
-.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-.pcard{background:var(--surface-2);border:1.5px solid var(--line);border-radius:var(--r2);
-  padding:14px 8px;text-align:center;display:flex;flex-direction:column;gap:5px;align-items:center}
-.pcard b{font-size:13px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
-.pcard.best{border-color:var(--br);background:var(--br-tint)}
-.pcard.best b{color:var(--br)}
-.plrow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:13px;line-height:1.5}
-.plrow+.plrow{border-top:1px solid var(--line)}
-.plrow .ic{width:16px;height:16px;color:var(--br);margin-top:2px;stroke-width:2.6}
-.chip .ic{width:12px;height:12px;margin-right:1px}
 
 /* 로그인 / 회원가입 화면 */
 .auth{position:fixed;inset:0;z-index:90;overflow-y:auto;
@@ -1054,23 +1044,9 @@ ko:{
  'auth.errNo':'없는 아이디예요','auth.errWrong':'비밀번호가 틀렸어요',
  'auth.welcome':'{0}님, 반가워요','auth.bye':'로그아웃했어요',
  'set.account':'계정','set.loggedIn':'{0} 으로 로그인됨','set.logout':'로그아웃','set.loginBtn':'로그인 / 회원가입',
- 'set.plan':'요금제','plan.free':'무료','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'좋아하는 경기를, 좋아하는 사람들과',
- 'pro.month':'월 2,500원','pro.year':'연 20,000원','pro.life':'평생 39,000원',
- 'pro.hasFree':'무료로 쓸 수 있는 것','pro.hasPro':'PRO로 열리는 것',
- 'pro.free1':'경기 일정 · 서킷 3D 지도 · 챔피언십 순위 · 소식 전부',
- 'pro.free2':'체험 단톡방 1개 (만들기·참여 각 1개)',
- 'pro.free3':'기본 테마 캘린더 1종',
- 'pro.pro1':'단톡방 무제한 — 만들기·참여 제한 없음',
- 'pro.pro2':'테마 캘린더 10종 — 다음 경기를 예쁘게',
- 'pro.pro3':'배경화면으로 저장 (1080×1920)',
- 'pro.buy':'PRO 시작하기','pro.notReady':'결제는 아직 연결하지 않았어요. 지금은 체험으로만 켜집니다.',
- 'pro.demoOn':'PRO를 체험으로 켰어요','pro.demoOff':'PRO를 껐어요','pro.demoBtn':'체험으로 켜보기',
- 'pro.off':'PRO 끄기','pro.already':'PRO 사용 중',
- 'pro.limitRoom':'무료는 방을 1개까지 만들 수 있어요','pro.limitJoin':'무료는 방 1개까지 참여할 수 있어요',
  'wid.title':'다음 경기 캘린더','wid.open':'캘린더 만들기','wid.theme':'테마',
  'wid.save':'배경화면으로 저장','wid.saved':'이미지를 내려받았어요','wid.fail':'이미지를 만들지 못했어요',
- 'wid.locked':'PRO 전용','wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
+ 'wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
  'st.after':'F1 2026 · {0}라운드 종료 기준','st.wins':'우승','st.podium':'포디움','st.races':'출전',
  'st.season':'2026 포디움 기록','st.noPodium':'아직 포디움 기록이 없어요.',
@@ -1210,23 +1186,9 @@ en:{
  'auth.errNo':'No such username','auth.errWrong':'Wrong password',
  'auth.welcome':'Welcome, {0}','auth.bye':'Logged out',
  'set.account':'Account','set.loggedIn':'Signed in as {0}','set.logout':'Log out','set.loginBtn':'Log in / Sign up',
- 'set.plan':'Plan','plan.free':'Free','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'Your races, with your people',
- 'pro.month':'$1.99 / month','pro.year':'$15.99 / year','pro.life':'$29.99 once',
- 'pro.hasFree':'Free forever','pro.hasPro':'What PRO unlocks',
- 'pro.free1':'Schedule, 3D circuit maps, standings and news — all of it',
- 'pro.free2':'One trial watch room (create 1, join 1)',
- 'pro.free3':'One basic calendar theme',
- 'pro.pro1':'Unlimited watch rooms — create and join freely',
- 'pro.pro2':'10 calendar themes for the next race',
- 'pro.pro3':'Save as phone wallpaper (1080×1920)',
- 'pro.buy':'Get PRO','pro.notReady':'Payments are not wired up yet. For now it only turns on as a demo.',
- 'pro.demoOn':'PRO enabled (demo)','pro.demoOff':'PRO turned off','pro.demoBtn':'Try it as a demo',
- 'pro.off':'Turn PRO off','pro.already':'PRO active',
- 'pro.limitRoom':'Free plan can create 1 room','pro.limitJoin':'Free plan can join 1 room',
  'wid.title':'Next race calendar','wid.open':'Create calendar','wid.theme':'Theme',
  'wid.save':'Save as wallpaper','wid.saved':'Image downloaded','wid.fail':'Could not create the image',
- 'wid.locked':'PRO only','wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
+ 'wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
  'st.after':'F1 2026 · after round {0}','st.wins':'Wins','st.podium':'Podiums','st.races':'Starts',
  'st.season':'2026 podiums','st.noPodium':'No podium yet this season.',
@@ -1366,23 +1328,9 @@ ja:{
  'auth.errNo':'そのユーザー名はありません','auth.errWrong':'パスワードが違います',
  'auth.welcome':'{0}さん、ようこそ','auth.bye':'ログアウトしました',
  'set.account':'アカウント','set.loggedIn':'{0} でログイン中','set.logout':'ログアウト','set.loginBtn':'ログイン / 新規登録',
- 'set.plan':'プラン','plan.free':'無料','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'好きなレースを、好きな人たちと',
- 'pro.month':'月 300円','pro.year':'年 2,400円','pro.life':'買い切り 4,500円',
- 'pro.hasFree':'無料でできること','pro.hasPro':'PROで開くもの',
- 'pro.free1':'レース日程・3Dコース図・ランキング・ニュースすべて',
- 'pro.free2':'お試し観戦ルーム1つ（作成・参加それぞれ1つ）',
- 'pro.free3':'基本テーマのカレンダー1種',
- 'pro.pro1':'観戦ルーム無制限 — 作成も参加も制限なし',
- 'pro.pro2':'カレンダーテーマ10種 — 次のレースを美しく',
- 'pro.pro3':'壁紙として保存（1080×1920）',
- 'pro.buy':'PROを始める','pro.notReady':'決済はまだ接続していません。今はデモとしてのみ有効になります。',
- 'pro.demoOn':'PROをデモで有効にしました','pro.demoOff':'PROをオフにしました','pro.demoBtn':'デモで試す',
- 'pro.off':'PROをオフ','pro.already':'PRO利用中',
- 'pro.limitRoom':'無料プランは1つまで作成できます','pro.limitJoin':'無料プランは1つまで参加できます',
  'wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.theme':'テーマ',
  'wid.save':'壁紙として保存','wid.saved':'画像を保存しました','wid.fail':'画像を作成できませんでした',
- 'wid.locked':'PRO限定','wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
+ 'wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
  'st.after':'F1 2026 · 第{0}戦終了時点','st.wins':'優勝','st.podium':'表彰台','st.races':'出走',
  'st.season':'2026 表彰台','st.noPodium':'今季の表彰台はまだありません。',
@@ -1648,17 +1596,9 @@ function track3d(key, color, size, id){
             <div class="stack">${s}</div></div>`;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   요금제 — 무료 / PRO
-   ⚠ 서버가 없어 결제를 강제할 수 없습니다. 지금은 요금제 '구조'만 있고
-     실제 과금은 붙어 있지 않습니다(개발자도구로 얼마든지 켤 수 있음).
-   ══════════════════════════════════════════════════════════════ */
-const isPro = ()=> DB.get('pro', false);
-const FREE_ROOMS = 1;          // 무료: 만들 수 있는 방 / 참여할 수 있는 방
-
 /* 다음 경기 캘린더 테마 — [ko, en, ja] */
 const THEMES = {
-  midnight :{ n:['미드나이트','Midnight','ミッドナイト'], free:true,
+  midnight :{ n:['미드나이트','Midnight','ミッドナイト'],
               bg:['#0b1430','#04070f'], fg:'#ffffff', dim:'#8fb4ff', useSeries:false },
   series   :{ n:['시리즈 컬러','Series colour','シリーズカラー'],
               bg:null, fg:'#ffffff', dim:'rgba(255,255,255,.72)', useSeries:true },
@@ -4308,12 +4248,6 @@ function openCreateRoom(preRaceId){
     const title = $('#rTitle').value.trim();
     const max   = maxSel;
     if(!title){ toast(t('chat.needTitle')); return; }
-    /* 무료: 내가 만든 방 1개까지 */
-    let existing = [];
-    try{ existing = await CHAT.rooms(); }catch(e){ toast(t('net.err')); return; }
-    if(!isPro() && existing.filter(x=>x.owner === CFG.nick).length >= FREE_ROOMS){
-      toast(t('pro.limitRoom')); closeSheet(); openPro(); return;
-    }
     const room = {
       id: 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
       title, desc: $('#rDesc').value.trim(), max,
@@ -4357,18 +4291,6 @@ async function enterRoom(id, known){
 
   const joined = room.members.includes(CFG.nick);
   if(!joined && room.members.length >= room.max){ toast(t('chat.full')); return; }
-  /* 무료 요금제: 동시에 참여할 수 있는 방 1개까지 */
-  if(!joined && !isPro()){
-    let mine = rooms.filter(x=>x.members.includes(CFG.nick)).length;
-    if(netFree()){          /* 목록만으로는 알 수 없어 각 방을 확인 */
-      mine = 0;
-      for(const x of rooms){
-        if(x.id === room.id) continue;
-        try{ if((await freeMembers(x.id)).includes(CFG.nick)) mine++; }catch(e){}
-      }
-    }
-    if(mine >= FREE_ROOMS){ toast(t('pro.limitJoin')); openPro(); return; }
-  }
   if(!joined){
     room.members.push(CFG.nick);
     await CHAT.patch(room.id, {members:room.members, lastActivity:Date.now()}, room);
@@ -4754,13 +4676,8 @@ let widTheme = 'midnight';
 function openWidget(){
   const r = nextRace();
   if(!r){ toast(t('alert.overSub')); return; }
-  if(!isPro() && !THEMES[widTheme].free) widTheme = 'midnight';
-
-  const chips = Object.entries(THEMES).map(([k,th])=>{
-    const locked = !th.free && !isPro();
-    return `<button class="chip ${k===widTheme?'on':''}" data-th="${k}">
-              ${locked ? ic('lock') : ''}${esc(lz3(th.n))}</button>`;
-  }).join('');
+  const chips = Object.entries(THEMES).map(([k,th])=>
+    `<button class="chip ${k===widTheme?'on':''}" data-th="${k}">${esc(lz3(th.n))}</button>`).join('');
 
   openSheet(`
     <h2>${t('wid.title')}</h2>
@@ -4775,53 +4692,15 @@ function openWidget(){
   paint();
   $('#widChips').querySelectorAll('.chip').forEach(b=>{
     b.onclick = ()=>{
-      const k = b.dataset.th;
-      if(!THEMES[k].free && !isPro()){ closeSheet(); openPro(); return; }
-      widTheme = k;
+      widTheme = b.dataset.th;
       $('#widChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===b));
       paint();
     };
   });
-  $('#widSave').onclick  = ()=>{
-    if(!isPro()){ closeSheet(); openPro(); return; }   /* 저장은 PRO 전용 */
-    saveWidget(r, widTheme);
-  };
+  $('#widSave').onclick  = ()=> saveWidget(r, widTheme);
   $('#widClose').onclick = closeSheet;
 }
 
-/* ── 요금제 안내 ── */
-function openPro(){
-  const pro = isPro();
-  const row = (txt)=>`<div class="plrow">${ic('check')}<span>${txt}</span></div>`;
-  openSheet(`
-    <div style="text-align:center;margin-bottom:6px">
-      <span class="tag" style="font-size:11px">${t('pro.title')}</span>
-    </div>
-    <h2 style="text-align:center">${t('pro.sub')}</h2>
-
-    <div class="prices">
-      <div class="pcard"><b>${t('pro.month')}</b></div>
-      <div class="pcard best"><b>${t('pro.year')}</b></div>
-      <div class="pcard"><b>${t('pro.life')}</b></div>
-    </div>
-
-    <div class="sec">${t('pro.hasPro')}</div>
-    <div class="card">${row(t('pro.pro1'))}${row(t('pro.pro2'))}${row(t('pro.pro3'))}</div>
-
-    <div class="sec">${t('pro.hasFree')}</div>
-    <div class="card">${row(t('pro.free1'))}${row(t('pro.free2'))}${row(t('pro.free3'))}</div>
-
-    <div class="note">${t('pro.notReady')}</div>
-    ${pro ? `<button class="btn ghost" id="proOff">${t('pro.off')}</button>`
-          : `<button class="btn flow" id="proOn">${t('pro.demoBtn')}</button>`}
-    <button class="btn ghost sm" id="proClose">${t('r.close')}</button>`);
-
-  const on = $('#proOn'), off = $('#proOff');
-  if(on)  on.onclick  = ()=>{ DB.set('pro', true);  toast(t('pro.demoOn'));  closeSheet(); refreshAll(); };
-  if(off) off.onclick = ()=>{ DB.set('pro', false); toast(t('pro.demoOff')); closeSheet(); refreshAll(); };
-  $('#proClose').onclick = closeSheet;
-}
-function refreshAll(){ switchTab(tab); }
 
 $('#btnSettings').onclick = ()=>{
   const who = session();
@@ -4834,12 +4713,6 @@ $('#btnSettings').onclick = ()=>{
              </div>
              <button class="btn ghost sm" id="setLogout">${t('set.logout')}</button>`
           : `<button class="btn flow sm" id="setLogin" style="margin-top:0">${t('set.loginBtn')}</button>`}
-    <div class="sec">${t('set.plan')}</div>
-    <button class="btn ghost sm" id="setPlan" style="margin-top:0;display:flex;align-items:center;gap:8px;justify-content:center">
-      <span class="tag ${isPro()?'':'grey'}" style="${isPro()?'background:var(--br);color:#fff':''}">${
-        isPro() ? t('plan.pro') : t('plan.free')}</span>
-      ${isPro() ? t('pro.already') : t('pro.buy')}
-    </button>
     <div class="sec">${t('set.display')}</div>
     <div class="seg c2" id="themeSeg">
       <button data-t="light" class="${CFG.theme==='light'?'on':''}">
@@ -4897,7 +4770,6 @@ $('#btnSettings').onclick = ()=>{
       ${esc(t('r.trackNote'))} <span style="opacity:.75">bacinger/f1-circuits (ODbL)</span></div>
     <button class="btn ghost sm" id="setClose">${t('set.close')}</button>`);
 
-  $('#setPlan').onclick = ()=>{ closeSheet(); openPro(); };
   $('#netSeg').querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{
       const n = net(); n.mode = b.dataset.m; DB.set('net', n);
@@ -4968,7 +4840,7 @@ $('#btnSettings').onclick = ()=>{
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
-    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','pro','myhome','picks'].forEach(DB.del);
+    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','myhome','picks'].forEach(DB.del);
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('ms-mir-')) localStorage.removeItem(k); });
     Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
     location.reload();
