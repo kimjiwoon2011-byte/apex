@@ -2846,7 +2846,7 @@ async function smartBoth(titles, leads){
         const timer = setTimeout(()=>ac.abort(), 45000);
         const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-          body: JSON.stringify({ model, temperature:0.3, max_tokens:6000,
+          body: JSON.stringify({ model, temperature:0.3, max_tokens:16000,   /* 기사 20개면 12000토큰쯤 나옵니다. 모자라면 통째로 잘립니다 */
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
         if(res.status === 429){
