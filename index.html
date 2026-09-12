@@ -2828,6 +2828,15 @@ function cardOk(c){
   return true;
 }
 
+/* AI 호출은 한 번에 하나만. 미리받기와 화면 요청이 동시에 부르면
+   서로 호출 제한을 잡아먹어 둘 다 실패합니다. 순서대로 줄을 세웁니다. */
+let aiQueue = Promise.resolve();
+function aiLock(fn){
+  const run = aiQueue.then(fn, fn);
+  aiQueue = run.then(()=>{}, ()=>{});
+  return run;
+}
+
 async function smartBoth(titles, leads){
   const key = orKey();
   if(!key || !titles.length || aiResting()) return null;
