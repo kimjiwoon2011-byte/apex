@@ -2664,6 +2664,95 @@ const EXTRA_NAMES = [
   ['Mercedes','메르세데스'], ['Ferrari','페라리'], ['McLaren','맥라렌'],
 ];
 
+/* WEC·IMSA·DTM·SUPER GT 는 F1 DRIVERS 목록에 없어서, 넣어 두지 않으면
+   AI가 한 카드 안에서도 같은 사람을 다르게 적습니다
+   (실제로 "쉐바론"과 "슈와르츠만"이 같은 카드에 함께 나왔습니다). */
+const SPORTSCAR_NAMES = [
+  /* 하이퍼카·LMDh */
+  ['Robert Shwartzman','로베르트 슈바르츠만'], ['Shwartzman','슈바르츠만'],
+  ['Kamui Kobayashi','고바야시 카무이'], ['Kobayashi','고바야시'],
+  ['Sebastien Buemi','세바스티앵 부에미'], ['Buemi','부에미'],
+  ['Brendon Hartley','브렌던 하틀리'], ['Hartley','하틀리'],
+  ['Ryo Hirakawa','히라카와 료'], ['Hirakawa','히라카와'],
+  ['Mike Conway','마이크 콘웨이'], ['Conway','콘웨이'],
+  ['Nyck de Vries','닉 더프리스'], ['de Vries','더프리스'],
+  ['Antonio Fuoco','안토니오 푸오코'], ['Fuoco','푸오코'],
+  ['Miguel Molina','미겔 몰리나'], ['Molina','몰리나'],
+  ['Nicklas Nielsen','니클라스 닐센'], ['Nielsen','닐센'],
+  ['James Calado','제임스 칼라도'], ['Calado','칼라도'],
+  ['Alessandro Pier Guidi','알레산드로 피에르 귀디'], ['Pier Guidi','피에르 귀디'],
+  ['Antonio Giovinazzi','안토니오 조비나치'], ['Giovinazzi','조비나치'],
+  ['Laurens Vanthoor','라우렌스 판토르'], ['Vanthoor','판토르'],
+  ['Andre Lotterer','안드레 로테러'], ['Lotterer','로테러'],
+  ['Matt Campbell','맷 캠벨'],
+  ['Julien Andlauer','쥘리앵 앙들라우어'], ['Andlauer','앙들라우어'],
+  ['Michael Christensen','미카엘 크리스텐센'],
+  ['Earl Bamber','얼 뱀버'], ['Bamber','뱀버'],
+  ['Paul di Resta','폴 디 레스타'], ['di Resta','디 레스타'],
+  ['Loic Duval','로익 뒤발'], ['Duval','뒤발'],
+  ['Sheldon van der Linde','셸던 판 데르 린데'],
+  ['Dries Vanthoor','드리스 판토르'],
+  ['Raffaele Marciello','라파엘레 마르첼로'], ['Marciello','마르첼로'],
+  ['Mick Schumacher','믹 슈마허'],
+  ['Jean-Eric Vergne','장에리크 베르뉴'], ['Vergne','베르뉴'],
+  ['Norman Nato','노르만 나토'],
+  ['Felipe Nasr','펠리피 나스르'], ['Nasr','나스르'],
+  ['Nick Tandy','닉 탠디'], ['Tandy','탠디'],
+  ['Filipe Albuquerque','필리피 알부케르크'], ['Albuquerque','알부케르크'],
+  ['Ricky Taylor','리키 테일러'], ['Jordan Taylor','조던 테일러'],
+  ['Tom Blomqvist','톰 블롬크비스트'], ['Blomqvist','블롬크비스트'],
+  ['Colin Braun','콜린 브라운'],
+  ['Renger van der Zande','렝어르 판 데르 잔더'],
+  ['Louis Deletraz','루이 들레트라즈'], ['Deletraz','들레트라즈'],
+  ['Dane Cameron','데인 캐머런'],
+  ['Pipo Derani','피포 데라니'], ['Derani','데라니'],
+  /* DTM */
+  ['Thomas Preining','토마스 프라이닝'], ['Preining','프라이닝'],
+  ['Rene Rast','르네 라스트'], ['Rast','라스트'],
+  ['Kelvin van der Linde','켈빈 판 데르 린데'],
+  ['Mirko Bortolotti','미르코 보르톨로티'], ['Bortolotti','보르톨로티'],
+  ['Ayhancan Guven','아이한잔 귀벤'], ['Guven','귀벤'],
+  ['Maro Engel','마로 엥겔'],
+  ['Lucas Auer','루카스 아우어'],
+  ['Marco Wittmann','마르코 비트만'], ['Wittmann','비트만'],
+  ['Jack Aitken','잭 에이킨'], ['Aitken','에이킨'],
+  /* SUPER GT */
+  ['Naoki Yamamoto','야마모토 나오키'], ['Yamamoto','야마모토'],
+  ['Tomoki Nojiri','노지리 도모키'], ['Nojiri','노지리'],
+  ['Nirei Fukuzumi','후쿠즈미 니레이'], ['Fukuzumi','후쿠즈미'],
+  ['Sho Tsuboi','쓰보이 쇼'], ['Tsuboi','쓰보이'],
+  ['Kenta Yamashita','야마시타 겐타'], ['Yamashita','야마시타'],
+  ['Koudai Tsukakoshi','쓰카코시 고다이'], ['Tsukakoshi','쓰카코시'],
+  ['Bertrand Baguette','베르트랑 바게트'], ['Baguette','바게트'],
+  ['Katsumasa Chiyo','지요 가쓰마사'],
+  /* 서킷 */
+  ['Fuji Speedway','후지 스피드웨이'], ['Motegi','모테기'],
+  ['Okayama','오카야마'], ['Autopolis','오토폴리스'], ['Sugo','스고'],
+  ['Nurburgring','뉘르부르크링'], ['Norisring','노리스링'],
+  ['Sachsenring','작센링'], ['Hockenheim','호켄하임'],
+  ['Lausitzring','라우지츠링'], ['Oschersleben','오셔슬레벤'],
+  ['Watkins Glen','왓킨스 글렌'], ['Laguna Seca','라구나 세카'],
+  ['Petit Le Mans','프티 르망'], ['Indianapolis','인디애나폴리스'],
+  ['Bathurst','배서스트'], ['Imola','이몰라'], ['Portimao','포르티망'],
+  ['Fuji','후지'],
+  /* 팀·제조사 */
+  ['Cadillac','캐딜락'], ['Porsche Penske','포르쉐 펜스케'],
+  ['Penske','펜스케'], ['Wayne Taylor Racing','웨인 테일러 레이싱'],
+  ['Peugeot','푸조'], ['Toyota Gazoo Racing','도요타 가주 레이싱'],
+  ['Gazoo Racing','가주 레이싱'], ['Alpine','알핀'],
+  ['Lamborghini','람보르기니'], ['Aston Martin','애스턴 마틴'],
+  ['Corvette','콜벳'], ['Acura','아큐라'], ['Lexus','렉서스'],
+  ['Nissan','닛산'], ['Honda','혼다'], ['Subaru','스바루'],
+  ['Manthey','만타이'], ['Jota','요타'], ['Proton','프로톤'],
+  ['Iron Lynx','아이언 링스'], ['AF Corse','AF 코르세'],
+  ['Abt','압트'], ['Schubert','슈베르트'], ['Rowe','로베'],
+  /* 자주 나오는 용어 */
+  ['Hypercar','하이퍼카'], ['Hyperpole','하이퍼폴'],
+  ['Balance of Performance','성능 균등화'],
+  ['safety car','세이프티카'], ['full course yellow','풀코스 옐로'],
+];
+
+
 /* 기계 번역은 사람·팀 이름을 영어로 남겨 두는 일이 잦습니다("Mercedes의 감독").
    번역이 끝난 뒤 남은 영어 이름을 한국어로 바꿔 표기를 통일합니다.
    긴 이름부터 바꿔야 "Aston Martin"이 "Aston"에 먼저 걸리지 않습니다. */
@@ -2690,6 +2779,7 @@ const NAME_MAP = (()=>{
   });
   LEGENDS.forEach(p => pairs.push(p));
   EXTRA_NAMES.forEach(p => pairs.push(p));
+  SPORTSCAR_NAMES.forEach(p => pairs.push(p));
   const seen = new Set();
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
