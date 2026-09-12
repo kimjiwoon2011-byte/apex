@@ -2588,7 +2588,21 @@ function dropEcho(s){
     const flat = x => x.replace(/\s+/g, '');
     const a = flat(before), b = flat(inner);
     if(!b) return m;
-    return a.endsWith(b) ? before.replace(/\s+$/, '') : m;
+    if(a.endsWith(b)) return before.replace(/\s+$/, '');
+    /* 구글의 음차와 앱 사전의 표기가 다를 때도 이름이 두 번 나옵니다
+       ("미구엘 몰리나" 뒤 괄호에 "미겔 몰리나"). 괄호 안이 사전에 있는
+       정식 표기면 앞의 음차를 그걸로 바꿉니다. 엉뚱한 말을 지우지 않도록
+       첫 글자가 같고 길이도 비슷할 때만 합니다 (르클레르 뒤의 페라리는 그대로). */
+    const inn = inner.trim();
+    if(!koNames().includes(inn)) return m;
+    /* 글자 수가 아니라 낱말 수로 맞춥니다. "미구엘"과 "미겔"처럼
+       음차 길이가 달라도 같은 이름을 집어낼 수 있습니다. */
+    const n = inn.split(/\s+/).length;
+    const w = before.split(/\s+/);
+    if(w.length < n) return m;
+    const t = flat(w.slice(-n).join(' '));
+    if(!t || t[0] !== b[0] || Math.abs(t.length - b.length) > 3) return m;
+    return w.slice(0, w.length - n).concat(inn).join(' ');
   });
 }
 const koFix = s => dropEcho(KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || '')));
