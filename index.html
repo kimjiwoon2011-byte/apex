@@ -274,6 +274,13 @@ main{padding:14px 16px 0}
 .artmeta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--tx-3);margin-bottom:9px}
 .arttitle{margin:0 0 12px;font-size:19px;line-height:1.36;font-weight:800;letter-spacing:-.015em}
 .artlead{margin:0 0 6px;font-size:14px;line-height:1.72;color:var(--tx-2)}
+.deep{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--br);
+      border-radius:var(--r2);padding:13px 14px;margin:0 0 12px}
+.deep.wait{color:var(--tx-3);font-size:12.5px;border-left-color:var(--line)}
+.deep .what{margin:0;font-size:14.5px;line-height:1.75;font-weight:600;color:var(--tx-1)}
+.deep .why{margin:9px 0 0;font-size:13px;line-height:1.7;color:var(--tx-2)}
+.deep .why b{color:var(--br);font-weight:800}
+.deep .by{display:block;margin-top:10px;font-size:10.5px;color:var(--tx-3)}
 .terms{display:grid;gap:9px}
 /* 기사 댓글 */
 .cmt{border-bottom:1px solid var(--line);padding:11px 2px}
@@ -1100,6 +1107,7 @@ ko:{
  'my.news':'{0} 소식','my.newsAll':'관심 시리즈 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
+ 'art.deepWait':'내용을 정리하는 중…','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'도입부를 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상','watch.videoSb':'유튜브에서 바로 찾기',
  'watch.openYt':'유튜브에서 이 경기 영상 보기',
@@ -1258,6 +1266,7 @@ en:{
  'my.news':'{0} news','my.newsAll':'News from your series','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
+ 'art.deepWait':'Summarising…','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Written from the syndicated opening section',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video','watch.videoSb':'Find it on YouTube',
  'watch.openYt':'Watch this race on YouTube',
@@ -1414,6 +1423,7 @@ ja:{
  'my.news':'{0}のニュース','my.newsAll':'興味のあるシリーズのニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
+ 'art.deepWait':'内容をまとめています…','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'導入部をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像','watch.videoSb':'YouTubeで探す',
  'watch.openYt':'YouTubeでこのレースを見る',
@@ -3118,6 +3128,111 @@ async function ensureTitles(key, data, onStep){
   }
   return changed;
 }
+/* 카드를 눌렀을 때 보여줄 자세한 풀이.
+   기사 전문은 봇 차단(403)과 저작권 때문에 가져올 수 없습니다. 그래서 언론사가
+   배포하는 제목과 도입부, 그 사실만 가지고 우리말로 풀어 씁니다.
+   여기서 제일 중요한 건 '지어내지 않는 것'입니다. 무료 모델은 빈칸을 만나면
+   그럴듯한 숫자와 순위를 만들어 냅니다. 그래서 규칙을 길게 적어 두었습니다. */
+const DEEP_SYS = [
+  '너는 한국 모터스포츠 기자다.',
+  '영어 기사의 제목과 도입부를 받아, 우리말로 풀어 쓴다.',
+  '',
+  '── 형식 ──',
+  '[무슨 일] 2~3문장. 누가 무엇을 했는지, 언제 어디서인지.',
+  '[왜 중요] 1~2문장. 이 소식이 어떤 의미인지.',
+  '[알아둘 것] 1~2문장. 배경이나 앞으로의 일정.',
+  '',
+  '── 절대 규칙 ──',
+  '- 준 글에 없는 사실을 절대 지어내지 마라. 이게 제일 중요하다.',
+  '- 숫자, 순위, 랩 수, 날짜, 점수, 나이를 만들지 마라. 준 글에 있는 것만 쓴다.',
+  '- 준 글로 알 수 없는 항목은 그 줄에 - 한 글자만 적어라. 추측해서 채우지 마라.',
+  '- 특히 [왜 중요]와 [알아둘 것]은 모르면 - 로 둔다. 억지로 쓰지 마라.',
+  '- 사람·팀·서킷 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
+  '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
+  '',
+  '── 보기 ──',
+  '입력  제목: Leclerc explains vision issue after Monza crash',
+  '      도입부: Ferrari driver Charles Leclerc said his vision issue was very short. He lost control on lap 2 and hit the barrier.',
+  '출력  [무슨 일] 페라리의 샤를 르클레르가 몬차에서 겪은 시력 이상을 설명했다. 그는 2랩에서 차량 조종을 잃고 배리어를 들이받았다.',
+  '      [왜 중요] 르클레르는 시력 이상이 아주 짧았다고 밝혀, 사고 원인을 둘러싼 의문에 직접 답했다.',
+  '      [알아둘 것] -',
+  '',
+  '위 보기는 형식만 보여준다. 문구를 그대로 가져다 쓰지 마라.',
+  '',
+  '── 출력 ──',
+  '- 대괄호 항목 세 개만 출력한다. 항목마다 줄을 바꾼다.',
+  '- 생각 과정을 쓰지 마라.',
+].join('\n');
+
+/* 본문용 다듬기. 제목처럼 어미를 걷어내지 않고 이름 표기만 맞춥니다 */
+const hlBody = s => s ? polish(koFix(postNames(s))) : '';
+
+/* 받아온 풀이는 저장해 둡니다. 같은 기사를 다시 열 때 또 부르면
+   하루 호출 한도를 금방 써 버립니다. */
+const deepKey = it => 'deep-' + artId(it).slice(-120);
+
+function deepParse(text){
+  const s = String(text || '');
+  const grab = name => {
+    const m = s.match(new RegExp('\\[' + name + '\\]\\s*([\\s\\S]*?)(?=\\n?\\[|$)'));
+    const v = m ? m[1].replace(/\s+/g, ' ').trim() : '';
+    return (!v || /^-+$/.test(v)) ? '' : v;
+  };
+  const out = { what: grab('무슨 일'), why: grab('왜 중요'), note: grab('알아둘 것') };
+  return out.what ? out : null;
+}
+
+/* 기사 하나를 풀어 씁니다. 실패하면 null 을 돌려주고 화면은 도입부만 보여줍니다. */
+async function deepRead(it){
+  const cached = DB.get(deepKey(it), null);
+  if(cached) return cached;
+  const key = orKey();
+  if(!key || aiResting() || aiSpent() >= AI_DAILY_MAX) return null;
+
+  const title = it.title || '';
+  const lead  = (it.desc || '').replace(/\s+/g, ' ').trim();
+  if(!title) return null;
+  const glos = nameGlossary([title, lead]);
+  const msg = (glos.length ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' : '')
+    + '제목: ' + title + '\n도입부: ' + (lead || '(없음)');
+
+  const deadline = Date.now() + 60000;
+  for(const model of OR_MODELS.slice(0, 3)){
+    if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
+    try{
+      const ac = new AbortController();
+      const timer = setTimeout(()=>ac.abort(), 25000);
+      aiSpend();
+      const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
+        headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
+        body: JSON.stringify({ model, temperature:0.3, max_tokens:3000,
+          messages:[ { role:'system', content: DEEP_SYS }, { role:'user', content: msg } ]})});
+      clearTimeout(timer);
+      if(res.status === 429){
+        try{
+          const e = await res.clone().json();
+          const meta = e?.error?.metadata || {};
+          if(/per-day|daily/i.test(String(e?.error?.message || '') + (meta.limit_source || ''))){
+            DB.set('aiRest', +((meta.headers || {})['X-RateLimit-Reset']) || (Date.now() + 3600000));
+            return null;
+          }
+        }catch(e){}
+        continue;                       /* 잠깐 몰린 것뿐이니 다음 모델로 */
+      }
+      if(!res.ok) continue;
+      const j = await res.json();
+      const got = deepParse(j?.choices?.[0]?.message?.content);
+      if(got){
+        const clean = { what: hlBody(got.what), why: hlBody(got.why), note: hlBody(got.note) };
+        DB.set(deepKey(it), clean);
+        return clean;
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
 /* 기사 읽기 — 밖으로 나가지 않고 앱 안에서 봅니다.
    언론사 기사 페이지는 봇 차단(403)이라 본문을 가져올 수 없고, 전문을 그대로 옮기는 것도
    저작권 문제가 있습니다. 그래서 피드가 배포용으로 제공하는 리드 문단만 번역해 보여주고,
@@ -3142,6 +3257,7 @@ function openArticle(it, title, lead){
       <span>${esc(it.src)} · ${esc(relTime(it.at))}</span>
     </div>
     <h2 class="arttitle">${esc(title)}</h2>
+    <div id="deepBox"></div>
     ${lead ? `<p class="artlead">${esc(lead)}</p>` : ''}
     ${terms}
     <div class="note">${t('art.note')}</div>
@@ -3181,6 +3297,25 @@ function openArticle(it, title, lead){
     }
   }
   drawCmt();
+
+  /* 자세한 풀이 — 받아오는 동안에도 도입부가 이미 떠 있어 화면이 비지 않습니다.
+     한 번 받으면 저장해 두므로 같은 기사를 다시 열 때는 바로 뜹니다. */
+  (async () => {
+    const box = $('#deepBox'); if(!box) return;
+    const has = DB.get(deepKey(it), null);
+    const can = orKey() && !aiResting() && aiSpent() < AI_DAILY_MAX;
+    if(!has && !can) return;                       /* 조용히 도입부만 보여줍니다 */
+    if(!has) box.innerHTML = `<div class="deep wait">${t('art.deepWait')}</div>`;
+    let d = null;
+    try{ d = await deepRead(it); }catch(e){}
+    const cur = $('#deepBox'); if(!cur) return;    /* 그새 창을 닫았습니다 */
+    if(!d){ cur.innerHTML = ''; return; }
+    cur.innerHTML = `<div class="deep">
+      <p class="what">${esc(d.what)}</p>
+      ${d.why  ? `<p class="why"><b>${t('art.deepWhy')}</b>${esc(d.why)}</p>` : ''}
+      ${d.note ? `<p class="why"><b>${t('art.deepNote')}</b>${esc(d.note)}</p>` : ''}
+      <span class="by">${t('art.deepBy')}</span></div>`;
+  })();
 }
 
 function buildNewsView(){
