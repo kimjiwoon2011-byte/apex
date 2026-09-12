@@ -2579,7 +2579,19 @@ const KO_FIX = [
   [/연습 세션/g, '연습 주행'],
   [/그리드 페널티/g, '그리드 강등'],
 ];
-const koFix = s => KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || ''));
+/* 구글 번역은 이름을 "조지 러셀(George Russell)" 처럼 원문을 괄호에 남겨 둡니다.
+   거기에 이름 사전이 괄호 안까지 바꿔서 "조지 러셀(조지 러셀)"이 됩니다.
+   (실측: 260줄 중 31줄) 괄호 안이 바로 앞 글자와 같으면 괄호째 뗍니다.
+   "(12위)" 처럼 내용이 다른 괄호는 건드리지 않습니다. */
+function dropEcho(s){
+  return String(s || '').replace(/([^()]+?)\s*\(([^()]{1,30})\)/g, (m, before, inner) => {
+    const flat = x => x.replace(/\s+/g, '');
+    const a = flat(before), b = flat(inner);
+    if(!b) return m;
+    return a.endsWith(b) ? before.replace(/\s+$/, '') : m;
+  });
+}
+const koFix = s => dropEcho(KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || '')));
 
 /* 제목 전용 다듬기 — 종결어미를 걷어내고 마침표를 뗍니다 */
 const HEAD_FIX = [
