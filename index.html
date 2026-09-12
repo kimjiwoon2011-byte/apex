@@ -513,6 +513,30 @@ textarea{resize:vertical;min-height:78px}
 .btn:disabled{opacity:.4;box-shadow:none}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
+/* ── 주말 세션 타임테이블 ── */
+.ttbl{padding:4px 0;margin-top:12px;overflow:hidden}
+.tday{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tx-3);padding:13px 16px 7px}
+.ttbl>.tday:first-child{padding-top:6px}
+.ses{display:flex;align-items:center;gap:11px;padding:11px 16px}
+.ses+.ses{box-shadow:inset 0 1px 0 var(--line)}
+.ses .dot{width:7px;height:7px;border-radius:50%;background:var(--line-2);flex:0 0 7px}
+.ses .sn{flex:1;min-width:0;font-size:13.5px;font-weight:600;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ses .st{font-size:13.5px;font-weight:700;color:var(--tx-2);flex:0 0 auto}
+.ses .sd{font-size:9.5px;font-weight:800;color:var(--tx-3);flex:0 0 auto;
+  min-width:46px;text-align:right;letter-spacing:.02em}
+.ses.key .sn{font-weight:800}
+.ses.past{opacity:.42}
+.ses.next{background:var(--surface-2)}
+.ses.next .dot{background:var(--acc,var(--br));
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--acc,var(--br)) 20%,transparent)}
+.ses.next .sn,.ses.next .st{color:var(--tx)}
+.ses.next .sd{color:var(--acc,var(--br))}
+.ses.now{background:var(--surface-2)}
+.ses.now .dot{background:#e5162b;animation:blip 1.2s ease-in-out infinite;box-shadow:none}
+.ses.now .sd{color:#e5162b}
+
 /* ═══════════════════════════  단톡방  ═══════════════════════════ */
 .room{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);
   border-radius:var(--r3);padding:15px;margin-bottom:10px;cursor:pointer;color:var(--tx);
@@ -714,20 +738,10 @@ textarea{resize:vertical;min-height:78px}
 .favcard .np{text-align:right;flex:0 0 auto}
 .favcard .np b{display:block;font-family:var(--mono);font-size:17px;font-weight:700;line-height:1}
 
-/* 캘린더 미리보기 · 요금제 */
+/* 캘린더 미리보기 */
 .widprev{margin-top:14px;border-radius:var(--r3);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-2);line-height:0}
 .widprev svg{width:100%;height:auto;display:block}
-.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-.pcard{background:var(--surface-2);border:1.5px solid var(--line);border-radius:var(--r2);
-  padding:14px 8px;text-align:center;display:flex;flex-direction:column;gap:5px;align-items:center}
-.pcard b{font-size:13px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
-.pcard.best{border-color:var(--br);background:var(--br-tint)}
-.pcard.best b{color:var(--br)}
-.plrow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:13px;line-height:1.5}
-.plrow+.plrow{border-top:1px solid var(--line)}
-.plrow .ic{width:16px;height:16px;color:var(--br);margin-top:2px;stroke-width:2.6}
-.chip .ic{width:12px;height:12px;margin-right:1px}
 
 /* 로그인 / 회원가입 화면 */
 .auth{position:fixed;inset:0;z-index:90;overflow-y:auto;
@@ -1006,6 +1020,8 @@ textarea{resize:vertical;min-height:78px}
         </div>
         <label class="fl" data-i18n="alert.leadTime"></label>
         <select id="leadSel"></select>
+        <label class="fl" data-i18n="ses.scope"></label>
+        <select id="scopeSel"></select>
         <div class="note" data-i18n-html="alert.notifNote"></div>
       </div>
       <div class="sec" data-i18n="alert.subs"></div>
@@ -1135,23 +1151,9 @@ ko:{
  'auth.errNo':'없는 아이디예요','auth.errWrong':'비밀번호가 틀렸어요',
  'auth.welcome':'{0}님, 반가워요','auth.bye':'로그아웃했어요',
  'set.account':'계정','set.loggedIn':'{0} 으로 로그인됨','set.logout':'로그아웃','set.loginBtn':'로그인 / 회원가입',
- 'set.plan':'요금제','plan.free':'무료','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'좋아하는 경기를, 좋아하는 사람들과',
- 'pro.month':'월 2,500원','pro.year':'연 20,000원','pro.life':'평생 39,000원',
- 'pro.hasFree':'무료로 쓸 수 있는 것','pro.hasPro':'PRO로 열리는 것',
- 'pro.free1':'경기 일정 · 서킷 3D 지도 · 챔피언십 순위 · 소식 전부',
- 'pro.free2':'체험 단톡방 1개 (만들기·참여 각 1개)',
- 'pro.free3':'기본 테마 캘린더 1종',
- 'pro.pro1':'단톡방 무제한 — 만들기·참여 제한 없음',
- 'pro.pro2':'테마 캘린더 10종 — 다음 경기를 예쁘게',
- 'pro.pro3':'배경화면으로 저장 (1080×1920)',
- 'pro.buy':'PRO 시작하기','pro.notReady':'결제는 아직 연결하지 않았어요. 지금은 체험으로만 켜집니다.',
- 'pro.demoOn':'PRO를 체험으로 켰어요','pro.demoOff':'PRO를 껐어요','pro.demoBtn':'체험으로 켜보기',
- 'pro.off':'PRO 끄기','pro.already':'PRO 사용 중',
- 'pro.limitRoom':'무료는 방을 1개까지 만들 수 있어요','pro.limitJoin':'무료는 방 1개까지 참여할 수 있어요',
  'wid.title':'다음 경기 캘린더','wid.open':'캘린더 만들기','wid.theme':'테마',
  'wid.save':'배경화면으로 저장','wid.saved':'이미지를 내려받았어요','wid.fail':'이미지를 만들지 못했어요',
- 'wid.locked':'PRO 전용','wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
+ 'wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
  'st.after':'F1 2026 · {0}라운드 종료 기준','st.wins':'우승','st.podium':'포디움','st.races':'출전',
  'st.season':'2026 포디움 기록','st.noPodium':'아직 포디움 기록이 없어요.',
@@ -1168,6 +1170,14 @@ ko:{
  'r.rate':'이 경기 재미있었나요?',
  'r.saveRate':'평점 저장','r.pickStar':'별점을 먼저 선택해주세요','r.saved':'{0}점으로 저장했어요',
  'r.makeRoom':'이 경기 같이 볼 단톡방 만들기','r.close':'닫기','r.icsDone':'캘린더 파일을 내려받았어요',
+ 'ses.title':'주말 일정','ses.now':'진행 중',
+ 'ses.est':'세션 시각은 시리즈별 표준 주말 형식으로 계산한 <b>예상 시각</b>이에요. 결승 시각만 확정이고, 나머지는 주최 측 발표에 따라 조금씩 달라질 수 있어요.',
+ 'ses.fp1':'연습주행 1','ses.fp2':'연습주행 2','ses.fp3':'연습주행 3','ses.q':'예선',
+ 'ses.sq':'스프린트 예선','ses.spr':'스프린트','ses.hy':'하이퍼폴','ses.wu':'워밍업','ses.r':'결승',
+ 'ses.until':'{0}까지','ses.nowS':'{0} 진행 중',
+ 'ses.scope':'어떤 세션을 알림 받을까요?',
+ 'ses.scopeRace':'결승만','ses.scopeKey':'예선 · 스프린트까지','ses.scopeAll':'모든 세션',
+ 'ses.scopeSaved':'알림 받을 세션을 바꿨어요','ses.icsAll':'주말 일정 {0}개를 캘린더에 담았어요',
  'chat.section':'같이 볼 사람 모여라',
  'chat.note':'방은 비밀번호 없이 누구나 들어올 수 있어요. 경기 종료 후 <b>24시간 동안 채팅이 없으면 자동으로 사라집니다.</b>',
  'chat.empty':'아직 열린 방이 없어요.<br>오른쪽 아래 <b>+</b> 버튼으로 첫 방을 만들어보세요.',
@@ -1218,11 +1228,12 @@ ko:{
  'chat.ttl':'자동삭제 {0} 남음','chat.ttlShort':'{0} 뒤 삭제','chat.noDesc':'설명 없음','chat.capFull':'정원',
  'alert.next':'다음 경기까지','alert.live':'지금 진행 중','alert.over':'2026 시즌 종료',
  'alert.overSub':'모든 경기가 끝났어요',
- 'alert.d':'일','alert.h':'시간','alert.m':'분','alert.s':'초',
+ 'alert.d':'일','alert.h':'시간','alert.m':'분','alert.s':'초','alert.sp':'',
+ 'alert.d1':'일','alert.h1':'시간','alert.m1':'분','alert.s1':'초',
  'alert.settings':'알림 설정','alert.browserNotif':'브라우저 알림','alert.enable':'켜기',
  'alert.pGranted':'켜져 있어요','alert.pDenied':'브라우저에서 차단됨 — 사이트 설정에서 허용해주세요',
  'alert.pDefault':'꺼져 있어요','alert.pNone':'이 브라우저는 알림을 지원하지 않아요',
- 'alert.leadTime':'알림 시점','alert.lead':'경기 {0} 전',
+ 'alert.leadTime':'알림 시점','alert.lead':'세션 시작 {0} 전',
  'alert.notifNote':'브라우저 알림은 <b>이 페이지가 열려 있을 때만</b> 울려요. 확실하게 받으려면 경기 상세에서 <b>캘린더에 추가(.ics)</b>를 눌러 휴대폰 캘린더에 넣어두세요.',
  'alert.leadSaved':'알림 시점을 바꿨어요',
  'alert.subs':'구독 중인 시리즈','alert.remain':'남은 경기 {0}개',
@@ -1291,23 +1302,9 @@ en:{
  'auth.errNo':'No such username','auth.errWrong':'Wrong password',
  'auth.welcome':'Welcome, {0}','auth.bye':'Logged out',
  'set.account':'Account','set.loggedIn':'Signed in as {0}','set.logout':'Log out','set.loginBtn':'Log in / Sign up',
- 'set.plan':'Plan','plan.free':'Free','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'Your races, with your people',
- 'pro.month':'$1.99 / month','pro.year':'$15.99 / year','pro.life':'$29.99 once',
- 'pro.hasFree':'Free forever','pro.hasPro':'What PRO unlocks',
- 'pro.free1':'Schedule, 3D circuit maps, standings and news — all of it',
- 'pro.free2':'One trial watch room (create 1, join 1)',
- 'pro.free3':'One basic calendar theme',
- 'pro.pro1':'Unlimited watch rooms — create and join freely',
- 'pro.pro2':'10 calendar themes for the next race',
- 'pro.pro3':'Save as phone wallpaper (1080×1920)',
- 'pro.buy':'Get PRO','pro.notReady':'Payments are not wired up yet. For now it only turns on as a demo.',
- 'pro.demoOn':'PRO enabled (demo)','pro.demoOff':'PRO turned off','pro.demoBtn':'Try it as a demo',
- 'pro.off':'Turn PRO off','pro.already':'PRO active',
- 'pro.limitRoom':'Free plan can create 1 room','pro.limitJoin':'Free plan can join 1 room',
  'wid.title':'Next race calendar','wid.open':'Create calendar','wid.theme':'Theme',
  'wid.save':'Save as wallpaper','wid.saved':'Image downloaded','wid.fail':'Could not create the image',
- 'wid.locked':'PRO only','wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
+ 'wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
  'st.after':'F1 2026 · after round {0}','st.wins':'Wins','st.podium':'Podiums','st.races':'Starts',
  'st.season':'2026 podiums','st.noPodium':'No podium yet this season.',
@@ -1324,6 +1321,14 @@ en:{
  'r.rate':'How good was this race?',
  'r.saveRate':'Save rating','r.pickStar':'Pick a star rating first','r.saved':'Saved — {0} stars',
  'r.makeRoom':'Create a watch room for this race','r.close':'Close','r.icsDone':'Calendar file downloaded',
+ 'ses.title':'Weekend schedule','ses.now':'LIVE',
+ 'ses.est':'Session times are <b>estimated</b> from each series\' standard weekend format. Only the race time is fixed — the rest can shift with the organiser\'s final timetable.',
+ 'ses.fp1':'Practice 1','ses.fp2':'Practice 2','ses.fp3':'Practice 3','ses.q':'Qualifying',
+ 'ses.sq':'Sprint Qualifying','ses.spr':'Sprint','ses.hy':'Hyperpole','ses.wu':'Warm-up','ses.r':'Race',
+ 'ses.until':'{0} in','ses.nowS':'{0} running',
+ 'ses.scope':'Which sessions should notify you?',
+ 'ses.scopeRace':'Race only','ses.scopeKey':'Qualifying & Sprint too','ses.scopeAll':'Every session',
+ 'ses.scopeSaved':'Notification sessions updated','ses.icsAll':'{0} weekend sessions saved to the calendar',
  'chat.section':'Find people to watch with',
  'chat.note':'Anyone can join — no password. A room <b>disappears if there is no chat for 24 hours after the race ends.</b>',
  'chat.empty':'No rooms yet.<br>Tap the <b>+</b> button to open the first one.',
@@ -1374,11 +1379,12 @@ en:{
  'chat.ttl':'auto-delete in {0}','chat.ttlShort':'deletes in {0}','chat.noDesc':'No description','chat.capFull':'full',
  'alert.next':'Next race in','alert.live':'Running now','alert.over':'2026 season over',
  'alert.overSub':'All races are done',
- 'alert.d':'days','alert.h':'hrs','alert.m':'min','alert.s':'sec',
+ 'alert.d':'days','alert.h':'hrs','alert.m':'min','alert.s':'sec','alert.sp':' ',
+ 'alert.d1':'day','alert.h1':'hr','alert.m1':'min','alert.s1':'sec',
  'alert.settings':'Notifications','alert.browserNotif':'Browser notifications','alert.enable':'Enable',
  'alert.pGranted':'Enabled','alert.pDenied':'Blocked by the browser — allow it in site settings',
  'alert.pDefault':'Off','alert.pNone':'This browser has no notification support',
- 'alert.leadTime':'Notify me','alert.lead':'{0} before the race',
+ 'alert.leadTime':'Notify me','alert.lead':'{0} before a session',
  'alert.notifNote':'Browser notifications only fire <b>while this page is open</b>. For a reliable reminder, open a race and tap <b>Add to phone calendar (.ics)</b>.',
  'alert.leadSaved':'Notification timing updated',
  'alert.subs':'Series you follow','alert.remain':'{0} races left',
@@ -1447,23 +1453,9 @@ ja:{
  'auth.errNo':'そのユーザー名はありません','auth.errWrong':'パスワードが違います',
  'auth.welcome':'{0}さん、ようこそ','auth.bye':'ログアウトしました',
  'set.account':'アカウント','set.loggedIn':'{0} でログイン中','set.logout':'ログアウト','set.loginBtn':'ログイン / 新規登録',
- 'set.plan':'プラン','plan.free':'無料','plan.pro':'PRO',
- 'pro.title':'APEX PRO','pro.sub':'好きなレースを、好きな人たちと',
- 'pro.month':'月 300円','pro.year':'年 2,400円','pro.life':'買い切り 4,500円',
- 'pro.hasFree':'無料でできること','pro.hasPro':'PROで開くもの',
- 'pro.free1':'レース日程・3Dコース図・ランキング・ニュースすべて',
- 'pro.free2':'お試し観戦ルーム1つ（作成・参加それぞれ1つ）',
- 'pro.free3':'基本テーマのカレンダー1種',
- 'pro.pro1':'観戦ルーム無制限 — 作成も参加も制限なし',
- 'pro.pro2':'カレンダーテーマ10種 — 次のレースを美しく',
- 'pro.pro3':'壁紙として保存（1080×1920）',
- 'pro.buy':'PROを始める','pro.notReady':'決済はまだ接続していません。今はデモとしてのみ有効になります。',
- 'pro.demoOn':'PROをデモで有効にしました','pro.demoOff':'PROをオフにしました','pro.demoBtn':'デモで試す',
- 'pro.off':'PROをオフ','pro.already':'PRO利用中',
- 'pro.limitRoom':'無料プランは1つまで作成できます','pro.limitJoin':'無料プランは1つまで参加できます',
  'wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.theme':'テーマ',
  'wid.save':'壁紙として保存','wid.saved':'画像を保存しました','wid.fail':'画像を作成できませんでした',
- 'wid.locked':'PRO限定','wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
+ 'wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
  'st.after':'F1 2026 · 第{0}戦終了時点','st.wins':'優勝','st.podium':'表彰台','st.races':'出走',
  'st.season':'2026 表彰台','st.noPodium':'今季の表彰台はまだありません。',
@@ -1480,6 +1472,14 @@ ja:{
  'r.rate':'このレース、面白かった？',
  'r.saveRate':'評価を保存','r.pickStar':'先に星を選んでください','r.saved':'{0}点で保存しました',
  'r.makeRoom':'このレースの観戦ルームを作る','r.close':'閉じる','r.icsDone':'カレンダーファイルを保存しました',
+ 'ses.title':'週末スケジュール','ses.now':'進行中',
+ 'ses.est':'セッション時刻はシリーズ標準の週末フォーマットから計算した<b>予想時刻</b>です。確定しているのは決勝のみで、他は主催者の最終タイムテーブルで前後することがあります。',
+ 'ses.fp1':'フリー走行 1','ses.fp2':'フリー走行 2','ses.fp3':'フリー走行 3','ses.q':'予選',
+ 'ses.sq':'スプリント予選','ses.spr':'スプリント','ses.hy':'ハイパーポール','ses.wu':'ウォームアップ','ses.r':'決勝',
+ 'ses.until':'{0}まで','ses.nowS':'{0} 進行中',
+ 'ses.scope':'どのセッションを通知する？',
+ 'ses.scopeRace':'決勝のみ','ses.scopeKey':'予選・スプリントまで','ses.scopeAll':'すべてのセッション',
+ 'ses.scopeSaved':'通知するセッションを変更しました','ses.icsAll':'週末 {0} セッションをカレンダーに保存しました',
  'chat.section':'一緒に見る人を探す',
  'chat.note':'パスワードなしで誰でも入れます。<b>レース終了後24時間チャットがないと自動的に消えます。</b>',
  'chat.empty':'まだルームがありません。<br>右下の<b>+</b>から作ってみましょう。',
@@ -1530,11 +1530,12 @@ ja:{
  'chat.ttl':'あと{0}で自動削除','chat.ttlShort':'{0}後に削除','chat.noDesc':'説明なし','chat.capFull':'満員',
  'alert.next':'次のレースまで','alert.live':'開催中','alert.over':'2026シーズン終了',
  'alert.overSub':'全レースが終了しました',
- 'alert.d':'日','alert.h':'時間','alert.m':'分','alert.s':'秒',
+ 'alert.d':'日','alert.h':'時間','alert.m':'分','alert.s':'秒','alert.sp':'',
+ 'alert.d1':'日','alert.h1':'時間','alert.m1':'分','alert.s1':'秒',
  'alert.settings':'通知設定','alert.browserNotif':'ブラウザ通知','alert.enable':'オン',
  'alert.pGranted':'オンになっています','alert.pDenied':'ブラウザでブロック中 — サイト設定で許可してください',
  'alert.pDefault':'オフです','alert.pNone':'このブラウザは通知に対応していません',
- 'alert.leadTime':'通知タイミング','alert.lead':'レースの{0}前',
+ 'alert.leadTime':'通知タイミング','alert.lead':'セッション開始の{0}前',
  'alert.notifNote':'ブラウザ通知は<b>このページを開いている間だけ</b>鳴ります。確実に受け取るにはレース詳細から<b>カレンダーに追加(.ics)</b>を使ってください。',
  'alert.leadSaved':'通知タイミングを変更しました',
  'alert.subs':'フォロー中のシリーズ','alert.remain':'残り{0}戦',
@@ -1730,17 +1731,9 @@ function track3d(key, color, size, id){
             <div class="stack">${s}</div></div>`;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   요금제 — 무료 / PRO
-   ⚠ 서버가 없어 결제를 강제할 수 없습니다. 지금은 요금제 '구조'만 있고
-     실제 과금은 붙어 있지 않습니다(개발자도구로 얼마든지 켤 수 있음).
-   ══════════════════════════════════════════════════════════════ */
-const isPro = ()=> DB.get('pro', false);
-const FREE_ROOMS = 1;          // 무료: 만들 수 있는 방 / 참여할 수 있는 방
-
 /* 다음 경기 캘린더 테마 — [ko, en, ja] */
 const THEMES = {
-  midnight :{ n:['미드나이트','Midnight','ミッドナイト'], free:true,
+  midnight :{ n:['미드나이트','Midnight','ミッドナイト'],
               bg:['#0b1430','#04070f'], fg:'#ffffff', dim:'#8fb4ff', useSeries:false },
   series   :{ n:['시리즈 컬러','Series colour','シリーズカラー'],
               bg:null, fg:'#ffffff', dim:'rgba(255,255,255,.72)', useSeries:true },
@@ -2213,6 +2206,97 @@ RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r
 RACES.sort((a,b)=>a.ms-b.ms);
 
 /* ══════════════════════════════════════════════════════════════
+   주말 세션 — 연습주행 · 예선 · 스프린트 · 결승
+   결승 시각만 데이터로 갖고 있고, 나머지는 시리즈별 표준 주말 형식으로 역산합니다.
+   h = 결승 시작 기준 오프셋(시간), m = 세션 길이(분).
+   확정 타임테이블이 나온 경기는 RACES 항목에
+     ss:[{k:'fp1',t:'2026-03-06T21:30:00+09:00',m:60}, …]
+   를 넣으면 계산 대신 그 값을 그대로 씁니다.
+   ══════════════════════════════════════════════════════════════ */
+const SES_FMT = {
+  /* F1 일반 주말 — 금 FP1·FP2 / 토 FP3·예선 / 일 결승 */
+  f1   :[{k:'fp1',h:-49.5,m:60},{k:'fp2',h:-46,m:60},{k:'fp3',h:-26.5,m:60},{k:'q',h:-23,m:60},{k:'r',h:0}],
+  /* F1 스프린트 주말 — 금 FP1·스프린트 예선 / 토 스프린트·예선 / 일 결승 */
+  f1sp :[{k:'fp1',h:-51.5,m:60},{k:'sq',h:-47.5,m:45},{k:'spr',h:-28,m:30},{k:'q',h:-24,m:60},{k:'r',h:0}],
+  /* WEC — 예선 뒤에 상위 차량만 다시 겨루는 하이퍼폴이 붙습니다 */
+  wec  :[{k:'fp1',h:-50,m:90},{k:'fp2',h:-45.5,m:90},{k:'fp3',h:-27,m:60},{k:'q',h:-21.5,m:20},{k:'hy',h:-20.75,m:20},{k:'r',h:0}],
+  imsaE:[{k:'fp1',h:-49,m:90},{k:'fp2',h:-44,m:105},{k:'fp3',h:-26,m:60},{k:'q',h:-23,m:45},{k:'r',h:0}],
+  imsaS:[{k:'fp1',h:-28,m:90},{k:'fp2',h:-24,m:60},{k:'q',h:-21,m:30},{k:'wu',h:-2,m:20},{k:'r',h:0}],
+  /* DTM은 한 주말에 결승이 두 번 — 2차전 앞에도 예선을 따로 치릅니다 */
+  dtm1 :[{k:'fp1',h:-27,m:45},{k:'fp2',h:-23,m:45},{k:'q',h:-3.25,m:20},{k:'r',h:0}],
+  dtm2 :[{k:'q',h:-3.25,m:20},{k:'r',h:0}],
+  /* 슈퍼GT — 토 공식연습·예선(Q1·Q2) / 일 워밍업·결승 */
+  sgt  :[{k:'fp1',h:-29,m:100},{k:'q',h:-24,m:75},{k:'wu',h:-4.5,m:20},{k:'r',h:0}],
+  gtE  :[{k:'fp1',h:-27,m:90},{k:'fp2',h:-23,m:60},{k:'q',h:-4,m:30},{k:'r',h:0}],
+  gtS  :[{k:'fp1',h:-26,m:60},{k:'q',h:-2.5,m:30},{k:'r',h:0}],
+  /* GT·TC의 같은 주말 2차전 — 예선을 따로 치르지 않아 결승만 남습니다 */
+  only :[{k:'r',h:0}],
+};
+
+/* 같은 주말 2차전인지 — 같은 시리즈·같은 서킷에서 48시간 안에 앞선 경기가 있으면 2차전입니다.
+   GT·TC는 지역별 시리즈를 하나로 합치면서 라운드 번호가 뒤섞여(예: 오카야마 r19·r21),
+   홀짝으로는 1·2차전을 가릴 수 없어 실제 일정으로 판정합니다. */
+const WKND_GAP = 48 * 3600000;
+function isFollowUp(r){
+  if(r._fu === undefined)
+    r._fu = RACES.some(o => o !== r && o.s === r.s && o.c[0] === r.c[0]
+                            && o.ms < r.ms && r.ms - o.ms <= WKND_GAP);
+  return r._fu;
+}
+
+function sesFmt(r){
+  if(r.s === 'f1')   return r.sp ? SES_FMT.f1sp : SES_FMT.f1;
+  if(r.s === 'wec')  return SES_FMT.wec;
+  if(r.s === 'imsa') return r.h >= 6 ? SES_FMT.imsaE : SES_FMT.imsaS;
+  if(r.s === 'dtm')  return isFollowUp(r) ? SES_FMT.dtm2 : SES_FMT.dtm1;
+  if(r.s === 'sgt')  return SES_FMT.sgt;
+  return isFollowUp(r) ? SES_FMT.only : (r.h >= 3 ? SES_FMT.gtE : SES_FMT.gtS);
+}
+
+/* 예선·스프린트·결승 = '주요 세션'. 알림 기본값이 여기까지입니다. */
+const SES_KEY = { q:1, sq:1, spr:1, hy:1, r:1 };
+
+/* 한 경기의 세션 목록. 시간순이고, 마지막이 결승입니다.
+   언어에 따라 바뀌는 건 이름뿐이라 시각만 캐시해 둡니다. */
+function sessionsOf(r){
+  if(r._ses) return r._ses;
+  const raw = r.ss || sesFmt(r).map(x => ({ k:x.k, ms:r.ms + x.h*3600000, m:x.m }));
+  return (r._ses = raw.map(x=>{
+    const ms  = x.t ? new Date(x.t).getTime() : x.ms;
+    const dur = x.k === 'r' ? r.h*3600000 : (x.m || 60)*60000;
+    return { k:x.k, ms, end:ms + dur, key:!!SES_KEY[x.k] };
+  }).sort((a,b)=>a.ms-b.ms));
+}
+const sesName   = k  => t('ses.'+k);
+const sesStatus = se => Date.now() < se.ms ? 'soon' : (Date.now() < se.end ? 'live' : 'done');
+
+/* 알림 범위 — race(결승만) / key(예선·스프린트까지) / all(전부) */
+const SCOPES  = ['race','key','all'];
+const inScope = se => CFG.scope === 'all' ? true : CFG.scope === 'race' ? se.k === 'r' : se.key;
+
+/* 가장 가까운 세션(진행 중이면 그 세션). 구독한 시리즈를 먼저 보고, 없으면 전체에서 찾습니다.
+   같은 주말에 여러 시리즈가 겹치면 결승 순서와 세션 순서가 어긋날 수 있어
+   전부 훑어 가장 이른 것을 고릅니다.
+   알림 범위를 '결승만'으로 둔 사람에게 연습주행을 세어 주면 앞뒤가 맞지 않아,
+   카운트다운도 알림과 같은 범위를 따릅니다. */
+function nextUp(){
+  const now = Date.now();
+  const scan = subbed => {
+    let best = null;
+    for(const r of RACES){
+      if(r.end <= now || (subbed && !CFG.subs[r.s])) continue;
+      for(const se of sessionsOf(r)){
+        if(se.end <= now || !inScope(se)) continue;
+        if(!best || se.ms < best.se.ms) best = { r, se };
+        break;                       /* 세션도 시간순 — 첫 미래 세션이면 충분합니다 */
+      }
+    }
+    return best;
+  };
+  return scan(true) || scan(false);
+}
+
+/* ══════════════════════════════════════════════════════════════
    저장소 — 지금은 전부 localStorage(= 내 기기 전용).
    나중에 Firebase/Supabase 등을 붙일 땐 이 두 함수만 갈아끼우면 됩니다.
    ══════════════════════════════════════════════════════════════ */
@@ -2288,12 +2372,21 @@ const NICK_COOLDOWN = 7 * 24 * 3600 * 1000;   /* DAY 상수는 이 아래에서 
 const nickFreeAt = ()=> (CFG.nickAt || 0) + NICK_COOLDOWN;
 const nickLocked = ()=> Date.now() < nickFreeAt();
 
+/* '30분' · '30 min' — 영어만 숫자와 단위를 띄우고, 1이면 단수형을 씁니다 */
+const unit = (n, k) => n + t('alert.sp') + t('alert.' + k + (n === 1 ? '1' : ''));
 function leftTime(ms){
   const d = ms - Date.now();
-  if(d <= 0) return '0' + t('alert.m');
+  if(d <= 0) return unit(0,'m');
   const h = Math.floor(d/3600000), m = Math.floor(d%3600000/60000);
-  if(h >= 24) return Math.floor(h/24) + t('alert.d') + ' ' + (h%24) + t('alert.h');
-  return h ? h + t('alert.h') + ' ' + m + t('alert.m') : m + t('alert.m');
+  if(h >= 24) return unit(Math.floor(h/24),'d') + ' ' + unit(h%24,'h');
+  return h ? unit(h,'h') + ' ' + unit(m,'m') : unit(m,'m');
+}
+/* 타임테이블 배지용 — 좁은 칸에 들어가도록 가장 큰 단위 하나만 */
+function shortLeft(ms){
+  const d = Math.max(0, ms - Date.now());
+  if(d >= 86400000) return 'D-' + Math.ceil(d/86400000);
+  const h = Math.floor(d/3600000);
+  return h ? unit(h,'h') : unit(Math.max(1, Math.floor(d/60000)),'m');
 }
 const status = r => Date.now() < r.ms ? 'soon' : (Date.now() < r.end ? 'live' : 'done');
 const rname  = r => lz(r.n);
@@ -2311,15 +2404,21 @@ let CFG = Object.assign({
   nick : '',
   nickAt : 0,          /* 설정에서 이름을 마지막으로 바꾼 때 */
   lead : 30,
-  subs : { f1:true, wec:true, imsa:true, dtm:true, gtwc:true },
+  scope: 'key',        /* 알림 범위 — 예선·스프린트까지 */
+  subs : {},
 }, DB.get('cfg', {}));
+/* 시리즈가 늘어난 뒤라 예전 설정에는 sgt·gt·tc가 없고, 지금은 없는 gtwc가 남아 있습니다.
+   빠진 시리즈는 켜 두고(기본이 전체 구독), 사라진 키는 지웁니다.
+   이걸 안 하면 새 시리즈는 알림도 카운트다운도 영영 잡히지 않습니다. */
+Object.keys(SERIES).forEach(k=>{ if(CFG.subs[k] === undefined) CFG.subs[k] = true; });
+Object.keys(CFG.subs).forEach(k=>{ if(!SERIES[k]) delete CFG.subs[k]; });
 L = LANGS[CFG.lang] ? CFG.lang : 'en';
 function saveCfg(){ DB.set('cfg', CFG); }
 function applyTheme(){ document.documentElement.setAttribute('data-theme', CFG.theme); }
 applyTheme();
 
 const LEADS = [10,30,60,180,1440];
-const leadLabel = m => m>=1440 ? (m/1440)+t('alert.d') : m>=60 ? (m/60)+t('alert.h') : m+t('alert.m');
+const leadLabel = m => m>=1440 ? unit(m/1440,'d') : m>=60 ? unit(m/60,'h') : unit(m,'m');
 
 /* HTML에 고정된 라벨을 현재 언어로 맞춥니다.
    화면을 그릴 때마다 호출해서, 어떤 경로로 들어오든 라벨이 옛 언어로 남지 않게 합니다. */
@@ -2331,6 +2430,9 @@ function syncLabels(){
   const ls = $('#leadSel');       /* 드롭다운 항목도 여기서 함께 다시 만듭니다 */
   if(ls) ls.innerHTML = LEADS.map(m=>
     `<option value="${m}" ${m===CFG.lead?'selected':''}>${esc(t('alert.lead', leadLabel(m)))}</option>`).join('');
+  const sc = $('#scopeSel');
+  if(sc) sc.innerHTML = SCOPES.map(v=>
+    `<option value="${v}" ${v===CFG.scope?'selected':''}>${esc(t('ses.scope'+v[0].toUpperCase()+v.slice(1)))}</option>`).join('');
 }
 
 function applyLang(){
@@ -4163,6 +4265,26 @@ function openRace(r){
       <span class="nm">${esc(w.nm)}</span><span class="sb">${esc(lz(w.sb))}</span>
     </a>`).join('');
 
+  /* 주말 타임테이블 — 날짜가 바뀔 때마다 머리글을 넣고, 다음 세션을 강조합니다.
+     같은 주말 2차전처럼 결승 하나뿐이면 카드를 아예 내지 않습니다 (위 시각 카드와 겹칩니다) */
+  const ses = sessionsOf(r), upNext = ses.find(x => x.end > Date.now());
+  let lastDay = '';
+  const sesRows = ses.map(se=>{
+    const sst = sesStatus(se), dk = dayKey(se.ms);
+    const head = dk === lastDay ? '' : `<div class="tday">${esc(fmtDate(se.ms))}</div>`;
+    lastDay = dk;
+    const badge = sst === 'live' ? t('ses.now')
+                : se === upNext  ? esc(shortLeft(se.ms)) : '';
+    const cls = [sst === 'done' && 'past', sst === 'live' && 'now',
+                 sst === 'soon' && se === upNext && 'next', se.key && 'key'].filter(Boolean).join(' ');
+    return `${head}<div class="ses ${cls}">
+      <i class="dot"></i><span class="sn">${esc(sesName(se.k))}</span>
+      <span class="st num">${esc(fmtTime(se.ms))}</span><span class="sd">${badge}</span></div>`;
+  }).join('');
+  const sesHtml = ses.length < 2 ? '' : `<div class="sec">${t('ses.title')}</div>
+    <div class="card ttbl" style="--acc:${s.color}">${sesRows}</div>
+    ${r.ss ? '' : `<div class="note">${t('ses.est')}</div>`}`;
+
   let resultHtml = '';
   if(st !== 'soon'){
     resultHtml = `<div class="sec">${t('r.results')}</div>` + (r.p
@@ -4203,6 +4325,7 @@ function openRace(r){
         <div class="num" style="font-size:19px;font-weight:800;color:var(--br);letter-spacing:-.03em">D-${Math.max(0,Math.ceil((r.ms-Date.now())/86400000))}</div>
         <div class="muted">${esc(leftTime(r.ms))}</div></div>` : ''}
     </div>
+    ${sesHtml}
     <button class="btn ghost sm" id="btnIcs">${ic('cal')} ${t('r.addCal')}</button>
 
     <div class="sec">${t('watch.video')}</div>
@@ -4241,21 +4364,30 @@ function openRace(r){
   }
 }
 
+/* 주말 전체를 세션마다 하나씩 일정으로 만들어 내려받습니다 */
 function downloadIcs(r){
   const s = SERIES[r.s], z = n => String(n).padStart(2,'0');
   const f = ms => { const d = new Date(ms);
     return d.getUTCFullYear()+z(d.getUTCMonth()+1)+z(d.getUTCDate())+'T'+z(d.getUTCHours())+z(d.getUTCMinutes())+'00Z'; };
-  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//APEX Motorsport//EN','CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT','UID:'+r.id+'@apex-motorsport','DTSTAMP:'+f(Date.now()),
-    'DTSTART:'+f(r.ms),'DTEND:'+f(r.end),
-    'SUMMARY:'+s.name+' R'+r.r+' '+rname(r),'LOCATION:'+rcirc(r),'DESCRIPTION:'+sfull(r.s),
-    'BEGIN:VALARM','TRIGGER:-PT'+CFG.lead+'M','ACTION:DISPLAY','DESCRIPTION:'+rname(r),'END:VALARM',
-    'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  /* ICS는 , ; \ 를 이스케이프해야 합니다 — 경기·서킷 이름에 들어가면 줄이 깨집니다 */
+  const q = v => String(v).replace(/([\\,;])/g, '\\$1').replace(/\r?\n/g, '\\n');
+  const stamp = f(Date.now());
+  const ses = sessionsOf(r);
+  const ev = se => {
+    const nm = s.name + ' R' + r.r + ' ' + rname(r) + (se.k === 'r' ? '' : ' — ' + sesName(se.k));
+    return ['BEGIN:VEVENT','UID:'+r.id+'-'+se.k+'@apex-motorsport','DTSTAMP:'+stamp,
+      'DTSTART:'+f(se.ms),'DTEND:'+f(se.end),
+      'SUMMARY:'+q(nm),'LOCATION:'+q(rcirc(r)),'DESCRIPTION:'+q(sfull(r.s)),
+      'BEGIN:VALARM','TRIGGER:-PT'+CFG.lead+'M','ACTION:DISPLAY','DESCRIPTION:'+q(nm),'END:VALARM',
+      'END:VEVENT'];
+  };
+  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//APEX Motorsport//EN','CALSCALE:GREGORIAN']
+    .concat(...ses.map(ev), ['END:VCALENDAR']).join('\r\n');
   const url = URL.createObjectURL(new Blob([ics], {type:'text/calendar;charset=utf-8'}));
   const a = el('a'); a.href = url; a.download = r.id + '.ics';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 2000);
-  toast(t('r.icsDone'));
+  toast(ses.length > 1 ? t('ses.icsAll', ses.length) : t('r.icsDone'));
 }
 
 $('#calPrev').onclick = ()=>{ calYM.m--; if(calYM.m<1){calYM.m=12;calYM.y--;} calSel=null; renderCal(); };
@@ -4388,7 +4520,7 @@ function exportConfigured(){
     /* 실행 중 채워진 부분은 비웁니다 (열면 다시 그려집니다) */
     ['#newsList','#cgrid','#raceList','#roomList','#stList','#subList','#myStats',
      '#myReviews','#favWrap','#sheet','#heroCard','#cdCard','#newsChips','#calChips',
-     '#calPills','#stPills','#authPills','#leadSel','#chatNetNote','#calTitle','#listTitle',
+     '#calPills','#stPills','#authPills','#leadSel','#scopeSel','#chatNetNote','#calTitle','#listTitle',
      '#newsFresh','#permTxt','#hdrTitle','#toast']
       .forEach(sel=>{ const el = doc.querySelector(sel); if(el) el.innerHTML = ''; });
     doc.removeAttribute('data-theme');
@@ -4806,12 +4938,6 @@ function openCreateRoom(preRaceId){
     const title = $('#rTitle').value.trim();
     const max   = maxSel;
     if(!title){ toast(t('chat.needTitle')); return; }
-    /* 무료: 내가 만든 방 1개까지 */
-    let existing = [];
-    try{ existing = await CHAT.rooms(); }catch(e){ toast(t('net.err')); return; }
-    if(!isPro() && existing.filter(x=>x.owner === CFG.nick).length >= FREE_ROOMS){
-      toast(t('pro.limitRoom')); closeSheet(); openPro(); return;
-    }
     const room = {
       id: 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
       title, desc: $('#rDesc').value.trim(), max,
@@ -4855,18 +4981,6 @@ async function enterRoom(id, known){
 
   const joined = room.members.includes(CFG.nick);
   if(!joined && room.members.length >= room.max){ toast(t('chat.full')); return; }
-  /* 무료 요금제: 동시에 참여할 수 있는 방 1개까지 */
-  if(!joined && !isPro()){
-    let mine = rooms.filter(x=>x.members.includes(CFG.nick)).length;
-    if(netFree()){          /* 목록만으로는 알 수 없어 각 방을 확인 */
-      mine = 0;
-      for(const x of rooms){
-        if(x.id === room.id) continue;
-        try{ if((await freeMembers(x.id)).includes(CFG.nick)) mine++; }catch(e){}
-      }
-    }
-    if(mine >= FREE_ROOMS){ toast(t('pro.limitJoin')); openPro(); return; }
-  }
   if(!joined){
     room.members.push(CFG.nick);
     await CHAT.patch(room.id, {members:room.members, lastActivity:Date.now()}, room);
@@ -5044,6 +5158,7 @@ function renderAlert(){
                                 default:t('alert.pDefault'), unsupported:t('alert.pNone') }[p];
   $('#btnPerm').style.display = (p === 'default') ? 'block' : 'none';
   $('#leadSel').value = String(CFG.lead);
+  $('#scopeSel').value = CFG.scope;
 
   const sub = $('#subList'); sub.innerHTML = '';
   Object.entries(SERIES).forEach(([k,s])=>{
@@ -5082,16 +5197,19 @@ function renderAlert(){
 
 function paintCountdown(){
   const card = $('#cdCard'); if(!card) return;
-  const r = nextRace();
-  if(!r){ card.innerHTML = `<div class="lbl">${t('alert.over')}</div><div class="nm">${t('alert.overSub')}</div>`; return; }
-  const s = SERIES[r.s], d = Math.max(0, r.ms - Date.now());
+  const up = nextUp();
+  if(!up){ card.innerHTML = `<div class="lbl">${t('alert.over')}</div><div class="nm">${t('alert.overSub')}</div>`; return; }
+  const { r, se } = up, s = SERIES[r.s], d = Math.max(0, se.ms - Date.now());
   const dd = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000),
         mm = Math.floor(d%3600000/60000), ss = Math.floor(d%60000/1000);
-  const live = Date.now() >= r.ms;
+  const live = Date.now() >= se.ms;
+  /* 결승이면 지금까지처럼, 그 밖의 세션이면 세션 이름을 그대로 보여줍니다 */
+  const lbl = se.k === 'r' ? (live ? t('alert.live') : t('alert.next'))
+                           : (live ? t('ses.nowS', sesName(se.k)) : t('ses.until', sesName(se.k)));
   card.innerHTML = `
-    <div class="lbl">${live ? t('alert.live') : t('alert.next')}</div>
+    <div class="lbl">${esc(lbl)}</div>
     <div class="nm">${ccTag(r)}${esc(rname(r))}</div>
-    <div class="ci">${esc(s.name)} ${t('r.round', r.r)} · ${esc(rcirc(r))} · ${fmtFull(r.ms)}</div>
+    <div class="ci">${esc(s.name)} ${t('r.round', r.r)} · ${esc(rcirc(r))} · ${fmtFull(se.ms)}</div>
     ${live ? '' : `<div class="cdn num">
       <div><b>${dd}</b><span>${t('alert.d')}</span></div>
       <div><b>${String(hh).padStart(2,'0')}</b><span>${t('alert.h')}</span></div>
@@ -5104,20 +5222,26 @@ $('#btnPerm').onclick = async ()=>{
   if(typeof Notification === 'undefined') return;
   await Notification.requestPermission(); renderAlert();
 };
-$('#leadSel').onchange = e=>{ CFG.lead = +e.target.value; saveCfg(); toast(t('alert.leadSaved')); };
+$('#leadSel').onchange  = e=>{ CFG.lead = +e.target.value; saveCfg(); toast(t('alert.leadSaved')); };
+$('#scopeSel').onchange = e=>{ CFG.scope = e.target.value; saveCfg(); paintCountdown(); toast(t('ses.scopeSaved')); };
 
 function checkAlerts(){
   if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   const fired = DB.get('fired', {}), now = Date.now(), lead = CFG.lead*60000;
   let changed = false;
   RACES.forEach(r=>{
-    if(!CFG.subs[r.s] || fired[r.id]) return;
-    const d = r.ms - now;
-    if(d > 0 && d <= lead){
-      new Notification(`${SERIES[r.s].name} ${rname(r)}`,
-        { body: t('alert.soon', leftTime(r.ms), rcirc(r)), tag: r.id });
-      fired[r.id] = 1; changed = true;
-    }
+    if(!CFG.subs[r.s] || r.end <= now) return;
+    sessionsOf(r).forEach(se=>{
+      /* 결승은 예전 키를 그대로 씁니다 — 이미 알림을 받은 경기가 다시 울리지 않도록 */
+      const key = se.k === 'r' ? r.id : r.id + ':' + se.k;
+      if(fired[key] || !inScope(se)) return;
+      const d = se.ms - now;
+      if(d > 0 && d <= lead){
+        const title = `${SERIES[r.s].name} ${rname(r)}` + (se.k === 'r' ? '' : ` — ${sesName(se.k)}`);
+        new Notification(title, { body: t('alert.soon', leftTime(se.ms), rcirc(r)), tag: key });
+        fired[key] = 1; changed = true;
+      }
+    });
   });
   if(changed) DB.set('fired', fired);
 }
@@ -5265,13 +5389,8 @@ let widTheme = 'midnight';
 function openWidget(){
   const r = nextRace();
   if(!r){ toast(t('alert.overSub')); return; }
-  if(!isPro() && !THEMES[widTheme].free) widTheme = 'midnight';
-
-  const chips = Object.entries(THEMES).map(([k,th])=>{
-    const locked = !th.free && !isPro();
-    return `<button class="chip ${k===widTheme?'on':''}" data-th="${k}">
-              ${locked ? ic('lock') : ''}${esc(lz3(th.n))}</button>`;
-  }).join('');
+  const chips = Object.entries(THEMES).map(([k,th])=>
+    `<button class="chip ${k===widTheme?'on':''}" data-th="${k}">${esc(lz3(th.n))}</button>`).join('');
 
   openSheet(`
     <h2>${t('wid.title')}</h2>
@@ -5286,53 +5405,15 @@ function openWidget(){
   paint();
   $('#widChips').querySelectorAll('.chip').forEach(b=>{
     b.onclick = ()=>{
-      const k = b.dataset.th;
-      if(!THEMES[k].free && !isPro()){ closeSheet(); openPro(); return; }
-      widTheme = k;
+      widTheme = b.dataset.th;
       $('#widChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===b));
       paint();
     };
   });
-  $('#widSave').onclick  = ()=>{
-    if(!isPro()){ closeSheet(); openPro(); return; }   /* 저장은 PRO 전용 */
-    saveWidget(r, widTheme);
-  };
+  $('#widSave').onclick  = ()=> saveWidget(r, widTheme);
   $('#widClose').onclick = closeSheet;
 }
 
-/* ── 요금제 안내 ── */
-function openPro(){
-  const pro = isPro();
-  const row = (txt)=>`<div class="plrow">${ic('check')}<span>${txt}</span></div>`;
-  openSheet(`
-    <div style="text-align:center;margin-bottom:6px">
-      <span class="tag" style="font-size:11px">${t('pro.title')}</span>
-    </div>
-    <h2 style="text-align:center">${t('pro.sub')}</h2>
-
-    <div class="prices">
-      <div class="pcard"><b>${t('pro.month')}</b></div>
-      <div class="pcard best"><b>${t('pro.year')}</b></div>
-      <div class="pcard"><b>${t('pro.life')}</b></div>
-    </div>
-
-    <div class="sec">${t('pro.hasPro')}</div>
-    <div class="card">${row(t('pro.pro1'))}${row(t('pro.pro2'))}${row(t('pro.pro3'))}</div>
-
-    <div class="sec">${t('pro.hasFree')}</div>
-    <div class="card">${row(t('pro.free1'))}${row(t('pro.free2'))}${row(t('pro.free3'))}</div>
-
-    <div class="note">${t('pro.notReady')}</div>
-    ${pro ? `<button class="btn ghost" id="proOff">${t('pro.off')}</button>`
-          : `<button class="btn flow" id="proOn">${t('pro.demoBtn')}</button>`}
-    <button class="btn ghost sm" id="proClose">${t('r.close')}</button>`);
-
-  const on = $('#proOn'), off = $('#proOff');
-  if(on)  on.onclick  = ()=>{ DB.set('pro', true);  toast(t('pro.demoOn'));  closeSheet(); refreshAll(); };
-  if(off) off.onclick = ()=>{ DB.set('pro', false); toast(t('pro.demoOff')); closeSheet(); refreshAll(); };
-  $('#proClose').onclick = closeSheet;
-}
-function refreshAll(){ switchTab(tab); }
 
 $('#btnSettings').onclick = ()=>{
   const who = session();
@@ -5345,12 +5426,6 @@ $('#btnSettings').onclick = ()=>{
              </div>
              <button class="btn ghost sm" id="setLogout">${t('set.logout')}</button>`
           : `<button class="btn flow sm" id="setLogin" style="margin-top:0">${t('set.loginBtn')}</button>`}
-    <div class="sec">${t('set.plan')}</div>
-    <button class="btn ghost sm" id="setPlan" style="margin-top:0;display:flex;align-items:center;gap:8px;justify-content:center">
-      <span class="tag ${isPro()?'':'grey'}" style="${isPro()?'background:var(--br);color:#fff':''}">${
-        isPro() ? t('plan.pro') : t('plan.free')}</span>
-      ${isPro() ? t('pro.already') : t('pro.buy')}
-    </button>
     <div class="sec">${t('set.display')}</div>
     <div class="seg c2" id="themeSeg">
       <button data-t="light" class="${CFG.theme==='light'?'on':''}">
@@ -5417,7 +5492,6 @@ $('#btnSettings').onclick = ()=>{
       ${esc(t('r.trackNote'))} <span style="opacity:.75">bacinger/f1-circuits (ODbL)</span></div>
     <button class="btn ghost sm" id="setClose">${t('set.close')}</button>`);
 
-  $('#setPlan').onclick = ()=>{ closeSheet(); openPro(); };
   $('#netSeg').querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{
       const n = net(); n.mode = b.dataset.m; DB.set('net', n);
@@ -5499,7 +5573,7 @@ $('#btnSettings').onclick = ()=>{
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
-    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','pro','myhome','picks'].forEach(DB.del);
+    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','myhome','picks'].forEach(DB.del);
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('ms-mir-')) localStorage.removeItem(k); });
     Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
     location.reload();
