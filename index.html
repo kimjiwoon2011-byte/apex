@@ -2936,13 +2936,17 @@ async function smartBoth(titles, leads){
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' + body
     : body;
 
-  const deadline = Date.now() + 90000;   /* 전체 상한. 넘으면 기존 번역으로 */
+  /* 한 번 호출에 30초, 전체 150초. 곱해서 모델 5개가 모두 시도됩니다.
+     예전엔 45초 x 90초라 모델이 매달리면 2개만 써 보고 끝나서,
+     돌릴 때마다 부문 하나씩 카드가 0개로 나왔습니다.
+     기다리는 동안에도 1단계 구글 번역이 이미 한국어로 떠 있습니다. */
+  const deadline = Date.now() + 150000;
   for(const model of OR_MODELS){
     if(Date.now() > deadline) break;
     for(let tryN = 0; tryN < 2; tryN++){
       try{
         const ac = new AbortController();
-        const timer = setTimeout(()=>ac.abort(), 45000);
+        const timer = setTimeout(()=>ac.abort(), 30000);
         const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
           body: JSON.stringify({ model, temperature:0.3, max_tokens:16000,   /* 기사 20개면 12000토큰쯤 나옵니다. 모자라면 통째로 잘립니다 */
