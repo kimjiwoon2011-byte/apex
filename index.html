@@ -2918,6 +2918,21 @@ function cardOk(c){
   return true;
 }
 
+/* 무료 등급은 하루 50회입니다. 그런데 미리받기가 부문 7개를 다 돌고,
+   한 부문이 모델을 바꿔 가며 최대 10회까지 쓰기 때문에, 앱을 한 번 켜는
+   것만으로 하루치를 다 태울 수 있었습니다. 그러면 그날 남은 시간 동안
+   번역이 통째로 멈춥니다. 그래서 직접 세서 40회에서 멈춥니다.
+   (남기는 10회는 사용자가 직접 새로고침할 때 쓸 몫입니다.) */
+const AI_DAILY_MAX = 40;
+const aiToday = ()=> new Date().toISOString().slice(0, 10);
+function aiSpent(){
+  const d = DB.get('aiDay', null);
+  return (d && d.d === aiToday()) ? (+d.n || 0) : 0;
+}
+function aiSpend(){
+  DB.set('aiDay', { d: aiToday(), n: aiSpent() + 1 });
+}
+
 /* AI 호출은 한 번에 하나만. 미리받기와 화면 요청이 동시에 부르면
    서로 호출 제한을 잡아먹어 둘 다 실패합니다. 순서대로 줄을 세웁니다. */
 let aiQueue = Promise.resolve();
@@ -2930,6 +2945,7 @@ function aiLock(fn){
 async function smartBoth(titles, leads){
   const key = orKey();
   if(!key || !titles.length || aiResting()) return null;
+  if(aiSpent() >= AI_DAILY_MAX) return null;
   const body = titles.map((s, i) => '[' + (i + 1) + '] ' + s + OR_SEP + (leads[i] || '-')).join('\n');
   const glos = nameGlossary(titles.concat(leads));
   const msg  = glos.length
@@ -2942,11 +2958,12 @@ async function smartBoth(titles, leads){
      기다리는 동안에도 1단계 구글 번역이 이미 한국어로 떠 있습니다. */
   const deadline = Date.now() + 150000;
   for(const model of OR_MODELS){
-    if(Date.now() > deadline) break;
+    if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
     for(let tryN = 0; tryN < 2; tryN++){
       try{
         const ac = new AbortController();
         const timer = setTimeout(()=>ac.abort(), 30000);
+        aiSpend();
         const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
           body: JSON.stringify({ model, temperature:0.3, max_tokens:16000,   /* 기사 20개면 12000토큰쯤 나옵니다. 모자라면 통째로 잘립니다 */
@@ -5482,6 +5499,11 @@ $('#btnSettings').onclick = ()=>{
     <input type="text" id="aiKey" placeholder="sk-or-v1-..." value="${esc(orKey())}">
     <button class="btn flow sm" id="aiSave">${t('ai.save')}</button>
     <div class="note">${t('ai.note')}</div>
+    <div class="note">${orKey()
+      ? (aiResting()
+          ? '오늘치를 다 썼습니다. ' + new Date(aiRestUntil()).toLocaleString('ko-KR', {hour:'2-digit', minute:'2-digit'}) + ' 에 다시 됩니다. 그때까지는 구글 번역으로 보입니다.'
+          : '오늘 ' + aiSpent() + ' / ' + AI_DAILY_MAX + '회 썼습니다 (무료 한도 하루 50회)')
+      : ''}</div>
 
     <div class="sec">${t('net.title')}</div>
     <div class="seg c3" id="netSeg">
