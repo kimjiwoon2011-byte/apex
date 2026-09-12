@@ -2972,7 +2972,10 @@ async function smartBoth(titles, leads){
           if(!s) return null;
           const p = s.split(':::').map(x => x.trim());
           if(p.length < 2) return null;
-          const card = { h:p[0] || '', p:p[1] || '', d:p[2] || '' };
+          /* AI 결과에도 이름 사전을 적용합니다. 구글 번역과 달리 이 경로는
+             거치지 않아서 Toyota·Ferrari 같은 아는 이름이 영어로 남았습니다. */
+          const fix = s => polish(postNames(String(s || '').trim()));
+          const card = { h:fix(p[0]), p:fix(p[1]), d:fix(p[2]) };
           return cardOk(card) ? card : null;      /* 형식을 어기면 버립니다 */
         });
         break;
