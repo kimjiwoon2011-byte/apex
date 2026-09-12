@@ -3331,18 +3331,38 @@ function buildNewsView(){
 /* 번역된 제목을 카드용 두 단으로 가릅니다.
    AI 카드가 없을 때도 파란 굵은 핵심 + 설명 형식을 그대로 유지하려는 것입니다.
    없는 말을 지어내지 않고, 있는 제목을 자르기만 합니다. */
+
+/* 한글은 한 칸, 영문·숫자는 반 칸으로 셉니다. 글자 폭이 달라서
+   글자 수로만 재면 영어 이름이 너무 일찍 잘립니다 ("David Coulthard는" → "David") */
+function wide(x){
+  let n = 0;
+  for(const ch of String(x)){
+    if(/\s/.test(ch)) continue;                 /* 공백은 세지 않습니다 */
+    n += /[가-힣ㄱ-ㅎㅏ-ㅣ\u3000-\u9fff]/.test(ch) ? 1 : 0.5;
+  }
+  return n;
+}
+
 function splitTitle(s){
   const t = String(s || '').replace(/\s+/g, ' ').trim();
   if(!t) return null;
-  const bare = x => x.replace(/\s/g, '').length;
+  const MAX = 14, MIN = 8;
 
-  /* ① 쉼표·가운뎃점·줄표에서 가릅니다. 번역 제목은 대개 "이름, 무엇을 했다" 꼴입니다 */
-  const m = t.match(/^(.{2,18}?)\s*[,·–—]\s*(.+)$/);
-  if(m) return { punch: m[1].trim(), rest: m[2].trim() };
+  /* ① 쉼표·가운뎃점·줄표·콜론에서 가릅니다. "이름, 무엇을 했다" 꼴이 가장 많습니다.
+        홑낱말 안의 붙임표와 헷갈리지 않도록, 하이픈은 양옆이 띄어진 것만 봅니다 */
+  const sm = t.match(/[,·–—:]|\s-\s/);
+  if(sm && sm.index > 0){
+    const head = t.slice(0, sm.index).trim();
+    const tail = t.slice(sm.index + sm[0].length).trim();
+    if(wide(head) >= 2 && wide(head) <= MAX && wide(tail) >= 4)
+      return { punch: head, rest: tail };
+  }
 
-  /* ② 큰따옴표가 있으면 따옴표 앞까지를 핵심으로 */
-  const q = t.match(/^(.{2,18}?)\s*["“](.+)$/);
-  if(q) return { punch: q[1].trim(), rest: '"' + q[2].trim() };
+  /* ② 말을 인용한 제목이면 따옴표 앞까지를 핵심으로.
+        제목이 따옴표로 시작하면 인용이 주어가 아니므로 건너뜁니다 */
+  const q = t.match(/^([^"“”']{2,}?)\s*["“](.+)$/);
+  if(q && wide(q[1]) <= MAX && wide(q[2]) >= 4)
+    return { punch: q[1].trim(), rest: '"' + q[2].trim() };
 
   const w = t.split(' ');
 
@@ -3350,22 +3370,22 @@ function splitTitle(s){
         "혼다가 / 2026 시즌 슈퍼 GT에…" 처럼 읽는 맛이 살아납니다 */
   for(let i = 0; i < w.length - 1; i++){
     const head = w.slice(0, i + 1).join(' ');
-    if(bare(head) > 14) break;
+    if(wide(head) > MAX) break;
     const tail = w.slice(i + 1).join(' ');
-    if(bare(head) >= 2 && bare(tail) >= 4 && /[이가은는]$/.test(w[i]))
+    if(wide(head) >= 2 && wide(tail) >= 4 && /[이가은는]$/.test(w[i]))
       return { punch: head, rest: tail };
   }
 
-  /* ④ 그래도 자를 데가 없으면 낱말을 8자 넘을 때까지 모읍니다 */
+  /* ④ 그래도 자를 데가 없으면 낱말을 모읍니다 */
   let punch = '', i = 0;
   for(; i < w.length; i++){
     const next = punch ? punch + ' ' + w[i] : w[i];
-    if(punch && bare(next) > 14) break;
+    if(punch && wide(next) > MAX) break;
     punch = next;
-    if(bare(punch) >= 8){ i++; break; }
+    if(wide(punch) >= MIN){ i++; break; }
   }
   const rest = w.slice(i).join(' ').trim();
-  return bare(rest) >= 4 ? { punch, rest } : { punch: t, rest: '' };
+  return wide(rest) >= 4 ? { punch, rest } : { punch: t, rest: '' };
 }
 /* 좌우로 넘기는 카드뉴스. 인스타 캐러셀 규격(4:5, 표지 + 한 장에 한 소식)을 따랐습니다 */
 /* 카드 사진 고르기
