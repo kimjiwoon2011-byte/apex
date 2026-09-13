@@ -3046,9 +3046,11 @@ async function smartBoth(titles, leads){
         if(!res.ok) break;
         const j = await res.json();
         const got = orParse(j?.choices?.[0]?.message?.content, titles.length);
-        if(got) return got.map(s => {
+        const cards = !got ? null : got.map(s => {
           if(!s) return null;
-          const p = s.split(':::').map(x => x.trim());
+          /* 모델이 ':::' 대신 '::' 를 쓰는 일이 잦습니다.
+             콜론을 두 개 이상 만나면 구분자로 봅니다. */
+          const p = s.split(/\s*:{2,}\s*/).map(x => x.trim()).filter(Boolean);
           if(p.length < 2) return null;
           /* AI 결과에도 이름 사전을 적용합니다. 구글 번역과 달리 이 경로는
              거치지 않아서 Toyota·Ferrari 같은 아는 이름이 영어로 남았습니다. */
@@ -3056,6 +3058,9 @@ async function smartBoth(titles, leads){
           const card = { h:fix(p[0]), p:fix(p[1]), d:fix(p[2]) };
           return cardOk(card) ? card : null;      /* 형식을 어기면 버립니다 */
         });
+        /* 한 장이라도 건졌을 때만 성공으로 봅니다. 전부 버려졌다면
+           그 모델이 형식을 못 지킨 것이므로 다음 모델을 써 봅니다. */
+        if(cards && cards.some(Boolean)) return cards;
         break;
       }catch(e){ break; }
     }
