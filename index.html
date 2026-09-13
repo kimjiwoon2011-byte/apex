@@ -2898,51 +2898,31 @@ const OR_SYS = [
   '너는 한국 모터스포츠 카드뉴스를 만드는 기자다.',
   '영어 기사를 받아, 지나가며 봐도 무슨 일인지 알아보게 세 줄로 만든다.',
   '',
-  '── 세 줄의 형식 ──',
-  '길이는 단어 수로 센다. 띄어쓴 덩어리 하나가 한 단어다.',
-  '',
-  '훅   : 왜 지금 중요한지 짧은 배경. 3~4단어. 없으면 빈칸으로 둔다.',
-  '핵심 : 무슨 일인지 한 방에. 2~4단어. 반드시 명사로 끝낸다.',
-  '       따옴표로 말을 담을 때만 5단어까지 쓴다.',
-  '설명 : 사실 한 줄. 6~8단어. 누가·무엇을 담는다.',
-  '',
-  '쓰면서 단어를 세라. 넘으면 덜 중요한 말부터 지워라.',
-  '아래 보기의 단어 수가 곧 기준이다. 보기보다 길게 쓰지 마라.',
-  '',
-  '── 기사 종류별로 이렇게 쓴다 ──',
-  '사건·사고  훅=언제/어떤 상황인지   핵심=무슨 사건인지',
-  '발언·인터뷰 훅=어떤 상황에서 나온 말 핵심=말한 사람 + 한 마디',
-  '결과·성적  훅=어느 대회/세션      핵심=누가 어떻게 됐는지',
-  '발표·변경  훅=무엇에 관한 것      핵심=무엇이 바뀌는지',
+  '── 형식 ── 길이는 단어 수로 센다. 띄어쓴 덩어리 하나가 한 단어다.',
+  '훅   3~4단어  왜 지금 중요한지 짧은 배경. 원문에 없으면 빈칸으로 둔다',
+  '핵심 2~4단어  무슨 일인지 한 방에. 반드시 명사로 끝낸다',
+  '설명 6~8단어  누가 무엇을 했는지 사실 한 줄',
   '',
   '── 보기 ──',
-  '입력  [1] Madrid F1 track hit by cable theft two weeks before race ::: Spanish police confirmed a large theft of generator cables at the Madring circuit.',
-  '출력  [1] 개최 2주 남았는데 ::: 마드링 절도사건 ::: 스페인 경찰, 발전기 케이블 대량 도난 인정',
+  '입력 [1] Madrid F1 track hit by cable theft two weeks before race ::: Spanish police confirmed a large theft of generator cables.',
+  '출력 [1] 개최 2주 남았는데 ::: 마드링 절도사건 ::: 스페인 경찰, 발전기 케이블 대량 도난 인정',
   '',
-  '입력  [2] Leclerc explains vision issue after Monza crash ::: Ferrari driver Charles Leclerc said his vision issue was very short. He lost control on lap 2.',
-  '출력  [2] 몬차 충돌 그 후 ::: 르클레르 시력 이상 ::: 2랩 조종 잃고 배리어 충돌, "아주 잠깐이었다"',
+  '입력 [2] Leclerc explains vision issue after Monza crash ::: Ferrari driver Charles Leclerc said his vision issue was very short. He lost control on lap 2.',
+  '출력 [2] 몬차 충돌 그 후 ::: 르클레르 시력 이상 ::: 2랩 조종 잃고 배리어 충돌, "아주 잠깐이었다"',
   '',
-  '입력  [3] Hamilton says he never asked Ferrari for priority over Leclerc ::: Lewis Hamilton denied requesting preferential treatment.',
-  '출력  [3] 팀 내 서열 논란에 ::: 해밀턴 "특혜 요구 안 했다" ::: 르클레르보다 우대해달라 한 적 없다고 밝혀',
+  '입력 [3] Porsche Penske leadership speaks out on IMSA performance ::: Management expressed strong frustration over disappointing results.',
+  '출력 [3] 시즌 성적 부진에 ::: 포르쉐 수뇌부 작심 발언 ::: 펜스케 경영진, 올 시즌 결과에 강한 불만',
   '',
-  '입력  [4] Porsche Penske leadership speaks out on IMSA performance ::: Management expressed strong frustration over disappointing results.',
-  '출력  [4] 시즌 성적 부진에 ::: 포르쉐 수뇌부 작심 발언 ::: 펜스케 경영진, 올 시즌 결과에 강한 불만',
+  '보기 문구를 그대로 쓰지 마라. 보기의 단어 수만 따라라.',
   '',
-  '위 보기는 형식을 보여줄 뿐이다. 보기에 나온 문구를 그대로 쓰지 마라.',
-  '기사마다 내용이 다르므로 세 줄도 기사마다 달라야 한다.',
+  '── 규칙 ──',
+  '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·날짜를 만들지 마라.',
+  '- 배경이 원문에 없으면 훅을 빈칸으로 둔다.',
+  '- 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 존댓말·마침표·한자·느낌표 금지.',
   '',
-  '── 절대 규칙 ──',
-  '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·횟수·날짜를 만들지 마라.',
-  '- 배경이 원문에 없으면 훅을 빈칸으로 둔다. 억지로 지어내지 마라.',
-  '- 사람·팀·서킷 이름은 표기표를 그대로 써라.',
-  '- 표기표에 없는 이름은 영어 원문 그대로 두어라.',
-  '- 존댓말 금지. 마침표 금지. 한자 금지. 느낌표 금지.',
-  '',
-  '── 출력 형식 ──',
-  '- 입력 한 줄은  [번호] 제목 ::: 요약',
-  '- 출력 한 줄은  [번호] 훅 ::: 핵심 ::: 설명',
-  '- 번호 하나당 한 줄. 서로 합치지 마라. 번호를 빠뜨리지 마라.',
-  '- 생각 과정을 쓰지 마라. 번호와 세 줄만 출력한다.',
+  '── 출력 ──  [번호] 훅 ::: 핵심 ::: 설명',
+  '번호 하나당 한 줄. 합치거나 빠뜨리지 마라. 생각 과정을 쓰지 마라.',
 ].join('\n');
 
 /* 하루 한도를 다 쓰면 풀리는 시각까지 AI를 건너뜁니다 */
@@ -2970,6 +2950,8 @@ function cardOk(c){
    번역이 통째로 멈춥니다. 그래서 직접 세서 40회에서 멈춥니다.
    (남기는 10회는 사용자가 직접 새로고침할 때 쓸 몫입니다.) */
 const AI_DAILY_MAX = 40;
+/* 카드뉴스가 화면에 보여 주는 장수. 이만큼만 AI로 만듭니다 */
+const AI_CARDS = 10;
 const aiToday = ()=> new Date().toISOString().slice(0, 10);
 function aiSpent(){
   const d = DB.get('aiDay', null);
@@ -2992,7 +2974,15 @@ async function smartBoth(titles, leads){
   const key = orKey();
   if(!key || !titles.length || aiResting()) return null;
   if(aiSpent() >= AI_DAILY_MAX) return null;
-  const body = titles.map((s, i) => '[' + (i + 1) + '] ' + s + OR_SEP + (leads[i] || '-')).join('\n');
+  /* 리드는 평균 394자인데 무슨 일인지는 앞머리에 다 담겨 있습니다.
+     낱말이 잘리지 않게 200자 근처 빈칸에서 끊어 보냅니다. */
+  const cut = s => {
+    const t = String(s || '-');
+    if(t.length <= 200) return t;
+    const p = t.lastIndexOf(' ', 200);
+    return t.slice(0, p > 120 ? p : 200);
+  };
+  const body = titles.map((s, i) => '[' + (i + 1) + '] ' + s + OR_SEP + cut(leads[i])).join('\n');
   const glos = nameGlossary(titles.concat(leads));
   const msg  = glos.length
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' + body
@@ -3012,7 +3002,7 @@ async function smartBoth(titles, leads){
         aiSpend();
         const res = await fetch(OR_URL, { method:'POST', signal:ac.signal,
           headers:{ Authorization:'Bearer ' + key, 'Content-Type':'application/json' },
-          body: JSON.stringify({ model, temperature:0.3, max_tokens:16000,   /* 기사 20개면 12000토큰쯤 나옵니다. 모자라면 통째로 잘립니다 */
+          body: JSON.stringify({ model, temperature:0.3, max_tokens:9000,   /* 기사 10개면 6000토큰쯤. 모자라면 통째로 잘립니다 */
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
         if(res.status === 429){
@@ -3099,6 +3089,9 @@ async function ensureTitles(key, data, onStep){
     data.hs = {}; data.hsd = {}; data.hc = {}; data.hv = HL_VER;
   }
 
+  /* 카드뉴스는 10장만 보여 줍니다. 20장을 만들면 절반은 버려지는데
+     생성 토큰은 그대로 나가므로, 보여 줄 만큼만 만듭니다.
+     11번째부터는 구글 번역 제목이 그대로 쓰입니다. */
   const titles = data.items.map(i => i.title || '-');
   const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
   let changed = false;
@@ -3126,7 +3119,8 @@ async function ensureTitles(key, data, onStep){
 
   /* 2단계 — AI가 기사체로 다시 씁니다. 실패해도 1단계 결과가 남습니다 */
   if(L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
-    const both = await aiLock(()=> smartBoth(titles, leads));
+    const n = Math.min(AI_CARDS, titles.length);
+    const both = await aiLock(()=> smartBoth(titles.slice(0, n), leads.slice(0, n)));
     if(both){
       data.hc[L]  = both;                                  /* 카드용 세 줄 */
       data.hs[L]  = both.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
