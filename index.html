@@ -1126,6 +1126,7 @@ ko:{
  'news.cards':'장','news.prev':'이전','news.next2':'다음','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
  'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 업데이트','news.failedShort':'불러오기 실패',
+ 'news.aiWork':'카드 정리 중… 20초쯤 걸려요','news.aiFail':'카드 정리 실패 — 번역본으로 보여드려요','news.aiRest':'오늘 AI 한도를 다 썼어요 — 번역본으로 보여드려요',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
  'news.stale':'갱신 실패 — 저장된 소식을 보여줍니다','news.empty':'표시할 소식이 없어요.',
  'news.translate':'전문 번역','time.now':'방금',
@@ -1282,6 +1283,7 @@ en:{
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
  'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.aiWork':'Writing cards… about 20s','news.aiFail':'Could not write cards — showing the translation','news.aiRest':'Daily AI limit reached — showing the translation',
  'news.updated':'Updated {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
@@ -1439,6 +1441,7 @@ ja:{
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
  'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.aiWork':'カードを作成中… 20秒ほど','news.aiFail':'カードを作成できませんでした — 翻訳を表示します','news.aiRest':'本日のAI上限に達しました — 翻訳を表示します',
  'news.updated':'{0}に更新','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
@@ -3525,8 +3528,24 @@ async function renderNews(force){
 
   if(cache){
     paintNews(cache);
-    /* 캐시는 있는데 이 언어 번역만 없는 경우 — 받아와서 다시 그립니다 */
-    ensureTitles(key, cache, ()=>{ if(newsSeries === key) paintNews(cache); });
+    /* 저장된 소식이 있어도 AI 카드가 아직 없으면 여기서 만듭니다.
+       예전에는 뒤에서 조용히 돌려 실패해도 표시가 없었습니다. */
+    const needAi = L === 'ko' && orKey() && !(cache.hc && cache.hc[L] && cache.hc[L].length);
+    if(needAi && aiResting()){
+      $('#newsFresh').textContent = t('news.aiRest');
+    }else if(needAi && aiSpent() >= AI_DAILY_MAX){
+      $('#newsFresh').textContent = t('news.aiRest');
+    }else if(needAi){
+      $('#newsFresh').textContent = t('news.aiWork');
+    }
+    ensureTitles(key, cache, ()=>{ if(newsSeries === key) paintNews(cache); })
+      .then(()=>{
+        if(newsSeries !== key) return;
+        paintNews(cache);
+        if(needAi && !(cache.hc && cache.hc[L] && cache.hc[L].length))
+          $('#newsFresh').textContent = t('news.aiFail');
+      })
+      .catch(()=>{});
   }
   if(fresh && !force) return;
 
