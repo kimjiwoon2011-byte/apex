@@ -19,10 +19,6 @@
       "destination": "https://www.crash.net/rss/:path*"
     },
     {
-      "source": "/api/tct/:path*",
-      "destination": "https://www.touringcartimes.com/:path*/"
-    },
-    {
       "source": "/api/yt/:path*",
       "destination": "https://www.youtube.com/:path*"
     }
