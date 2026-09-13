@@ -3082,7 +3082,7 @@ async function translateTitles(titles, target){
 /* 구글 번역을 먼저 해서 한국어를 바로 띄우고, AI 다듬기는 뒤에서 이어 붙입니다.
    AI를 먼저 기다리면 최대 90초 동안 영어가 그대로 보입니다.
    onStep 이 불리면 화면을 다시 그립니다 (두 번: 구글 직후, AI 직후). */
-async function ensureTitles(key, data, onStep){
+async function ensureTitles(key, data, onStep, noAi){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
   if(data.hv !== HL_VER){        /* 기준이 바뀌었으면 옛 AI 결과를 버립니다 */
@@ -3118,7 +3118,7 @@ async function ensureTitles(key, data, onStep){
   }
 
   /* 2단계 — AI가 기사체로 다시 씁니다. 실패해도 1단계 결과가 남습니다 */
-  if(L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
+  if(!noAi && L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
     const n = Math.min(AI_CARDS, titles.length);
     const both = await aiLock(()=> smartBoth(titles.slice(0, n), leads.slice(0, n)));
     if(both){
@@ -3476,22 +3476,24 @@ function buildNewsChips(){
    이미 받아 둔 시리즈는 건너뜁니다. */
 let preBusy = false;
 async function prefetchNews(){
-  if(preBusy || L !== 'ko' || !orKey()) return;
+  if(preBusy || L !== 'ko') return;
   preBusy = true;
   try{
     for(const k of Object.keys(SERIES)){
       if(SERIES[k].noNews) continue;
       let c = DB.get('news3-'+k, null);
       const fresh = c && Date.now() - c.at < NEWS_TTL;
-      if(fresh && c.hv === HL_VER && c.hs?.[L] && c.hsd?.[L]) continue;   /* 이미 됨 */
+      if(fresh && c.tr?.[L] && c.trd?.[L]) continue;   /* 번역까지 됐으면 넘어갑니다 */
       if(!fresh){
         try{ c = { at: Date.now(), items: await fetchNews(k) }; DB.set('news3-'+k, c); }
         catch(e){ continue; }
       }
       try{
-        await ensureTitles(k, c, ()=>{ if(newsSeries === k && tab === 'news') paintNews(c); });
+        /* 여기서는 AI를 부르지 않습니다. 구글 번역만으로도 한국어로 읽히고,
+           AI 하루 한도는 사용자가 실제로 연 부문에 씁니다. */
+        await ensureTitles(k, c, ()=>{ if(newsSeries === k && tab === 'news') paintNews(c); }, true);
       }catch(e){}
-      await new Promise(r => setTimeout(r, 25000));   /* 호출 제한을 피해 천천히 */
+      await new Promise(r => setTimeout(r, 1500));   /* 구글 번역만 하므로 조금만 쉽니다 */
     }
   }finally{ preBusy = false; }
 }
