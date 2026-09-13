@@ -2805,6 +2805,23 @@ const LEGENDS = [
   ['Frederic Vasseur','프레데리크 바쇠르'], ['Andrea Stella','안드레아 스텔라'],
 ];
 
+const RACE_TERMS = [
+  ['Madring','마드링'], ['Madring','마드링'],
+  ['banked','경사진'], ['banking','뱅킹'], ['banked corner','뱅킹 코너'],
+  ['grid penalty','그리드 강등'], ['pit lane','피트레인'], ['pit stop','피트스톱'],
+  ['pole position','폴 포지션'], ['free practice','연습 주행'],
+  ['qualifying','예선'], ['sprint race','스프린트 레이스'],
+  ['safety car','세이프티카'], ['virtual safety car','버추얼 세이프티카'],
+  ['formation lap','포메이션 랩'], ['parc ferme','파르크 페르메'],
+  ['stewards','심판진'], ['steward','심판'], ['penalty','페널티'],
+  ['podium','포디움'], ['retirement','리타이어'], ['tyre','타이어'],
+  ['slick','슬릭'], ['wet tyre','웨트 타이어'], ['pit wall','피트월'],
+  ['title fight','타이틀 경쟁'], ['championship lead','선수권 선두'],
+  ['team principal','팀 대표'], ['test driver','테스트 드라이버'],
+  ['reserve driver','리저브 드라이버'], ['rookie','신인'],
+  ['hypercar','하이퍼카'], ['endurance','내구'], ['stint','스틴트'],
+  ['double stint','더블 스틴트'], ['full course yellow','풀코스 옐로'],
+];
 const NAME_MAP = (()=>{
   const pairs = [];
   DRIVERS.forEach(d=>{
@@ -2820,6 +2837,7 @@ const NAME_MAP = (()=>{
   LEGENDS.forEach(p => pairs.push(p));
   EXTRA_NAMES.forEach(p => pairs.push(p));
   SPORTSCAR_NAMES.forEach(p => pairs.push(p));
+  RACE_TERMS.forEach(p => pairs.push(p));
   const seen = new Set();
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
