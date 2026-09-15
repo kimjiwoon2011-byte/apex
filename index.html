@@ -3093,17 +3093,34 @@ async function ensureTitles(key, data, onStep, noAi){
     }
   }
 
-  /* 2단계 — AI가 기사체로 다시 씁니다. 실패해도 1단계 결과가 남습니다 */
-  if(!noAi && L === 'ko' && orKey() && (!data.hs[L] || !data.hsd[L])){
+  /* 2단계 — AI가 기사체로 다시 씁니다. 실패해도 1단계 결과가 남습니다.
+     한 번에 다 못 받는 일이 잦아서(모델이 몇 줄을 빠뜨리거나 형식을 어깁니다)
+     빠진 자리만 골라 다시 부릅니다. 전체를 다시 돌리면 이미 받은 것까지
+     토큰을 또 씁니다. 몇 번 해도 안 되는 기사가 있으므로 횟수를 제한합니다. */
+  if(!noAi && L === 'ko' && orKey()){
     const n = Math.min(AI_CARDS, titles.length);
-    const both = await aiLock(()=> smartBoth(titles.slice(0, n), leads.slice(0, n)));
-    if(both){
-      data.hc[L]  = both;                                  /* 카드용 세 줄 */
-      data.hs[L]  = both.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
-      data.hsd[L] = both.map(x => x && x.d ? x.d : null);
-      DB.set('news3-'+key, data);
-      changed = true;
-      if(onStep) onStep();
+    if(!Array.isArray(data.hc[L]) || data.hc[L].length !== n)
+      data.hc[L] = new Array(n).fill(null);
+
+    const miss = [];
+    for(let i = 0; i < n; i++){
+      const c = data.hc[L][i];
+      if(!(c && c.p)) miss.push(i);
+    }
+    data.hcTry = +data.hcTry || 0;
+    if(miss.length && data.hcTry < 3){
+      data.hcTry++;
+      DB.set('news3-'+key, data);          /* 실패해도 횟수는 남깁니다 */
+      const got = await aiLock(()=> smartBoth(miss.map(i => titles[i]), miss.map(i => leads[i])));
+      if(got){
+        miss.forEach((idx, j) => { if(got[j] && got[j].p) data.hc[L][idx] = got[j]; });
+        const cards = data.hc[L];
+        data.hs[L]  = cards.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
+        data.hsd[L] = cards.map(x => x && x.d ? x.d : null);
+        DB.set('news3-'+key, data);
+        changed = true;
+        if(onStep) onStep();
+      }
     }
   }
   return changed;
