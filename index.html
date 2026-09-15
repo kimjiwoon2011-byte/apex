@@ -393,16 +393,17 @@ main{padding:14px 16px 0}
    릴스 카드처럼 지나가며 봐도 무슨 일인지 알아보게 만듭니다 */
 .cardn .hook{font-size:15px;font-weight:900;color:#fff;letter-spacing:-.025em;
   margin:0 0 5px;text-shadow:0 2px 10px rgba(0,0,0,.8)}
-.cardn .punch{font-size:37px;font-weight:900;line-height:1.08;letter-spacing:-.05em;
+.cardn .punch{font-size:46px;font-weight:900;line-height:1.04;letter-spacing:-.055em;
   color:#5aa9ff;margin:0 0 10px;
-  /* 시스템 글꼴은 900이 끝이라, 획을 덧그려 더 굵게 보이게 합니다 */
-  -webkit-text-stroke:.9px #5aa9ff;paint-order:stroke fill;
+  /* 시스템 글꼴은 900이 끝이라, 획을 덧그려 더 굵게 보이게 합니다.
+     다만 한글은 획을 너무 올리면 ㅁ·ㅇ 속이 메워져 뭉갭니다. 1.6px 까지가 한계입니다 */
+  -webkit-text-stroke:1.6px #5aa9ff;paint-order:stroke fill;
   text-shadow:0 2px 18px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.7);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* 제목을 통째로 실을 때 — 파란색·900·획 덧그리기는 그대로 두고 크기만 줄여
    세 줄까지 보이게 합니다 */
-.cardn .punch.full{font-size:23px;line-height:1.26;letter-spacing:-.035em;
-  -webkit-text-stroke:.6px #5aa9ff;-webkit-line-clamp:3;margin-bottom:8px}
+.cardn .punch.full{font-size:26px;line-height:1.22;letter-spacing:-.04em;
+  -webkit-text-stroke:.9px #5aa9ff;-webkit-line-clamp:3;margin-bottom:8px}
 .cardn .line{font-size:13px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.9);
   margin:0 0 12px;text-shadow:0 1px 6px rgba(0,0,0,.6);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
