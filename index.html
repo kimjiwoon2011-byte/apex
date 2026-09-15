@@ -2967,8 +2967,9 @@ async function smartBoth(titles, leads){
   const deadline = Date.now() + 150000;
   for(const model of OR_MODELS){
     if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
-    {                       /* 재시도 없이 한 번씩만 — 429 는 aiGap 이 받아 줍니다 */
-      try{
+    /* 모델마다 한 번씩만 부릅니다. 실패하면 다음 모델로 넘어갑니다
+       (429 는 aiGap 이 20초 띄워 줍니다). */
+    try{
         await aiGap();
         const ac = new AbortController();
         const timer = setTimeout(()=>ac.abort(), 30000);
@@ -2993,7 +2994,7 @@ async function smartBoth(titles, leads){
           }
           /* 몰린 것뿐이면 다음 모델로 넘어갑니다 (aiGap 이 20초 띄웁니다) */
         }
-        if(!res.ok) break;
+        if(!res.ok) continue;            /* 이 모델은 실패 — 다음 모델 */
         const j = await res.json();
         const got = orParse(j?.choices?.[0]?.message?.content, titles.length);
         const cards = !got ? null : got.map(s => {
@@ -3011,9 +3012,8 @@ async function smartBoth(titles, leads){
         /* 한 장이라도 건졌을 때만 성공으로 봅니다. 전부 버려졌다면
            그 모델이 형식을 못 지킨 것이므로 다음 모델을 써 봅니다. */
         if(cards && cards.some(Boolean)) return cards;
-        break;
-      }catch(e){ break; }
-    }
+        continue;                        /* 형식을 못 지킴 — 다음 모델 */
+    }catch(e){ continue; }               /* 시간 초과 — 다음 모델 */
   }
   return null;
 }
