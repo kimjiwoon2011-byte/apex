@@ -109,7 +109,15 @@ button,input,textarea,select{font-family:inherit;letter-spacing:inherit}
   background-size:300% 100%;animation:slide 15s linear infinite;
 }
 @keyframes slide{to{background-position:300% 50%}}
-@media (prefers-reduced-motion:reduce){ .aurora i,.flow{animation:none} }
+/* 동작 최소화를 켠 기기에서는 움직임을 모두 멈춥니다.
+   어지럼증·멀미가 있는 분들이 켜는 설정이라 배경뿐 아니라 등장 효과까지 끕니다. */
+@media (prefers-reduced-motion:reduce){
+  .aurora i,.flow{animation:none}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important
+  }
+}
 
 /* ═══════════════════════════  레이아웃  ═══════════════════════════ */
 .app{max-width:540px;margin:0 auto;padding-bottom:calc(env(safe-area-inset-bottom) + 92px)}
@@ -282,6 +290,28 @@ main{padding:14px 16px 0}
 .deep .why b{color:var(--br);font-weight:800}
 .deep .by{display:block;margin-top:10px;font-size:10.5px;color:var(--tx-3)}
 .terms{display:grid;gap:9px}
+/* 순차 등장 — 한꺼번에 튀어나오지 않게 앞의 여덟 개만 조금씩 늦춥니다.
+   뒤쪽은 어차피 화면 밖이라 지연을 주지 않습니다. */
+.nitem:nth-child(1),.nlead:nth-child(1),.cardn:nth-child(1){animation-delay:0ms}
+.nitem:nth-child(2),.nlead:nth-child(2),.cardn:nth-child(2){animation-delay:40ms}
+.nitem:nth-child(3),.nlead:nth-child(3),.cardn:nth-child(3){animation-delay:80ms}
+.nitem:nth-child(4),.nlead:nth-child(4),.cardn:nth-child(4){animation-delay:120ms}
+.nitem:nth-child(5),.nlead:nth-child(5),.cardn:nth-child(5){animation-delay:160ms}
+.nitem:nth-child(6),.nlead:nth-child(6),.cardn:nth-child(6){animation-delay:200ms}
+.nitem:nth-child(7),.nlead:nth-child(7),.cardn:nth-child(7){animation-delay:240ms}
+.nitem:nth-child(8),.nlead:nth-child(8),.cardn:nth-child(8){animation-delay:280ms}
+
+/* 카운트다운 초 — 1초마다 다시 그려지므로 그때마다 한 번 튑니다.
+   네 칸 모두 튀면 산만해서 초 칸에만 답니다. */
+@keyframes tick{
+  0%{transform:translateY(-3px);opacity:.45}
+  60%{transform:translateY(0);opacity:1}
+  100%{transform:none}
+}
+.cdn b.tick{animation:tick .42s var(--ease)}
+
+/* 카드를 누를 때 살짝 눌리는 느낌 — 목록 항목과 같은 정도로 */
+.deck{scroll-behavior:smooth}
 /* 기사 댓글 */
 .cmt{border-bottom:1px solid var(--line);padding:11px 2px}
 .cmt:last-of-type{border-bottom:0}
@@ -335,7 +365,8 @@ main{padding:14px 16px 0}
   background-image:linear-gradient(150deg,var(--cc,#2b3a55),#0a0f1a 78%);
   aspect-ratio:4/5;border-radius:var(--r4);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-3);box-shadow:var(--sh2);cursor:pointer;padding:0;text-align:left;
-  color:inherit;transition:transform .2s var(--ease)}
+  color:inherit;transition:transform .2s var(--ease);
+  animation:pop .5s var(--ease) backwards}
 .cardn:active{transform:scale(.985)}
 .cardn>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   object-position:50% 28%}
@@ -5427,7 +5458,7 @@ function paintCountdown(){
       <div><b>${dd}</b><span>${t('alert.d')}</span></div>
       <div><b>${String(hh).padStart(2,'0')}</b><span>${t('alert.h')}</span></div>
       <div><b>${String(mm).padStart(2,'0')}</b><span>${t('alert.m')}</span></div>
-      <div><b>${String(ss).padStart(2,'0')}</b><span>${t('alert.s')}</span></div></div>`}`;
+      <div><b class="tick">${String(ss).padStart(2,'0')}</b><span>${t('alert.s')}</span></div></div>`}`;
   card.onclick = ()=> openRace(r);
 }
 
