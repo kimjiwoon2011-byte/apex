@@ -3,6 +3,10 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/tr/:path*",
+      "destination": "https://translate.googleapis.com/:path*"
+    },
+    {
       "source": "/api/ms/:path*",
       "destination": "https://www.motorsport.com/rss/:path*/"
     },
@@ -15,12 +19,28 @@
       "destination": "https://www.crash.net/rss/:path*"
     },
     {
-      "source": "/api/tct/:path*",
-      "destination": "https://www.touringcartimes.com/:path*/"
-    },
-    {
       "source": "/api/yt/:path*",
       "destination": "https://www.youtube.com/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
