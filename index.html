@@ -2921,6 +2921,17 @@ function aiSpend(){
   DB.set('aiDay', { d: aiToday(), n: aiSpent() + 1 });
 }
 
+/* 무료 등급은 분당 호출 수에 제한이 있습니다. 모델을 바꿔 가며 쉬지 않고
+   부르면 전부 429 로 튕깁니다 (실측: 부문 6개에 19회를 태우고 0장).
+   모든 AI 호출을 최소 간격으로 벌립니다. 429 를 만나면 더 늦춥니다. */
+let aiNextAt = 0;
+const AI_GAP = 6000;                 /* 보통 간격 */
+const AI_GAP_429 = 20000;            /* 429 를 만난 뒤 간격 */
+async function aiGap(){
+  const wait = aiNextAt - Date.now();
+  if(wait > 0) await new Promise(r => setTimeout(r, wait));
+  aiNextAt = Date.now() + AI_GAP;
+}
 /* AI 호출은 한 번에 하나만. 미리받기와 화면 요청이 동시에 부르면
    서로 호출 제한을 잡아먹어 둘 다 실패합니다. 순서대로 줄을 세웁니다. */
 let aiQueue = Promise.resolve();
@@ -2957,6 +2968,7 @@ async function smartBoth(titles, leads){
     if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
     for(let tryN = 0; tryN < 2; tryN++){
       try{
+        await aiGap();
         const ac = new AbortController();
         const timer = setTimeout(()=>ac.abort(), 30000);
         aiSpend();
@@ -2966,6 +2978,7 @@ async function smartBoth(titles, leads){
             messages:[ { role:'system', content: OR_SYS }, { role:'user', content: msg } ]})});
         clearTimeout(timer);
         if(res.status === 429){
+          aiNextAt = Date.now() + AI_GAP_429;   /* 몰렸으니 더 쉬어 갑니다 */
           let daily = false, until = 0;
           try{
             const e = await res.clone().json();
@@ -3170,6 +3183,7 @@ async function deepRead(it){
   for(const model of OR_MODELS.slice(0, 3)){
     if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
     try{
+      await aiGap();
       const ac = new AbortController();
       const timer = setTimeout(()=>ac.abort(), 25000);
       aiSpend();
@@ -3179,6 +3193,7 @@ async function deepRead(it){
           messages:[ { role:'system', content: DEEP_SYS }, { role:'user', content: msg } ]})});
       clearTimeout(timer);
       if(res.status === 429){
+        aiNextAt = Date.now() + AI_GAP_429;
         try{
           const e = await res.clone().json();
           const meta = e?.error?.metadata || {};
