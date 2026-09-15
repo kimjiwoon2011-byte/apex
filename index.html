@@ -1204,7 +1204,7 @@ ko:{
  'auth.errNo':'없는 아이디예요','auth.errWrong':'비밀번호가 틀렸어요',
  'auth.welcome':'{0}님, 반가워요','auth.bye':'로그아웃했어요',
  'set.account':'계정','set.loggedIn':'{0} 으로 로그인됨','set.logout':'로그아웃','set.loginBtn':'로그인 / 회원가입',
- 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.theme':'테마',
+ 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.theme':'테마','wid.size':'크기','wid.lay':'글자 위치','wid.sizeNote':'{0} 로 저장됩니다 · 잠금화면 시계를 피하려면 글자 위치를 바꿔 보세요',
  'wid.save':'배경화면으로 저장','wid.saved':'이미지를 내려받았어요','wid.fail':'이미지를 만들지 못했어요',
  'wid.locked':'PRO 전용','wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
@@ -1348,7 +1348,7 @@ en:{
  'auth.errNo':'No such username','auth.errWrong':'Wrong password',
  'auth.welcome':'Welcome, {0}','auth.bye':'Logged out',
  'set.account':'Account','set.loggedIn':'Signed in as {0}','set.logout':'Log out','set.loginBtn':'Log in / Sign up',
- 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.theme':'Theme',
+ 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.theme':'Theme','wid.size':'Size','wid.lay':'Text position','wid.sizeNote':'Saves at {0} · move the text to clear the lock-screen clock',
  'wid.save':'Save as wallpaper','wid.saved':'Image downloaded','wid.fail':'Could not create the image',
  'wid.locked':'PRO only','wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
@@ -1492,7 +1492,7 @@ ja:{
  'auth.errNo':'そのユーザー名はありません','auth.errWrong':'パスワードが違います',
  'auth.welcome':'{0}さん、ようこそ','auth.bye':'ログアウトしました',
  'set.account':'アカウント','set.loggedIn':'{0} でログイン中','set.logout':'ログアウト','set.loginBtn':'ログイン / 新規登録',
- 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.theme':'テーマ',
+ 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.theme':'テーマ','wid.size':'サイズ','wid.lay':'文字の位置','wid.sizeNote':'{0} で保存されます · ロック画面の時計を避けるには位置を変えてください',
  'wid.save':'壁紙として保存','wid.saved':'画像を保存しました','wid.fail':'画像を作成できませんでした',
  'wid.locked':'PRO限定','wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
@@ -1779,12 +1779,59 @@ const THEMES = {
               bg:['#101016','#000000'], fg:'#ffffff', dim:'#9d9dab', acc:'#ff1e1e', lights:true },
   vintage  :{ n:['빈티지','Vintage','ヴィンテージ'],
               bg:['#e9dcbe','#c6b391'], fg:'#2a1c0c', dim:'#6d5836', acc:'#8f2c12' },
+  /* ── 새로 더한 여섯 ── */
+  mono     :{ n:['모노크롬','Monochrome','モノクローム'],
+              bg:['#fafafa','#d8d8d8'], fg:'#0b0b0b', dim:'#5d5d5d', acc:'#0b0b0b' },
+  crimson  :{ n:['크림슨','Crimson','クリムゾン'],
+              bg:['#7a0b16','#1a0205'], fg:'#ffffff', dim:'#ffb3ba', acc:'#ff4757' },
+  ice      :{ n:['아이스','Ice','アイス'],
+              bg:['#dff1ff','#8fc4e8'], fg:'#06263c', dim:'#2b5f82', acc:'#0080c8' },
+  gold     :{ n:['골드','Gold','ゴールド'],
+              bg:['#2b2415','#0b0904'], fg:'#fff6dd', dim:'#c2a86a', acc:'#f2c14e' },
+  mint     :{ n:['민트','Mint','ミント'],
+              bg:['#053b33','#01110f'], fg:'#eafff8', dim:'#7fd9c2', acc:'#19e3a5' },
+  dusk     :{ n:['더스크','Dusk','ダスク'],
+              bg:['#3b2a63','#11071f'], fg:'#ffffff', dim:'#c0a9ea', acc:'#ff9f68', glow:true },
 };
 const lz3 = a => a[L==='ko' ? 0 : L==='ja' ? 2 : 1];
 
+/* 배경화면 맞춤 —
+   ① 크기: 폰마다 화면 비율이 달라서, 9:16 로 만든 그림을 21:9 폰에 깔면
+      위아래가 잘립니다. 쓰는 폰 비율을 그대로 쓰는 항목을 기본으로 둡니다.
+   ② 글자 위치: 잠금화면은 위에 시계, 아래에 바로가기가 얹힙니다.
+      그 자리를 피해 글자를 올리거나 내릴 수 있게 합니다. */
+const WID_SIZES = {
+  auto :{ n:['내 폰에 맞게','My phone','この端末に合わせる'] },
+  r916 :{ n:['9 : 16','9 : 16','9 : 16'],           w:1080, h:1920 },
+  r9195:{ n:['9 : 19.5','9 : 19.5','9 : 19.5'],     w:1080, h:2340 },
+  r920 :{ n:['9 : 20','9 : 20','9 : 20'],           w:1080, h:2400 },
+  sq   :{ n:['정사각','Square','スクエア'],          w:1080, h:1080 },
+};
+const WID_LAYS = {
+  high:{ n:['위로','Top','上'],      dy:-0.06 },
+  mid :{ n:['가운데','Middle','中央'], dy: 0 },
+  low :{ n:['아래로','Bottom','下'],  dy: 0.07 },
+};
+/* 이 기기 화면 비율로 1080 폭에 맞춘 크기 */
+function autoSize(){
+  const sw = Math.min(screen.width, screen.height);
+  const sh = Math.max(screen.width, screen.height);
+  const ratio = (sw && sh) ? sh / sw : 1920 / 1080;
+  return { w:1080, h: Math.round(1080 * Math.min(Math.max(ratio, 1), 2.6)) };
+}
+const widSize = ()=>{
+  const k = DB.get('widSize', 'auto');
+  const s = WID_SIZES[k];
+  return (!s || k === 'auto') ? autoSize() : { w:s.w, h:s.h };
+};
+const widLay = ()=> WID_LAYS[DB.get('widLay','mid')] ? DB.get('widLay','mid') : 'mid';
+
 /* 배경화면용 SVG 한 장을 문자열로 만듭니다 (외부 리소스 없이 자체 완결) */
-function widgetSvg(r, key, W, H){
+function widgetSvg(r, key, W, H, lay){
   W = W || 1080; H = H || 1920;
+  /* 잠금화면 시계·바로가기를 피해 글자를 올리거나 내립니다.
+     배경(바탕색·무늬)은 그대로 두고 글자와 서킷 지도만 움직입니다. */
+  const DY = (WID_LAYS[lay] || WID_LAYS.mid).dy * H;
   const th = THEMES[key] || THEMES.midnight, s = SERIES[r.s];
   const acc = th.useSeries ? s.color
             : th.acc || (key==='sunset' ? '#ffd66b' : key==='checker' ? '#ffffff' : '#5aa0ff');
@@ -1855,6 +1902,7 @@ function widgetSvg(r, key, W, H){
   </filter>` : ''}</defs>
   <rect width="${W}" height="${H}" fill="url(#${gid})"/>
   ${deco}
+  <g transform="translate(0,${DY})">
   <text x="${W/2}" y="${H*0.115}" fill="${acc}" font-size="40" font-weight="800" text-anchor="middle"
         font-family="sans-serif" letter-spacing="10">${esx(s.name)}  ·  ${esx(t('hero.round', r.r))}</text>
   <text x="${W/2}" y="${H*0.175}" fill="${th.fg}" font-size="76" font-weight="800" text-anchor="middle"
@@ -1865,6 +1913,7 @@ function widgetSvg(r, key, W, H){
   <text x="${W/2}" y="${H*0.715}" fill="${th.fg}" font-size="46" font-weight="700" text-anchor="middle"
         font-family="sans-serif">${esx(fmtFull(r.ms))}</text>
   ${cd}
+  </g>
   <text x="${W/2}" y="${H*0.945}" fill="${th.dim}" font-size="30" font-weight="800" text-anchor="middle"
         font-family="sans-serif" letter-spacing="8" opacity=".7">APEX</text>
 </svg>`;
@@ -1872,13 +1921,14 @@ function widgetSvg(r, key, W, H){
 
 /* SVG를 PNG로 굽습니다. blob URL은 동일 출처라 캔버스가 오염되지 않습니다. */
 function saveWidget(r, key){
-  const svg = widgetSvg(r, key);
+  const sz = widSize();
+  const svg = widgetSvg(r, key, sz.w, sz.h, widLay());
   const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml;charset=utf-8'}));
   const img = new Image();
   img.onload = ()=>{
     try{
-      const c = el('canvas'); c.width = 1080; c.height = 1920;
-      c.getContext('2d').drawImage(img, 0, 0, 1080, 1920);
+      const c = el('canvas'); c.width = sz.w; c.height = sz.h;
+      c.getContext('2d').drawImage(img, 0, 0, sz.w, sz.h);
       c.toBlob(b=>{
         if(!b){ toast(t('wid.fail')); return; }
         const u = URL.createObjectURL(b), a = el('a');
@@ -4288,7 +4338,7 @@ function renderCal(){
     if(nr){
       /* widTheme 은 이 함수보다 아래에서 선언됩니다. 지금은 부팅이 소식 탭으로
          시작해 문제가 없지만, 순서가 바뀌어도 앱이 멈추지 않도록 감쌉니다 */
-      try{ $('#calCtaPrev').innerHTML = widgetSvg(nr, widTheme, 1080, 1920); }catch(e){}
+      try{ const sz = widSize(); $('#calCtaPrev').innerHTML = widgetSvg(nr, widTheme, sz.w, sz.h, widLay()); }catch(e){}
       cta.onclick = openWidget;
     }
   }
@@ -5701,26 +5751,48 @@ function openWidget(){
   const chips = Object.entries(THEMES).map(([k,th])=>
     `<button class="chip ${k===widTheme?'on':''}" data-th="${k}">${esc(lz3(th.n))}</button>`
   ).join('');
+  /* 배경화면 맞춤 — 크기와 글자 위치 */
+  const szNow = DB.get('widSize','auto'), layNow = DB.get('widLay','mid');
+  const szChips = Object.entries(WID_SIZES).map(([k,v])=>
+    `<button class="chip ${k===szNow?'on':''}" data-sz="${k}">${esc(lz3(v.n))}</button>`
+  ).join('');
+  const layChips = Object.entries(WID_LAYS).map(([k,v])=>
+    `<button class="chip ${k===layNow?'on':''}" data-lay="${k}">${esc(lz3(v.n))}</button>`
+  ).join('');
 
   openSheet(`
     <h2>${t('wid.title')}</h2>
     <div class="muted">${esc(rname(r))} · ${esc(fmtFull(r.ms))}</div>
-    <div class="chips" style="margin-top:12px" id="widChips">${chips}</div>
+    <div class="sec">${t('wid.theme')}</div>
+    <div class="chips" id="widChips">${chips}</div>
+    <div class="sec">${t('wid.size')}</div>
+    <div class="chips" id="widSz">${szChips}</div>
+    <div class="sec">${t('wid.lay')}</div>
+    <div class="chips" id="widLayC">${layChips}</div>
+    <div class="note" id="widSzNote"></div>
     <div class="widprev" id="widPrev"></div>
     <div class="note">${t('wid.hint')}</div>
     <button class="btn flow" id="widSave">${t('wid.save')}</button>
     <button class="btn ghost sm" id="widClose">${t('r.close')}</button>`);
 
-  const paint = ()=>{ $('#widPrev').innerHTML = widgetSvg(r, widTheme, 1080, 1920); };
+  const paint = ()=>{
+    const sz = widSize();
+    $('#widPrev').innerHTML = widgetSvg(r, widTheme, sz.w, sz.h, widLay());
+    $('#widSzNote').textContent = t('wid.sizeNote', sz.w + ' × ' + sz.h);
+  };
   paint();
-  $('#widChips').querySelectorAll('.chip').forEach(b=>{
-    b.onclick = ()=>{
-      const k = b.dataset.th;
-      widTheme = k;
-      $('#widChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===b));
-      paint();
-    };
-  });
+  const pick = (box, attr, store)=>{
+    $(box).querySelectorAll('.chip').forEach(b=>{
+      b.onclick = ()=>{
+        if(store) DB.set(store, b.dataset[attr]); else widTheme = b.dataset[attr];
+        $(box).querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===b));
+        paint();
+      };
+    });
+  };
+  pick('#widChips', 'th',  null);
+  pick('#widSz',    'sz',  'widSize');
+  pick('#widLayC',  'lay', 'widLay');
   $('#widSave').onclick  = ()=> saveWidget(r, widTheme);
   $('#widClose').onclick = closeSheet;
 }
