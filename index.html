@@ -3120,6 +3120,35 @@ async function translateTitles(titles, target){
 /* 구글 번역을 먼저 해서 한국어를 바로 띄우고, AI 다듬기는 뒤에서 이어 붙입니다.
    AI를 먼저 기다리면 최대 90초 동안 영어가 그대로 보입니다.
    onStep 이 불리면 화면을 다시 그립니다 (두 번: 구글 직후, AI 직후). */
+/* 새로 받은 기사 목록에, 전에 만들어 둔 카드를 주소로 맞춰 옮겨 담습니다.
+   기사 순서가 바뀌어도 주소가 같으면 그대로 따라옵니다. */
+function carryCards(old, data){
+  if(!old || !old.items || !old.hc) return;
+  const by = {};
+  (old.items || []).forEach((it, i) => {
+    Object.keys(old.hc).forEach(lang => {
+      const c = (old.hc[lang] || [])[i];
+      if(c && c.p) (by[lang] = by[lang] || {})[artId(it)] = c;
+    });
+  });
+  if(!Object.keys(by).length) return;
+  data.hc = data.hc || {}; data.hs = data.hs || {}; data.hsd = data.hsd || {};
+  Object.keys(by).forEach(lang => {
+    const n = Math.min(AI_CARDS, data.items.length);
+    const arr = new Array(n).fill(null);
+    let hit = 0;
+    for(let i = 0; i < n; i++){
+      const c = by[lang][artId(data.items[i])];
+      if(c){ arr[i] = c; hit++; }
+    }
+    if(hit){
+      data.hc[lang]  = arr;
+      data.hs[lang]  = arr.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
+      data.hsd[lang] = arr.map(x => x && x.d ? x.d : null);
+    }
+  });
+  data.hv = old.hv;
+}
 async function ensureTitles(key, data, onStep, noAi){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
@@ -3626,6 +3655,9 @@ async function renderNews(force){
   try{
     const items = await fetchNews(key);
     const data = { at: Date.now(), items };
+    /* 전에 만든 카드를 버리지 않고 옮겨 담습니다. 기사가 그대로면 다시
+       만들 이유가 없고, 한도에 걸린 날에는 사라지기만 합니다. */
+    carryCards(cache, data);
     DB.set('news3-'+key, data);
     if(newsSeries === key) paintNews(data);
     await ensureTitles(key, data, ()=>{ if(newsSeries === key) paintNews(data); });
