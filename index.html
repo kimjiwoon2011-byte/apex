@@ -3107,10 +3107,14 @@ async function ensureTitles(key, data, onStep, noAi){
       const c = data.hc[L][i];
       if(!(c && c.p)) miss.push(i);
     }
+    /* 날이 바뀌면 시도 횟수를 되돌립니다. 안 그러면 한도가 찬 날에 3번을
+       다 태우고 다음 날에도 빈 자리가 영영 안 채워집니다. */
+    if(data.hcDay !== aiToday()){ data.hcTry = 0; data.hcDay = aiToday(); }
     data.hcTry = +data.hcTry || 0;
-    if(miss.length && data.hcTry < 3){
+    /* 한도에 막혀 있으면 세지 않습니다 — 모델 탓이 아니라 우리 사정입니다 */
+    if(miss.length && data.hcTry < 3 && !aiResting() && aiSpent() < AI_DAILY_MAX){
       data.hcTry++;
-      DB.set('news3-'+key, data);          /* 실패해도 횟수는 남깁니다 */
+      DB.set('news3-'+key, data);          /* 형식을 못 지켜 실패해도 횟수는 남깁니다 */
       const got = await aiLock(()=> smartBoth(miss.map(i => titles[i]), miss.map(i => leads[i])));
       if(got){
         miss.forEach((idx, j) => { if(got[j] && got[j].p) data.hc[L][idx] = got[j]; });
