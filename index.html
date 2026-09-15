@@ -3129,16 +3129,42 @@ async function ensureTitles(key, data, onStep, noAi){
      한 번에 다 못 받는 일이 잦아서(모델이 몇 줄을 빠뜨리거나 형식을 어깁니다)
      빠진 자리만 골라 다시 부릅니다. 전체를 다시 돌리면 이미 받은 것까지
      토큰을 또 씁니다. 몇 번 해도 안 되는 기사가 있으므로 횟수를 제한합니다. */
-  if(!noAi && L === 'ko' && orKey()){
+  if(L === 'ko'){
     const n = Math.min(AI_CARDS, titles.length);
     if(!Array.isArray(data.hc[L]) || data.hc[L].length !== n)
       data.hc[L] = new Array(n).fill(null);
 
-    const miss = [];
-    for(let i = 0; i < n; i++){
-      const c = data.hc[L][i];
-      if(!(c && c.p)) miss.push(i);
+    const gaps = () => {
+      const a = [];
+      for(let i = 0; i < n; i++){ const c = data.hc[L][i]; if(!(c && c.p)) a.push(i); }
+      return a;
+    };
+
+    /* 먼저 서버에 올라온 카드를 봅니다. 다른 기기가 이미 만들어 두었다면
+       AI를 부르지 않고 그대로 씁니다. 키가 없는 휴대폰에서도 이 길로 보입니다. */
+    let miss = gaps();
+    if(miss.length && netSb()){
+      try{
+        const got = await CARDS.get(miss.map(i => data.items[i]));
+        let n2 = 0;
+        miss.forEach(i => {
+          const c = got[CARDS.key(data.items[i])];
+          if(c && c.p){ data.hc[L][i] = c; n2++; }
+        });
+        if(n2){
+          const cards = data.hc[L];
+          data.hs[L]  = cards.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
+          data.hsd[L] = cards.map(x => x && x.d ? x.d : null);
+          DB.set('news3-'+key, data);
+          changed = true;
+          if(onStep) onStep();
+        }
+      }catch(e){}
     }
+
+    /* 그래도 빈 자리가 있고 이 기기에 키가 있으면 직접 만듭니다 */
+    miss = gaps();
+    if(noAi || !orKey()) miss = [];
     /* 날이 바뀌면 시도 횟수를 되돌립니다. 안 그러면 한도가 찬 날에 3번을
        다 태우고 다음 날에도 빈 자리가 영영 안 채워집니다. */
     if(data.hcDay !== aiToday()){ data.hcTry = 0; data.hcDay = aiToday(); }
@@ -3149,7 +3175,12 @@ async function ensureTitles(key, data, onStep, noAi){
       DB.set('news3-'+key, data);          /* 형식을 못 지켜 실패해도 횟수는 남깁니다 */
       const got = await aiLock(()=> smartBoth(miss.map(i => titles[i]), miss.map(i => leads[i])));
       if(got){
-        miss.forEach((idx, j) => { if(got[j] && got[j].p) data.hc[L][idx] = got[j]; });
+        const made = [];
+        miss.forEach((idx, j) => {
+          if(got[j] && got[j].p){ data.hc[L][idx] = got[j]; made.push([data.items[idx], got[j]]); }
+        });
+        /* 다른 기기도 쓰도록 올려 둡니다. 실패해도 화면에는 영향이 없습니다 */
+        if(made.length) CARDS.put(made);
         const cards = data.hc[L];
         data.hs[L]  = cards.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
         data.hsd[L] = cards.map(x => x && x.d ? x.d : null);
@@ -4848,6 +4879,31 @@ create policy "add messages"  on messages for insert with check (true);
 -- 남이 쓴 말을 바꿔치기할 수는 없습니다.
 create policy "drop messages" on messages for delete using (true);
 
+-- 카드뉴스 공유 — 한 기기가 만든 카드를 모든 기기가 같이 봅니다.
+-- 기기마다 AI 키를 넣지 않아도 되고, 하루 호출 한도도 훨씬 덜 씁니다.
+create table if not exists cards (
+  id   text primary key,   -- 언어|기사주소
+  hook text,               -- 훅
+  punch text,              -- 핵심
+  line text,               -- 설명
+  at   int8
+);
+create index if not exists cards_at_idx on cards (at desc);
+
+alter table cards enable row level security;
+drop policy if exists "read cards"  on cards;
+drop policy if exists "write cards" on cards;
+-- 누구나 읽고 쓸 수 있습니다. 단톡방과 같은 방식입니다.
+create policy "read cards"  on cards for select using (true);
+create policy "write cards" on cards for all    using (true) with check (true);
+
+-- 한 사람이 긴 글을 넣어 무료 용량을 태우지 못하게 막습니다
+alter table cards drop constraint if exists cards_len;
+alter table cards add  constraint cards_len check (
+  char_length(coalesce(hook,'')) <= 40 and
+  char_length(coalesce(punch,'')) <= 40 and
+  char_length(coalesce(line,'')) <= 120
+);
 -- 새 대화가 실시간으로 밀려오도록 (지금은 주기적으로 받아오지만, 켜 두면 나중에 바로 씁니다)
 do $$
 begin
@@ -4915,8 +4971,11 @@ async function sb(path, opt){
   const headers = { apikey:n.key, 'Content-Type':'application/json',
                     Prefer:'return=representation' };
   if(n.key.startsWith('eyJ')) headers.Authorization = 'Bearer ' + n.key;
-  const res = await fetch(n.url.replace(/\/+$/,'') + '/rest/v1/' + path,
-                          Object.assign({headers}, opt || {}));
+  /* 부르는 쪽이 헤더를 얹을 수 있게 합쳐 줍니다. 예전에는 통째로 갈아치워서
+     Prefer 하나만 넘겨도 apikey 가 사라져 인증이 깨졌습니다. */
+  const o = Object.assign({}, opt || {});
+  o.headers = Object.assign(headers, o.headers || {});
+  const res = await fetch(n.url.replace(/\/+$/,'') + '/rest/v1/' + path, o);
   const txt = await res.text();
   if(!res.ok) throw new Error('HTTP ' + res.status + ' ' + txt.slice(0,140));
   return txt ? JSON.parse(txt) : null;
@@ -5070,6 +5129,41 @@ function chatGate(){
 /* 기사마다 댓글. 기사 주소를 그대로 열쇠로 씁니다 */
 const artId = it => String(it.link || it.title || (String(it.at) + it.src)).slice(0, 400);
 
+/* 카드뉴스 공유 — 한 기기가 만든 카드를 모두가 같이 봅니다.
+   AI 키는 기기마다 따로 저장되기 때문에, 키를 넣지 않은 휴대폰에서는
+   카드가 하나도 안 보였습니다. 여기에 올려 두면 키 없이도 보입니다.
+   기사 주소를 열쇠로 쓰므로, 어느 부문에서 만들었든 그대로 맞물립니다. */
+const CARDS = {
+  key: it => 'ko|' + artId(it).slice(-160),
+
+  /* 기사 여러 개의 카드를 한 번에 받아옵니다 */
+  async get(items){
+    if(!netSb() || !items.length) return {};
+    try{
+      const ids = items.map(it => this.key(it));
+      const q = ids.map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
+      const rows = await sb('cards?id=in.(' + q + ')&select=*');
+      const out = {};
+      rows.forEach(r => { out[r.id] = { h:r.hook || '', p:r.punch || '', d:r.line || '' }; });
+      return out;
+    }catch(e){ return {}; }
+  },
+
+  /* 새로 만든 카드를 올립니다. 실패해도 화면에는 영향이 없습니다 */
+  async put(pairs){
+    if(!netSb() || !pairs.length) return;
+    try{
+      const now = Date.now();
+      const body = pairs.map(([it, c]) => ({
+        id: this.key(it), hook: (c.h || '').slice(0, 40),
+        punch: (c.p || '').slice(0, 40), line: (c.d || '').slice(0, 120), at: now
+      }));
+      await sb('cards?on_conflict=id', { method:'POST',
+        headers:{ Prefer:'resolution=merge-duplicates' },
+        body: JSON.stringify(body) });
+    }catch(e){}
+  },
+};
 const CMT = {
   async list(art){
     if(!netSb()) return [];
