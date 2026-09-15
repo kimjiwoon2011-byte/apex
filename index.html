@@ -2809,12 +2809,13 @@ function polish(s){
 /* OpenRouter 무료 모델. 키는 이 브라우저에만 두고 코드에 넣지 않습니다
    (저장소가 공개라 넣으면 남이 가져다 씁니다) */
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
+/* 실제로 응답이 돌아오는 모델만 남깁니다. NVIDIA 550B 는 2분 넘게 걸려
+   상한 안에 못 들어오고, gemma 는 부를 때마다 429 였습니다.
+   둘은 호출 수만 태우고 카드는 못 만들었습니다. */
 const OR_MODELS = [
-  'inclusionai/ling-3.0-flash-fin:free',      /* InclusionAI · 실측 1.5~2.5초 */
-  'nex-agi/nex-n2.5-mini:free',               /* Nex AGI · 4.7초, 이름 표기 정확 */
-  'dots-studio/dots-3-note-preview:free',     /* dots · 9.5초 */
-  'nvidia/nemotron-3-ultra-550b-a55b:free',   /* NVIDIA · 품질은 좋지만 과부하가 잦습니다 */
-  'google/gemma-4-31b-it:free',
+  'inclusionai/ling-3.0-flash-fin:free',      /* 실측 19~25초, 10/10 */
+  'nex-agi/nex-n2.5-mini:free',               /* 이름 표기가 정확합니다 */
+  'dots-studio/dots-3-note-preview:free',     /* 느리지만 형식을 잘 지킵니다 */
 ];
 const orKey = ()=> DB.get('orkey', '');
 
@@ -2966,7 +2967,7 @@ async function smartBoth(titles, leads){
   const deadline = Date.now() + 150000;
   for(const model of OR_MODELS){
     if(Date.now() > deadline || aiSpent() >= AI_DAILY_MAX) break;
-    for(let tryN = 0; tryN < 2; tryN++){
+    {                       /* 재시도 없이 한 번씩만 — 429 는 aiGap 이 받아 줍니다 */
       try{
         await aiGap();
         const ac = new AbortController();
@@ -2990,10 +2991,7 @@ async function smartBoth(titles, leads){
             DB.set('aiRest', until || (Date.now() + 3600000));
             return null;
           }
-          if(tryN === 0 && Date.now() + 25000 < deadline){
-            await new Promise(r => setTimeout(r, 20000));   /* 잠깐 몰린 것뿐 */
-            continue;
-          }
+          /* 몰린 것뿐이면 다음 모델로 넘어갑니다 (aiGap 이 20초 띄웁니다) */
         }
         if(!res.ok) break;
         const j = await res.json();
