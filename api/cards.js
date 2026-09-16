@@ -13,7 +13,7 @@
  * 주의 — 키를 이 파일에 적지 마세요. 저장소가 공개라 그대로 남에게 넘어갑니다.
  */
 
-export const config = { maxDuration: 60 };   /* AI 한 번이 20~30초 걸립니다 */
+export const maxDuration = 60;   /* AI 한 번이 20~30초 걸립니다 */
 
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OR_MODELS = [
@@ -93,12 +93,15 @@ async function makeCards(items, glossary, key) {
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' + body
     : body;
 
-  const deadline = Date.now() + 50000;          /* 함수 상한 60초 안에서 끝냅니다 */
+  /* 함수 상한이 60초입니다. 남은 시간이 한 번 호출할 만큼 없으면 아예 시작하지
+     않습니다. 예전엔 28초짜리 호출을 50초 지점에 시작해 통째로 시간 초과가
+     났습니다. */
+  const deadline = Date.now() + 42000;
   for (const model of OR_MODELS) {
-    if (Date.now() > deadline) break;
+    if (Date.now() + 21000 > deadline) break;   /* 한 번 돌릴 시간이 없으면 중단 */
     try {
       const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 28000);
+      const timer = setTimeout(() => ac.abort(), 20000);
       const res = await fetch(OR_URL, {
         method: 'POST', signal: ac.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },

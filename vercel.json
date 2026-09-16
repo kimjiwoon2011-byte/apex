@@ -42,5 +42,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/cards.js": {
+      "maxDuration": 60
+    }
+  }
 }
