@@ -4785,7 +4785,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-11 · 사진·GIF·댓글';
+const BUILD = '2026-09-16 · 서버 카드·자동 갱신';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -4821,6 +4821,15 @@ const SB_AUTH = 'https://nlwfmhrhbgzvvenztejn.supabase.co';
     DB.set('fav', { driver:fav.driver, team:null });
   }
   DB.del('news3-tc');
+})();
+
+/* 앱이 새 버전으로 바뀌면 담아 둔 소식을 한 번 비웁니다.
+   옛 기사 목록이 남아 있으면 서버에 쌓인 카드와 주소가 안 맞아 카드가
+   하나도 안 붙습니다. 카드는 서버에 있으니 다시 받는 데 AI 를 쓰지 않습니다. */
+(function(){
+  if(DB.get('build', '') === BUILD) return;
+  Object.keys(localStorage).forEach(k => { if(k.startsWith('ms-news3-')) localStorage.removeItem(k); });
+  DB.set('build', BUILD);
 })();
 
 
