@@ -1,0 +1,52 @@
+{
+  "packageId": "app.vercel.apex_five_theta.twa",
+  "host": "apex-five-theta.vercel.app",
+  "name": "APEX — 모터스포츠 통합 앱",
+  "launcherName": "APEX",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#1257e8",
+  "themeColorDark": "#0b1424",
+  "navigationColor": "#1257e8",
+  "navigationColorDark": "#0b1424",
+  "navigationDividerColor": "#1257e8",
+  "navigationDividerColorDark": "#0b1424",
+  "backgroundColor": "#f3f6ff",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://apex-five-theta.vercel.app/icon-512.png",
+  "maskableIconUrl": "https://apex-five-theta.vercel.app/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "일정",
+      "shortName": "일정",
+      "url": "/?tab=cal",
+      "chosenIconUrl": "https://apex-five-theta.vercel.app/icon-192.png"
+    },
+    {
+      "name": "단톡방",
+      "shortName": "단톡방",
+      "url": "/?tab=chat",
+      "chosenIconUrl": "https://apex-five-theta.vercel.app/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://apex-five-theta.vercel.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://apex-five-theta.vercel.app/",
+  "minSdkVersion": 21,
+  "appVersion": "1.0.0",
+  "orientationLock": false
+}

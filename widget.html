@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>APEX 위젯</title>
+<style>
+/* 홈 화면 위젯 칸에 들어갑니다. 칸이 작고 배경이 저마다 달라서
+   글자를 크고 굵게, 바탕은 반투명 어둡게 깔았습니다. */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Pretendard','Noto Sans KR',-apple-system,'Segoe UI',Roboto,sans-serif;
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  background:transparent;
+}
+a{text-decoration:none;color:inherit;display:block;width:100%;height:100%}
+.w{
+  width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;
+  gap:2px;padding:12px 14px;border-radius:20px;
+  background:linear-gradient(150deg,var(--cc,#2b3a55) 0%,rgba(6,10,20,.97) 72%);
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
+}
+.top{display:flex;align-items:center;gap:6px;min-width:0}
+.tag{
+  font-size:10px;font-weight:900;letter-spacing:.04em;padding:2px 7px;border-radius:999px;
+  background:rgba(255,255,255,.22);flex:0 0 auto
+}
+.rd{font-size:10px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap}
+/* 제목과 서킷을 한 줄에 놓습니다. 서킷은 작고 흐리게 붙여
+   제목이 먼저 읽히도록 했습니다. 자리가 모자라면 서킷부터 줄어듭니다. */
+.nm{
+  font-size:20px;font-weight:900;letter-spacing:-.03em;line-height:1.2;margin-top:5px;
+  display:flex;align-items:baseline;gap:7px;min-width:0
+}
+.nm .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+.nm .ci{
+  font-size:10.5px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0
+}
+.cd{display:flex;gap:5px;margin-top:9px}
+.cd div{
+  flex:1;background:rgba(255,255,255,.14);border-radius:9px;padding:6px 2px 4px;text-align:center
+}
+.cd b{
+  display:block;font-size:17px;font-weight:900;letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums;line-height:1
+}
+.cd span{display:block;font-size:8px;font-weight:700;color:rgba(255,255,255,.6);margin-top:2px}
+.live{
+  margin-top:9px;font-size:15px;font-weight:900;color:#ff5b5b;
+  display:flex;align-items:center;gap:6px
+}
+.live i{width:8px;height:8px;border-radius:50%;background:#ff3b3b;animation:b 1.2s infinite}
+@keyframes b{0%,100%{opacity:1}50%{opacity:.25}}
+.err{font-size:12px;font-weight:700;color:rgba(255,255,255,.75);text-align:center}
+
+/* 위젯 칸이 낮으면 여백과 글자를 줄이고 서킷 이름을 뺍니다.
+   안 그러면 경기 이름이 중간에서 잘립니다 (340x110 에서 확인). */
+@media (max-height:150px){
+  .w{padding:9px 12px;gap:0}
+  .nm .ci{display:none}
+  .nm{font-size:15px;margin-top:3px}
+  .cd{margin-top:6px;gap:4px}
+  .cd div{padding:4px 2px 3px}
+  .cd b{font-size:15px}
+  .cd span{font-size:7.5px}
+  .live{margin-top:6px;font-size:13px}
+}
+/* 더 낮으면 경기 이름까지 빼고 카운트다운만 */
+@media (max-height:105px){
+  .nm{display:none}
+  .cd{margin-top:4px}
+}
+@media (prefers-reduced-motion:reduce){ .live i{animation:none} }
+</style>
+</head>
+<body>
+<a id="go" href="https://apex-five-theta.vercel.app/" rel="noopener">
+  <div class="w" id="w"><div class="err">불러오는 중…</div></div>
+</a>
+
+<script>
+/* 일정은 races.json 한 장(12KB)만 받습니다. 앱 전체(365KB)를 받을 이유가 없습니다.
+   받은 일정은 저장해 두고, 하루에 한 번만 다시 받습니다. */
+var SRC = 'https://apex-five-theta.vercel.app/races.json';
+var KEY = 'apex-widget-races';
+var data = null, timer = null;
+
+function save(d){ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY) || 'null'); }catch(e){ return null; } }
+
+function nextRace(d){
+  var now = Date.now();
+  for (var i = 0; i < d.races.length; i++){
+    var r = d.races[i], ms = new Date(r.t).getTime();
+    if (ms + (r.h || 2) * 3600000 > now) return r;   /* 진행 중이면 그것 */
+  }
+  return null;
+}
+
+function z(n){ return n < 10 ? '0' + n : '' + n; }
+
+function paint(){
+  var box = document.getElementById('w');
+  if (!data){ box.innerHTML = '<div class="err">일정을 받지 못했어요</div>'; return; }
+  var r = nextRace(data);
+  if (!r){ box.innerHTML = '<div class="err">이번 시즌 경기가 끝났어요</div>'; return; }
+
+  var s = data.series[r.s] || { name: r.s, color: '#2b3a55' };
+  box.style.setProperty('--cc', s.color);
+  var ms = new Date(r.t).getTime(), d = ms - Date.now();
+
+  var head =
+    '<div class="top"><span class="tag">' + esc(s.name) + '</span>' +
+    '<span class="rd">라운드 ' + r.r + '</span></div>' +
+    '<div class="nm"><span class="t">' + esc(r.f ? r.f + ' ' : '') + esc(r.n) + '</span>' +
+      '<span class="ci">' + esc(r.c) + '</span></div>';
+
+  if (d <= 0){
+    box.innerHTML = head + '<div class="live"><i></i>진행 중</div>';
+    return;
+  }
+  var dd = Math.floor(d / 86400000),
+      hh = Math.floor(d % 86400000 / 3600000),
+      mm = Math.floor(d % 3600000 / 60000),
+      ss = Math.floor(d % 60000 / 1000);
+  box.innerHTML = head +
+    '<div class="cd">' +
+      '<div><b>' + dd + '</b><span>일</span></div>' +
+      '<div><b>' + z(hh) + '</b><span>시간</span></div>' +
+      '<div><b>' + z(mm) + '</b><span>분</span></div>' +
+      '<div><b>' + z(ss) + '</b><span>초</span></div>' +
+    '</div>';
+}
+
+function esc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function fetchRaces(){
+  try{
+    var res = await fetch(SRC + '?t=' + Math.floor(Date.now() / 86400000), { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var j = await res.json();
+    if (j && j.races && j.races.length){ data = j; save(j); }
+  }catch(e){ /* 저장해 둔 걸 그대로 씁니다 */ }
+}
+
+/* 위젯 앱에 따라 a 태그가 안 먹는 경우가 있어, 눌림을 직접 받아도 엽니다 */
+document.addEventListener('click', function(){
+  try{ location.href = 'https://apex-five-theta.vercel.app/'; }catch(e){}
+});
+
+(async function(){
+  data = load();                 /* 저장된 게 있으면 먼저 그려 빈 화면을 없앱니다 */
+  if (data) paint();
+  await fetchRaces();
+  paint();
+  if (timer) clearInterval(timer);
+  timer = setInterval(paint, 1000);
+  /* 위젯은 오래 떠 있으므로 여섯 시간마다 일정을 다시 받습니다 */
+  setInterval(fetchRaces, 6 * 3600 * 1000);
+})();
+</script>
+</body>
+</html>

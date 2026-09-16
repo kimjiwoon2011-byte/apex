@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.apex_five_theta.twa",
+    "sha256_cert_fingerprints": [
+      "여기에 bubblewrap fingerprint list 로 나온 SHA-256 값을 넣으세요"
+    ]
+  }
+}]

@@ -1,0 +1,9 @@
+# 앱 서명 키 — 잃어버리면 앱을 업데이트할 수 없고,
+# 남에게 넘어가면 남이 내 앱인 척 올릴 수 있습니다. 절대 올리지 마세요.
+*.keystore
+*.jks
+store/android.keystore
+store/app-release-*.aab
+store/app-release-*.apk
+store/.bubblewrap/
+node_modules/
