@@ -56,5 +56,6 @@
       "path": "/api/cron",
       "schedule": "30 0 * * *"
     }
-  ]
+  ],
+  "cleanUrls": true
 }
