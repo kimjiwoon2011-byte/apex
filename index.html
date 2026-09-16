@@ -2918,6 +2918,15 @@ function nameGlossary(lines){
   return out;
 }
 
+/* 서버에서 받은 카드에 이름 사전을 입힙니다. 기기에서 직접 만든 카드는
+   거치는데(fix) 이 길만 빠져 있어서, 자동으로 만들어진 카드에
+   Kelvin van der Linde 같은 이름이 영어로 남았습니다. 이미 서버에 쌓인
+   카드도 받는 자리에서 고쳐지므로 다시 만들 필요가 없습니다. */
+function cardNames(c){
+  if(!c || !c.p) return c;
+  const fix = s => polish(postNames(String(s || "").trim()));
+  return { h: fix(c.h), p: fix(c.p), d: fix(c.d) };
+}
 /* 번호가 몇 개 빠져도 받은 것만 씁니다. 빠진 자리는 null 로 두고
    화면에서 기존 번역으로 자동으로 메웁니다. */
 function orParse(text, n){
@@ -3246,7 +3255,7 @@ async function ensureTitles(key, data, onStep, noAi){
         let n2 = 0;
         miss.forEach(i => {
           const c = got[CARDS.key(data.items[i])];
-          if(c && c.p){ data.hc[L][i] = c; n2++; }
+          if(c && c.p){ data.hc[L][i] = cardNames(c); n2++; }
         });
         if(n2){
           const cards = data.hc[L];
@@ -3269,7 +3278,7 @@ async function ensureTitles(key, data, onStep, noAi){
         let n2 = 0;
         miss.forEach(i => {
           const c = got.cards['ko|' + String(data.items[i].link || '').slice(-160)];
-          if(c && c.p){ data.hc[L][i] = c; n2++; }
+          if(c && c.p){ data.hc[L][i] = cardNames(c); n2++; }
         });
         if(n2){
           const cards = data.hc[L];
@@ -4803,7 +4812,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-16 · 서버 카드·자동 갱신';
+const BUILD = '2026-09-17 · 자동 갱신 수리';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
