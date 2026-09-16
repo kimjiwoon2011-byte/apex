@@ -773,6 +773,15 @@ textarea{resize:vertical;min-height:78px}
 .favcard .np b{display:block;font-family:var(--mono);font-size:17px;font-weight:700;line-height:1}
 
 /* 캘린더 미리보기 · 요금제 */
+/* 홈 화면 위젯 안내 칸 */
+.widhome{display:flex;align-items:center;gap:12px}
+.widhome .wh-tx{flex:1;min-width:0}
+.widhome .wh-tx b{display:block;font-size:13.5px;font-weight:800}
+.widhome .wh-tx small{display:block;margin-top:3px;font-size:11.5px;line-height:1.5;color:var(--tx-2)}
+.widhome .btn{width:auto;flex:0 0 auto;margin:0;padding:10px 15px}
+.urlbox{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);
+  padding:12px 13px;margin-top:12px;font-size:12px;word-break:break-all;color:var(--tx-2);
+  font-family:var(--mono)}
 .widprev{margin-top:14px;border-radius:var(--r3);overflow:hidden;border:1px solid var(--line);
   background:var(--surface-2);line-height:0}
 .widprev svg{width:100%;height:auto;display:block}
@@ -1213,7 +1222,7 @@ ko:{
  'auth.errNo':'없는 아이디예요','auth.errWrong':'비밀번호가 틀렸어요',
  'auth.welcome':'{0}님, 반가워요','auth.bye':'로그아웃했어요',
  'set.account':'계정','set.loggedIn':'{0} 으로 로그인됨','set.logout':'로그아웃','set.loginBtn':'로그인 / 회원가입',
- 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.theme':'테마','wid.size':'크기','wid.lay':'글자 위치','wid.sizeNote':'{0} 로 저장됩니다 · 잠금화면 시계를 피하려면 글자 위치를 바꿔 보세요',
+ 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.home':'홈 화면 위젯','wid.homeT':'앱을 안 열어도 보이게','wid.homeS':'날씨 앱처럼 홈 화면에서 다음 경기와 남은 시간을 바로 봅니다','wid.homeBtn':'놓는 법','wid.aosStep':'안드로이드','wid.aosWhy':'플레이 스토어에서 "웹 위젯"을 설치한 뒤, 홈 화면 빈 곳을 길게 눌러 위젯 → 그 앱을 고르고 아래 주소를 넣으세요. 갱신 주기는 30분~1시간이 알맞습니다.','wid.iosStep':'아이폰','wid.iosWhy':'아이폰은 웹페이지를 위젯으로 올릴 수 없어서 Scriptable(무료 앱)이 필요합니다. 아래를 누르면 설치 방법과 복사 버튼이 나옵니다.','wid.iosGo':'설치 방법 열기','wid.copy':'주소 복사','wid.copied':'주소를 복사했어요','wid.theme':'테마','wid.size':'크기','wid.lay':'글자 위치','wid.sizeNote':'{0} 로 저장됩니다 · 잠금화면 시계를 피하려면 글자 위치를 바꿔 보세요',
  'wid.save':'배경화면으로 저장','wid.saved':'이미지를 내려받았어요','wid.fail':'이미지를 만들지 못했어요',
  'wid.locked':'PRO 전용','wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
@@ -1357,7 +1366,7 @@ en:{
  'auth.errNo':'No such username','auth.errWrong':'Wrong password',
  'auth.welcome':'Welcome, {0}','auth.bye':'Logged out',
  'set.account':'Account','set.loggedIn':'Signed in as {0}','set.logout':'Log out','set.loginBtn':'Log in / Sign up',
- 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.theme':'Theme','wid.size':'Size','wid.lay':'Text position','wid.sizeNote':'Saves at {0} · move the text to clear the lock-screen clock',
+ 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.home':'Home screen widget','wid.homeT':'See it without opening the app','wid.homeS':'Next race and countdown on your home screen, like a weather app','wid.homeBtn':'How to add','wid.aosStep':'Android','wid.aosWhy':'Install a "Web Widget" app from Play Store, long-press your home screen, add its widget, and paste the address below. A 30–60 minute refresh works well.','wid.iosStep':'iPhone','wid.iosWhy':'iPhone cannot show a web page as a widget, so it needs Scriptable (free). Tap below for the steps and a copy button.','wid.iosGo':'Open the guide','wid.copy':'Copy address','wid.copied':'Address copied','wid.theme':'Theme','wid.size':'Size','wid.lay':'Text position','wid.sizeNote':'Saves at {0} · move the text to clear the lock-screen clock',
  'wid.save':'Save as wallpaper','wid.saved':'Image downloaded','wid.fail':'Could not create the image',
  'wid.locked':'PRO only','wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
@@ -1501,7 +1510,7 @@ ja:{
  'auth.errNo':'そのユーザー名はありません','auth.errWrong':'パスワードが違います',
  'auth.welcome':'{0}さん、ようこそ','auth.bye':'ログアウトしました',
  'set.account':'アカウント','set.loggedIn':'{0} でログイン中','set.logout':'ログアウト','set.loginBtn':'ログイン / 新規登録',
- 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.theme':'テーマ','wid.size':'サイズ','wid.lay':'文字の位置','wid.sizeNote':'{0} で保存されます · ロック画面の時計を避けるには位置を変えてください',
+ 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.home':'ホーム画面ウィジェット','wid.homeT':'アプリを開かずに見る','wid.homeS':'天気アプリのように次のレースと残り時間をホーム画面で','wid.homeBtn':'置き方','wid.aosStep':'Android','wid.aosWhy':'Play ストアで「Web Widget」を入れ、ホーム画面を長押し→ウィジェット→そのアプリを選び、下のアドレスを貼り付けます。更新は30分〜1時間が適切です。','wid.iosStep':'iPhone','wid.iosWhy':'iPhone はウェブページをウィジェットにできないため Scriptable（無料）が必要です。下を押すと手順とコピーボタンが出ます。','wid.iosGo':'手順を開く','wid.copy':'アドレスをコピー','wid.copied':'コピーしました','wid.theme':'テーマ','wid.size':'サイズ','wid.lay':'文字の位置','wid.sizeNote':'{0} で保存されます · ロック画面の時計を避けるには位置を変えてください',
  'wid.save':'壁紙として保存','wid.saved':'画像を保存しました','wid.fail':'画像を作成できませんでした',
  'wid.locked':'PRO限定','wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
@@ -5866,6 +5875,16 @@ function openWidget(){
     <div class="widprev" id="widPrev"></div>
     <div class="note">${t('wid.hint')}</div>
     <button class="btn flow" id="widSave">${t('wid.save')}</button>
+
+    <!-- 홈 화면 위젯 — 날씨 앱처럼 앱을 안 열어도 보이게 -->
+    <div class="sec">${t('wid.home')}</div>
+    <div class="card widhome">
+      <div class="wh-tx">
+        <b>${t('wid.homeT')}</b>
+        <small>${t('wid.homeS')}</small>
+      </div>
+      <button class="btn flow sm" id="widHome">${t('wid.homeBtn')}</button>
+    </div>
     <button class="btn ghost sm" id="widClose">${t('r.close')}</button>`);
 
   const paint = ()=>{
@@ -5887,6 +5906,42 @@ function openWidget(){
   pick('#widSz',    'sz',  'widSize');
   pick('#widLayC',  'lay', 'widLay');
   $('#widSave').onclick  = ()=> saveWidget(r, widTheme);
+
+  /* 홈 화면 위젯 안내. 아이폰과 안드로이드는 방법이 아예 달라서 갈라 놓습니다.
+     아이폰은 웹페이지를 위젯으로 못 올려 Scriptable(무료 앱)을 거쳐야 합니다. */
+  $('#widHome').onclick = ()=>{
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const url = location.origin + '/widget';
+    openSheet(`
+      <h2>${t('wid.home')}</h2>
+      <div class="muted">${t('wid.homeS')}</div>
+      ${ios ? `
+        <div class="sec">${t('wid.iosStep')}</div>
+        <div class="card"><div class="note" style="margin:0">${t('wid.iosWhy')}</div></div>
+        <a class="btn flow" href="/ios" target="_blank" rel="noopener">${t('wid.iosGo')}</a>
+      ` : `
+        <div class="sec">${t('wid.aosStep')}</div>
+        <div class="card"><div class="note" style="margin:0">${t('wid.aosWhy')}</div></div>
+        <div class="urlbox" id="widUrl">${esc(url)}</div>
+        <button class="btn flow" id="widCopy">${t('wid.copy')}</button>
+      `}
+      <button class="btn ghost sm" id="widHomeClose">${t('r.close')}</button>`);
+
+    const cp = $('#widCopy');
+    if(cp) cp.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(url); toast(t('wid.copied')); }
+      catch(e){
+        /* 옛 브라우저 — 보이지 않는 칸에 넣고 복사합니다 */
+        const ta = el('textarea'); ta.value = url;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); toast(t('wid.copied')); }catch(e2){}
+        document.body.removeChild(ta);
+      }
+    };
+    $('#widHomeClose').onclick = ()=> openWidget();   /* 캘린더 화면으로 돌아갑니다 */
+  };
   $('#widClose').onclick = closeSheet;
 }
 
