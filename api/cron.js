@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
     if (todo.length) {
       /* 남은 시간에서 저장·다음 호출 몫을 빼고 씁니다 */
-      const budget = 45000 - (Date.now() - t0);
+      const budget = 50000 - (Date.now() - t0);
       const made = await makeCards(todo, [], KEY, budget);
       if (made.cards) {
         const rows = [];

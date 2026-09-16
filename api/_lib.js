@@ -83,14 +83,22 @@ export async function makeCards(items, glossary, key, budgetMs) {
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' + body
     : body;
 
-  const deadline = Date.now() + (budgetMs || 42000);
+  const deadline = Date.now() + (budgetMs || 50000);
   for (const model of OR_MODELS) {
-    if (Date.now() + 21000 > deadline) break;   /* 한 번 돌릴 시간이 없으면 중단 */
-    /* 20초 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자
-       껐더니, 답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이
-       기다렸고 함수가 60초에 죽었습니다. */
+    /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
+       기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
+       20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
+       남으면 짧게 한 번 더 해 봅니다. 뒤에 저장과 다음 부문 호출이
+       남아 있으므로 2초는 떼어 둡니다. */
+    const room = deadline - Date.now() - 2000;
+    const callMs = Math.min(28000, room);
+    if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
+
+    /* 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자 껐더니,
+       답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이 기다렸고
+       함수가 60초에 죽었습니다. */
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 20000);
+    const timer = setTimeout(() => ac.abort(), callMs);
     try {
       const res = await fetch(OR_URL, {
         method: 'POST', signal: ac.signal,
