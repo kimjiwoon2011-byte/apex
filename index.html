@@ -6092,6 +6092,15 @@ setInterval(()=>{
 setInterval(()=>{
   if(tab === 'chat' && googleUser() && netOn() && !$('#scrim').classList.contains('open')) renderRooms();
 }, 6000);
+
+/* 앱 껍데기를 기기에 담아 둡니다. 통신이 약한 곳에서도 열리게 하려는 것입니다.
+   새 버전이 올라오면 다음에 열 때 자동으로 바뀝니다. */
+if(HOSTED && 'serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+
 setInterval(checkAlerts, 30000);
 checkAlerts();
 </script>
