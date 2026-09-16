@@ -1,0 +1,24 @@
+{
+  "name": "APEX — 모터스포츠 통합 앱",
+  "short_name": "APEX",
+  "description": "F1·WEC·IMSA·DTM·SUPER GT·GT 소식과 일정을 한국어로",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6ff",
+  "theme_color": "#1257e8",
+  "lang": "ko",
+  "categories": ["sports", "news"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "일정", "short_name": "일정", "url": "/?tab=cal",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "단톡방", "short_name": "단톡방", "url": "/?tab=chat",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
