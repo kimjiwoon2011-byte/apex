@@ -102,6 +102,11 @@ export default async function handler(req, res) {
     out.error = String(e).slice(0, 120);
   }
 
+  /* 무엇을 했는지 한 줄 남깁니다. 이게 없으면 자동 갱신이 돌았는지,
+     어느 부문에서 멈췄는지 나중에 알 방법이 없습니다. */
+  console.log('cron ' + s.k + ' made=' + out.made + ' cached=' + out.cached
+              + (out.note ? ' note=' + out.note : '')
+              + (out.error ? ' error=' + out.error : ''));
   /* 다음 부문을 이어 부릅니다. */
   if (i + 1 < SERIES.length) {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
