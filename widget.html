@@ -52,11 +52,22 @@ a{text-decoration:none;color:inherit;display:block;width:100%;height:100%}
 @keyframes b{0%,100%{opacity:1}50%{opacity:.25}}
 .err{font-size:12px;font-weight:700;color:rgba(255,255,255,.75);text-align:center}
 
-/* 위젯 칸이 아주 낮을 때는 카운트다운만 남깁니다 */
-@media (max-height:130px){
+/* 위젯 칸이 낮으면 여백과 글자를 줄이고 서킷 이름을 뺍니다.
+   안 그러면 경기 이름이 중간에서 잘립니다 (340x110 에서 확인). */
+@media (max-height:150px){
+  .w{padding:9px 12px;gap:0}
   .ci{display:none}
-  .nm{font-size:16px;-webkit-line-clamp:1}
-  .cd{margin-top:6px}
+  .nm{font-size:15px;-webkit-line-clamp:1;margin-top:3px}
+  .cd{margin-top:6px;gap:4px}
+  .cd div{padding:4px 2px 3px}
+  .cd b{font-size:15px}
+  .cd span{font-size:7.5px}
+  .live{margin-top:6px;font-size:13px}
+}
+/* 더 낮으면 경기 이름까지 빼고 카운트다운만 */
+@media (max-height:105px){
+  .nm{display:none}
+  .cd{margin-top:4px}
 }
 @media (prefers-reduced-motion:reduce){ .live i{animation:none} }
 </style>
