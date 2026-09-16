@@ -3149,6 +3149,26 @@ function carryCards(old, data){
   });
   data.hv = old.hv;
 }
+/* 서버에 카드를 부탁합니다. AI 키는 Vercel 환경변수에 있어서,
+   이 기기에 키가 없어도 카드가 만들어집니다. 만든 건 서버가 Supabase 에
+   저장하므로 다른 기기는 그냥 받아 가기만 하면 됩니다.
+   앱을 파일로 열었을 때(file://)는 서버가 없으니 건너뜁니다. */
+async function askServerCards(items, glossary){
+  if(!HOSTED || !items.length) return null;
+  try{
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), 70000);
+    const res = await fetch('/api/cards', { method:'POST', signal:ac.signal,
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        items: items.map(it => ({ link:it.link, title:it.title||'', lead:(it.desc||'').replace(/\s+/g,' ').trim() })),
+        glossary: glossary || [] }) });
+    clearTimeout(timer);
+    if(!res.ok) return null;
+    const j = await res.json();
+    return j && j.cards ? j : null;
+  }catch(e){ return null; }
+}
 async function ensureTitles(key, data, onStep, noAi){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
@@ -3221,7 +3241,30 @@ async function ensureTitles(key, data, onStep, noAi){
       }catch(e){}
     }
 
-    /* 그래도 빈 자리가 있고 이 기기에 키가 있으면 직접 만듭니다 */
+    /* 서버에 부탁합니다. 이 기기에 키가 없어도 여기서 만들어집니다.
+       서버가 Supabase 에 저장까지 하므로 다음 기기는 위 단계에서 끝납니다. */
+    miss = gaps();
+    if(miss.length && !noAi){
+      const gl = nameGlossary(titles.concat(leads));
+      const got = await aiLock(()=> askServerCards(miss.map(i => data.items[i]), gl));
+      if(got && got.cards){
+        let n2 = 0;
+        miss.forEach(i => {
+          const c = got.cards['ko|' + String(data.items[i].link || '').slice(-160)];
+          if(c && c.p){ data.hc[L][i] = c; n2++; }
+        });
+        if(n2){
+          const cards = data.hc[L];
+          data.hs[L]  = cards.map(x => x && x.p ? (x.h ? x.h + ' ' + x.p : x.p) : null);
+          data.hsd[L] = cards.map(x => x && x.d ? x.d : null);
+          DB.set('news3-'+key, data);
+          changed = true;
+          if(onStep) onStep();
+        }
+      }
+    }
+
+    /* 그래도 빈 자리가 있고 이 기기에 키가 직접 들어 있으면 마지막으로 시도합니다 */
     miss = gaps();
     if(noAi || !orKey()) miss = [];
     /* 날이 바뀌면 시도 횟수를 되돌립니다. 안 그러면 한도가 찬 날에 3번을
