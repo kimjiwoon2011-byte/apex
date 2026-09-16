@@ -4,9 +4,9 @@
  * 새 기사가 올라온 뒤 처음 여는 사람은 20~30초를 기다려야 했고, 아무도 안
  * 열면 아예 안 만들어졌습니다. 미리 만들어 두면 열자마자 바로 보입니다.
  *
- * 한 번에 6개 부문을 다 못 합니다 — 부문당 20~30초인데 함수 상한이 60초입니다.
- * 그래서 부문 하나를 끝내고 스스로 다음 부문을 불러 이어 갑니다(기다리지 않고
- * 던지기만 합니다). 6번이 사슬처럼 이어집니다.
+ * 한 번에 6개 부문을 줄줄이 하면 함수 상한(60초)을 넘깁니다. 그래서 i 없이
+ * 불리면 지휘자가 되어 6개 부문을 한꺼번에 띄우고 다 끝날 때까지 지켜봅니다.
+ * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
 import { makeCards, keyOf, loadExisting, saveCards } from './_lib.js';
 
@@ -60,6 +60,34 @@ export default async function handler(req, res) {
   if (secret ? auth !== 'Bearer ' + secret : !fromVercel)
     return res.status(401).json({ error: '허용되지 않은 요청입니다' });
 
+  /* 부를 자격은 정기 실행과 같은 것을 씁니다 */
+  const callerHeaders = {};
+  if (secret) callerHeaders.Authorization = 'Bearer ' + secret;
+  else callerHeaders['User-Agent'] = 'vercel-cron/1.0';
+
+  /* i 가 없으면 지휘자입니다. 6개 부문을 한꺼번에 띄우고 다 끝날 때까지
+     지켜봅니다.
+
+     예전에는 부문이 다음 부문을 부르는 사슬이었습니다. 그런데 부르는 쪽
+     연결이 끊기면 받는 쪽 요청도 같이 중단됩니다. 사슬이 6겹으로 쌓이니
+     맨 끝이 잘려 나갔고, 실제로 gt 부문이 한 번도 안 돌았습니다.
+
+     한꺼번에 띄우면 겹치는 층이 하나뿐입니다. 지휘자가 끝까지 붙어
+     있으므로 아무도 중간에 끊기지 않습니다. 부문끼리 나란히 도니까
+     제일 오래 걸리는 부문만큼만 기다리면 됩니다. */
+  if (req.query.i === undefined) {
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const runs = await Promise.all(SERIES.map((one, n) =>
+      fetch('https://' + host + '/api/cron?i=' + n, { headers: callerHeaders })
+        .then(r => r.json())
+        .catch(e => ({ series: one.k, error: String(e).slice(0, 80) }))));
+    console.log('cron 전체 · ' +
+      runs.map(r => r.series + ' ' + (r.made || 0) + '장' +
+                    (r.note ? '(' + r.note + ')' : '') +
+                    (r.error ? '(' + r.error + ')' : '')).join(' · '));
+    return res.status(200).json({ runs });
+  }
+
   const i = Math.max(0, Math.min(SERIES.length - 1, parseInt(req.query.i, 10) || 0));
   const s = SERIES[i];
   const t0 = Date.now();
@@ -77,7 +105,7 @@ export default async function handler(req, res) {
     out.cached = items.length - todo.length;
 
     if (todo.length) {
-      /* 남은 시간에서 저장·다음 호출 몫을 빼고 씁니다 */
+      /* 남은 시간에서 저장 몫을 빼고 씁니다 */
       const budget = 50000 - (Date.now() - t0);
       const made = await makeCards(todo, [], KEY, budget);
       if (made.cards) {
@@ -91,11 +119,7 @@ export default async function handler(req, res) {
         out.made = await saveCards(rows);
         out.model = made.model;
       } else {
-        out.note = made.reason;
-        /* 하루 한도를 다 썼으면 다음 부문도 어차피 안 됩니다. 사슬을 끊습니다. */
-        if (made.reason === 'daily-limit') {
-          return res.status(200).json(Object.assign(out, { chain: 'stopped' }));
-        }
+        out.note = made.reason;   /* daily-limit 이면 이 부문만 건너뜁니다 */
       }
     }
   } catch (e) {
@@ -107,25 +131,6 @@ export default async function handler(req, res) {
   console.log('cron ' + s.k + ' made=' + out.made + ' cached=' + out.cached
               + (out.note ? ' note=' + out.note : '')
               + (out.error ? ' error=' + out.error : ''));
-  /* 다음 부문을 이어 부릅니다. */
-  if (i + 1 < SERIES.length) {
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
-    const next = 'https://' + host + '/api/cron?i=' + (i + 1);
-    const headers = {};
-    if (secret) headers.Authorization = 'Bearer ' + secret;
-    else headers['User-Agent'] = 'vercel-cron/1.0';   /* 사슬도 같은 자격으로 */
-    /* 요청이 나가는 것까지만 기다립니다. 그냥 던지기만 하면 응답을 보낸
-       순간 함수가 얼어붙어 요청이 나가지도 못합니다. 답까지 기다리면
-       6단계가 쌓여 상한을 넘기므로 3초에서 끊습니다. */
-    const stopper = new AbortController();
-    const cutTimer = setTimeout(() => stopper.abort(), 3000);
-    try { await fetch(next, { headers, signal: stopper.signal }); } catch (e) {}
-    clearTimeout(cutTimer);
-    out.chain = 'i=' + (i + 1);
-  } else {
-    out.chain = 'done';
-  }
-
   out.ms = Date.now() - t0;
   res.status(200).json(out);
 }
