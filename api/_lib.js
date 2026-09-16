@@ -86,9 +86,12 @@ export async function makeCards(items, glossary, key, budgetMs) {
   const deadline = Date.now() + (budgetMs || 42000);
   for (const model of OR_MODELS) {
     if (Date.now() + 21000 > deadline) break;   /* 한 번 돌릴 시간이 없으면 중단 */
+    /* 20초 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자
+       껐더니, 답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이
+       기다렸고 함수가 60초에 죽었습니다. */
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 20000);
     try {
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 20000);
       const res = await fetch(OR_URL, {
         method: 'POST', signal: ac.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
@@ -97,7 +100,6 @@ export async function makeCards(items, glossary, key, budgetMs) {
           messages: [{ role: 'system', content: OR_SYS }, { role: 'user', content: msg }],
         }),
       });
-      clearTimeout(timer);
       if (res.status === 429) {
         const e = await res.json().catch(() => ({}));
         const meta = (e && e.error && e.error.metadata) || {};
@@ -118,6 +120,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
       });
       if (cards.some(Boolean)) return { cards, model };
     } catch (e) { /* 다음 모델로 */ }
+    finally { clearTimeout(timer); }
   }
   return { cards: null, reason: 'all-models-failed' };
 }

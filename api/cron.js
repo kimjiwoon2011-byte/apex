@@ -102,14 +102,20 @@ export default async function handler(req, res) {
     out.error = String(e).slice(0, 120);
   }
 
-  /* 다음 부문을 이어 부릅니다. 기다리지 않고 던지기만 합니다. */
+  /* 다음 부문을 이어 부릅니다. */
   if (i + 1 < SERIES.length) {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const next = 'https://' + host + '/api/cron?i=' + (i + 1);
     const headers = {};
     if (secret) headers.Authorization = 'Bearer ' + secret;
     else headers['User-Agent'] = 'vercel-cron/1.0';   /* 사슬도 같은 자격으로 */
-    try { fetch(next, { headers }).catch(() => {}); } catch (e) {}
+    /* 요청이 나가는 것까지만 기다립니다. 그냥 던지기만 하면 응답을 보낸
+       순간 함수가 얼어붙어 요청이 나가지도 못합니다. 답까지 기다리면
+       6단계가 쌓여 상한을 넘기므로 3초에서 끊습니다. */
+    const stopper = new AbortController();
+    const cutTimer = setTimeout(() => stopper.abort(), 3000);
+    try { await fetch(next, { headers, signal: stopper.signal }); } catch (e) {}
+    clearTimeout(cutTimer);
     out.chain = 'i=' + (i + 1);
   } else {
     out.chain = 'done';
