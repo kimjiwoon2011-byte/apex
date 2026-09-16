@@ -6052,11 +6052,7 @@ $('#btnSettings').onclick = ()=>{
   };
   $('#clearNews').onclick = ()=>{
     Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
-    toast(t('set.newsCleared')); closeSheet(); /* 홈 화면 바로가기(?tab=cal)로 들어오면 그 탭을 바로 엽니다 */
-(function(){
-  var want = new URLSearchParams(location.search).get('tab');
-  switchTab(['news','home','cal','chat','alert'].indexOf(want) >= 0 ? want : 'news');
-})();
+    toast(t('set.newsCleared')); closeSheet(); switchTab('news');
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
@@ -6073,7 +6069,11 @@ $('#btnSettings').onclick = ()=>{
    ══════════════════════════════════════════════════════════════ */
 applyLang();
 pruneRooms();
-switchTab('news');
+/* 홈 화면 바로가기(?tab=cal)로 들어오면 그 탭을 바로 엽니다 */
+(function(){
+  var want = new URLSearchParams(location.search).get('tab');
+  switchTab(['news','home','cal','chat','alert'].indexOf(want) >= 0 ? want : 'news');
+})();
 /* 구글에서 돌아온 직후면 그대로 로그인, 아니면 평소대로.
    로그인한 적도, 둘러보기를 고른 적도 없으면 첫 실행에 로그인 화면을 띄웁니다 */
 if(googleReturn())               { /* 이미 로그인됨 */ }
