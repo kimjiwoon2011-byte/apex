@@ -9,7 +9,7 @@
  *   소식·번역·서버   항상 새로 받습니다. 안 되면 담아 둔 것으로 대신합니다.
  *                   (오래된 소식을 보여 주느니 안 보여 주는 게 낫습니다)
  */
-const VER = 'apex-2026-09-17b';
+const VER = 'apex-2026-09-18';
 const SHELL = VER + '-shell';
 const DATA  = VER + '-data';
 

@@ -1185,7 +1185,7 @@ ko:{
  'my.news':'{0} 소식','my.newsAll':'관심 시리즈 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
- 'art.deepWait':'내용을 정리하는 중…','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'도입부를 바탕으로 정리했습니다',
+ 'art.deepWait':'내용을 정리하는 중…','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상','watch.videoSb':'유튜브에서 바로 찾기',
  'watch.openYt':'유튜브에서 이 경기 영상 보기',
@@ -1331,7 +1331,7 @@ en:{
  'my.news':'{0} news','my.newsAll':'News from your series','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
- 'art.deepWait':'Summarising…','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Written from the syndicated opening section',
+ 'art.deepWait':'Summarising…','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video','watch.videoSb':'Find it on YouTube',
  'watch.openYt':'Watch this race on YouTube',
@@ -1475,7 +1475,7 @@ ja:{
  'my.news':'{0}のニュース','my.newsAll':'興味のあるシリーズのニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
- 'art.deepWait':'内容をまとめています…','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'導入部をもとにまとめました',
+ 'art.deepWait':'内容をまとめています…','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像','watch.videoSb':'YouTubeで探す',
  'watch.openYt':'YouTubeでこのレースを見る',
@@ -3196,6 +3196,25 @@ async function askServerCards(items, glossary){
     return j && j.cards ? j : null;
   }catch(e){ return null; }
 }
+/* 자세한 풀이를 서버에 부탁합니다. 서버가 원문을 읽고 우리말로 간추려
+   Supabase 에 저장까지 하므로 다음 사람은 기다리지 않습니다. */
+async function askServerDeep(it, glossary){
+  if(!HOSTED || !it || !it.link) return null;
+  try{
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), 70000);
+    const res = await fetch('/api/deep', { method:'POST', signal:ac.signal,
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        link: it.link, title: it.title || '',
+        lead: (it.desc || '').replace(/\s+/g,' ').trim(),
+        glossary: glossary || [] }) });
+    clearTimeout(timer);
+    if(!res.ok) return null;
+    const j = await res.json();
+    return (j && j.deep && j.deep.what) ? j.deep : null;
+  }catch(e){ return null; }
+}
 async function ensureTitles(key, data, onStep, noAi){
   if(L === 'en' || !data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
@@ -3380,13 +3399,37 @@ function deepParse(text){
 async function deepRead(it){
   const cached = DB.get(deepKey(it), null);
   if(cached) return cached;
-  const key = orKey();
-  if(!key || aiResting() || aiSpent() >= AI_DAILY_MAX) return null;
 
   const title = it.title || '';
   const lead  = (it.desc || '').replace(/\s+/g, ' ').trim();
   if(!title) return null;
   const glos = nameGlossary([title, lead]);
+
+  /* ① 서버에 누가 이미 만들어 둔 글이 있으면 그대로 씁니다 (AI 호출 0회) */
+  const sid = 'deep|' + artId(it).slice(-160);
+  if(netSb()){
+    try{
+      const rows = await sb('cards?id=eq.' + encodeURIComponent(sid) + '&select=*');
+      const r = rows && rows[0];
+      if(r && r.hook){
+        const got = { what: hlBody(r.hook), why: hlBody(r.punch), note: hlBody(r.line) };
+        DB.set(deepKey(it), got);
+        return got;
+      }
+    }catch(e){}
+  }
+
+  /* ② 서버에 부탁합니다. 이 기기에 키가 없어도 여기서 만들어집니다 */
+  const mine = await askServerDeep(it, glos);
+  if(mine){
+    const got = { what: hlBody(mine.what), why: hlBody(mine.why), note: hlBody(mine.note) };
+    DB.set(deepKey(it), got);
+    return got;
+  }
+
+  /* ③ 그래도 비면 이 기기에 든 키로 직접 */
+  const key = orKey();
+  if(!key || aiResting() || aiSpent() >= AI_DAILY_MAX) return null;
   const msg = (glos.length ? '아래 이름은 반드시 이 표기를 써라:\n' + glos.join('\n') + '\n\n' : '')
     + '제목: ' + title + '\n도입부: ' + (lead || '(없음)');
 
@@ -3498,7 +3541,9 @@ function openArticle(it, title, lead){
   (async () => {
     const box = $('#deepBox'); if(!box) return;
     const has = DB.get(deepKey(it), null);
-    const can = orKey() && !aiResting() && aiSpent() < AI_DAILY_MAX;
+    /* 서버가 만들어 주므로 이 기기에 키가 없어도 됩니다. 인터넷 주소로
+       열었을 때만 서버를 쓸 수 있습니다 (file:// 은 못 씁니다). */
+    const can = HOSTED || (orKey() && !aiResting() && aiSpent() < AI_DAILY_MAX);
     if(!has && !can) return;                       /* 조용히 도입부만 보여줍니다 */
     if(!has) box.innerHTML = `<div class="deep wait">${t('art.deepWait')}</div>`;
     let d = null;
@@ -4812,7 +4857,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-17 · 자동 갱신 확인';
+const BUILD = '2026-09-18 · 자세한 풀이 길게';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
