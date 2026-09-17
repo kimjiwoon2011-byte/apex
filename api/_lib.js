@@ -251,10 +251,41 @@ const unent = x => String(x || '')
   .replace(/&mdash;|&#8212;|&ndash;|&#8211;/g, '-');
 
 /* 기사 페이지에서 본문 글만 뽑습니다. 요약에 쓸 재료일 뿐이고
-   원문을 그대로 보여주지는 않습니다 (프롬프트에서도 막아 뒀습니다). */
+   원문을 그대로 보여주지는 않습니다 (프롬프트에서도 막아 뒀습니다).
+
+   앱은 세 곳에서 소식을 받는데 페이지 생김새가 제각각입니다.
+     motorsport.com  구조화 데이터에 본문이 들어 있습니다
+     autosport.com   같은 방식입니다
+     crash.net       구조화 데이터가 없어 문단을 직접 긁어야 합니다
+   그래서 세 갈래로 시도합니다.                                      */
+
+/* 기사가 아니라 화면 장식인 문구들. 그냥 두면 요약에 섞여 들어갑니다. */
+const JUNK = [
+  /Prefer Crash\.Net on Google/gi,
+  /See our stories more often/gi,
+  /Sign up to our newsletter/gi,
+  /Subscribe to [^.]{0,40}/gi,
+  /Read more:?/gi,
+  /Follow us on [^.]{0,30}/gi,
+];
+const clean = t => JUNK.reduce((x, re) => x.replace(re, ' '), t).replace(/\s+/g, ' ').trim();
+
+function paras(html, limit) {
+  const ps = [];
+  const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let x;
+  while ((x = re.exec(html))) {
+    const t = clean(unent(x[1].replace(/<[^>]+>/g, '')));
+    if (t.length >= 60) ps.push(t);          /* 짧은 줄은 사진 설명이나 버튼 */
+    if (ps.join(' ').length > limit) break;
+  }
+  return ps;
+}
+
 export async function articleText(link) {
   const url = String(link || '').split('?')[0];
-  if (!/^https:\/\/[\w.-]*motorsport\.com\//i.test(url)) return '';   /* 아는 곳만 */
+  /* 앱이 소식을 받아 오는 곳만 읽습니다 */
+  if (!/^https:\/\/[\w.-]*(motorsport\.com|autosport\.com|crash\.net)\//i.test(url)) return '';
   try {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 12000);
@@ -268,28 +299,39 @@ export async function articleText(link) {
 
     /* ① 페이지에 심어 둔 구조화 데이터가 가장 깨끗합니다 */
     const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || [];
-    for (const b of blocks) {
+    for (const one of blocks) {
       let j;
-      try { j = JSON.parse(b.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '')); }
+      try { j = JSON.parse(one.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '')); }
       catch (e) { continue; }
       for (const node of (Array.isArray(j) ? j : (j['@graph'] || [j]))) {
         if (node && typeof node.articleBody === 'string' && node.articleBody.length > 200)
-          return unent(node.articleBody).replace(/\s+/g, ' ').trim().slice(0, 3500);
+          return clean(unent(node.articleBody)).slice(0, 3500);
       }
     }
 
-    /* ② 없으면 본문 칸 안의 문단만. 짧은 줄은 사진 설명이나 버튼입니다 */
-    const m = html.match(/class="[^"]*ms-article-content[^"]*"[\s\S]*?(<p[\s\S]*)/i);
-    if (!m) return '';
-    const ps = [];
-    const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
-    let x;
-    while ((x = re.exec(m[1].slice(0, 200000)))) {
-      const txt = unent(x[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
-      if (txt.length >= 60) ps.push(txt);
-      if (ps.join(' ').length > 3500) break;
+    /* 글이 아닌 덩어리를 걷어냅니다 */
+    const doc = html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+      .replace(/<figure[\s\S]*?<\/figure>/gi, ' ')
+      .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+      .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+      .replace(/<form[\s\S]*?<\/form>/gi, ' ');
+
+    /* ② 본문 칸이 표시돼 있으면 그 안만 */
+    const m = doc.match(/class="[^"]*(?:ms-article-content|text-article|article-body|entry-content)[^"]*"[\s\S]*?(<p[\s\S]*)/i);
+    if (m) {
+      const ps = paras(m[1].slice(0, 300000), 3500);
+      if (ps.join(' ').length > 400) return ps.join(' ').slice(0, 3500);
     }
-    return ps.join(' ').slice(0, 3500);
+
+    /* ③ 표시가 없으면 페이지 전체의 문단에서 */
+    const ps = paras(doc, 3500);
+    return ps.join(' ').length > 400 ? ps.join(' ').slice(0, 3500) : '';
   } catch (e) { return ''; }
 }
 
