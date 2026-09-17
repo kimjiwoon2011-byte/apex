@@ -321,6 +321,9 @@ function deepParse(text) {
 
 /* 기사 하나를 길게 풀어 씁니다 */
 export async function makeDeep(item, glossary, key, budgetMs) {
+  /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
+     원문 12초 + 모델 45초 = 57초가 되어 상한(60초)에 아슬아슬합니다. */
+  const t0 = Date.now();
   const full = await articleText(item.link);
   const src = full || String(item.lead || '');
   if (!item.title) return { deep: null, reason: 'no-title' };
@@ -329,10 +332,11 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' : '')
     + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
 
-  const deadline = Date.now() + (budgetMs || 45000);
+  const deadline = t0 + (budgetMs || 45000);
+  let raw = '';
   for (const model of OR_MODELS) {
     const room = deadline - Date.now() - 2000;
-    const callMs = Math.min(25000, room);
+    const callMs = Math.min(28000, room);
     if (callMs < 10000) break;
 
     const ac = new AbortController();
@@ -355,10 +359,12 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       }
       if (!res.ok) continue;
       const j = await res.json();
-      const got = deepParse(j && j.choices && j.choices[0] && j.choices[0].message.content);
+      const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
+      const got = deepParse(txt);
       if (got) return { deep: got, model, usedFull: !!full };
+      raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
     } catch (e) { /* 다음 모델로 */ }
     finally { clearTimeout(timer); }
   }
-  return { deep: null, reason: 'all-models-failed' };
+  return { deep: null, reason: 'all-models-failed', raw };
 }
