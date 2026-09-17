@@ -85,7 +85,27 @@ export default async function handler(req, res) {
       runs.map(r => r.series + ' ' + (r.made || 0) + '장' +
                     (r.note ? '(' + r.note + ')' : '') +
                     (r.error ? '(' + r.error + ')' : '')).join(' · '));
-    return res.status(200).json({ runs });
+
+    /* 돌았다는 사실 자체를 남깁니다.
+
+       새 기사가 없는 날은 한 장도 안 만듭니다. 그러면 결과만 봐서는
+       '만들 게 없어서 0장' 인지 '아예 안 돌아서 0장' 인지 가릴 수가
+       없습니다. Vercel 무료 요금제는 실행 기록을 한 시간만 보관해서
+       나중에 로그로 확인할 방법도 없습니다.
+
+       카드 표에 한 줄 얹습니다. 앱은 'ko|<기사주소>' 로만 카드를 찾으므로
+       이 줄은 화면에 나오지 않습니다. 표를 따로 만들지 않아도 됩니다. */
+    const total = runs.reduce((n, r) => n + (r.made || 0), 0);
+    await saveCards([{
+      id: '_run|cron',
+      hook: '자동 갱신',
+      punch: total + '장',
+      line: runs.map(r => r.series + ':' + (r.made || 0) + '/' + (r.cached || 0))
+                .join(' ').slice(0, 120),
+      at: Date.now(),
+    }]);
+
+    return res.status(200).json({ ran: new Date().toISOString(), made: total, runs });
   }
 
   const i = Math.max(0, Math.min(SERIES.length - 1, parseInt(req.query.i, 10) || 0));
