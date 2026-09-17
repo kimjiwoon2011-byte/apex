@@ -394,7 +394,9 @@ export async function makeDeep(item, glossary, key, budgetMs) {
         method: 'POST', signal: ac.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model, temperature: 0.3, max_tokens: 6000,
+          /* 자세한 풀이는 카드보다 훨씬 깁니다. 6000 으로 뒀더니 생각 과정이
+             한도를 다 먹고 본문이 한 글자도 안 나오는 일이 있었습니다. */
+          model, temperature: 0.3, max_tokens: 14000,
           messages: [{ role: 'system', content: DEEP_SYS }, { role: 'user', content: msg }],
         }),
       });
