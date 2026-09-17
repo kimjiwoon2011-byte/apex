@@ -2331,6 +2331,21 @@ function leftTime(ms){
   if(h >= 24) return Math.floor(h/24) + t('alert.d') + ' ' + (h%24) + t('alert.h');
   return h ? h + t('alert.h') + ' ' + m + t('alert.m') : m + t('alert.m');
 }
+/* 경기까지 남은 시간 — 초까지 보여 줍니다.
+   leftTime 은 분까지만 보여 줘서 1분에 한 번만 바뀝니다. 경기 상세
+   화면에서는 멈춘 것처럼 보였습니다. */
+function liveLeft(ms){
+  const d = Math.max(0, ms - Date.now());
+  const dd = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000),
+        mm = Math.floor(d%3600000/60000), ss = Math.floor(d%60000/1000);
+  const p = [];
+  if(dd) p.push(dd + t('alert.d'));
+  if(dd || hh) p.push(hh + t('alert.h'));
+  p.push(mm + t('alert.m'));
+  p.push(ss + t('alert.s'));
+  return p.join(' ');
+}
+
 const status = r => Date.now() < r.ms ? 'soon' : (Date.now() < r.end ? 'live' : 'done');
 const rname  = r => lz(r.n);
 const rcirc  = r => lz(r.c);
@@ -3478,15 +3493,27 @@ async function deepRead(it){
 function openArticle(it, title, lead){
   const s = SERIES[it.series || newsSeries];
   const hay = (it.title + ' ' + (it.desc || ''));
-  const hits = TERMS.filter(x => x.re.test(hay)).slice(0, 6);
 
-  const terms = hits.length ? `
-    <div class="sec">${t('art.terms')}</div>
-    <div class="terms">${hits.map(x => `
-      <div class="term">
-        <b>${esc(lz3(x.n))}</b>
-        <span>${esc(lz3(x.d))}</span>
-      </div>`).join('')}</div>` : '';
+  /* 용어는 영어 제목과 도입부에서만 찾고 있었습니다. 도입부가 200자뿐이라
+     10건 중 2건에서만 걸렸습니다. 우리말 풀이가 도착하면 거기서도 찾도록
+     따로 떼어 뒀습니다. 우리말 쪽은 이름표(세이프티카 같은)로 맞춥니다. */
+  function termsHtml(text){
+    const hits = TERMS.filter(x => {
+      if(x.re.test(text)) return true;
+      const ko = x.n && x.n[0];
+      return !!(ko && text.includes(ko));
+    }).slice(0, 6);
+    if(!hits.length) return '';
+    return `
+      <div class="sec">${t('art.terms')}</div>
+      <div class="terms">${hits.map(x => `
+        <div class="term">
+          <b>${esc(lz3(x.n))}</b>
+          <span>${esc(lz3(x.d))}</span>
+        </div>`).join('')}</div>`;
+  }
+
+  const terms = `<div id="termBox">${termsHtml(hay)}</div>`;
 
   openSheet(`
     ${it.img ? `<img class="artimg" src="${esc(it.img)}" alt="" onerror="this.remove()">` : ''}
@@ -3555,6 +3582,11 @@ function openArticle(it, title, lead){
       ${d.why  ? `<p class="why"><b>${t('art.deepWhy')}</b>${esc(d.why)}</p>` : ''}
       ${d.note ? `<p class="why"><b>${t('art.deepNote')}</b>${esc(d.note)}</p>` : ''}
       <span class="by">${t('art.deepBy')}</span></div>`;
+
+    /* 우리말 풀이에는 원문 전체가 녹아 있습니다. 여기서 용어를 다시 찾으면
+       제목만 볼 때보다 훨씬 많이 걸립니다. */
+    const tb = $('#termBox');
+    if(tb) tb.innerHTML = termsHtml(hay + ' ' + [d.what, d.why, d.note].join(' '));
   })();
 }
 
@@ -4763,7 +4795,7 @@ function openRace(r){
       </div>
       ${st==='soon' ? `<div style="text-align:right;flex:0 0 auto">
         <div class="num" style="font-size:19px;font-weight:800;color:var(--br);letter-spacing:-.03em">D-${Math.max(0,Math.ceil((r.ms-Date.now())/86400000))}</div>
-        <div class="muted">${esc(leftTime(r.ms))}</div></div>` : ''}
+        <div class="muted" id="rcd" data-ms="${r.ms}">${esc(liveLeft(r.ms))}</div></div>` : ''}
     </div>
     <button class="btn ghost sm" id="btnIcs">${ic('cal')} ${t('r.addCal')}</button>
 
@@ -4857,7 +4889,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-18 · 자세한 풀이 구체적으로';
+const BUILD = '2026-09-18 · 실시간 카운트다운·용어';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6213,6 +6245,9 @@ else if(session())               { if(!CFG.nick){ CFG.nick = session(); saveCfg(
 else if(!DB.get('guest', false)) openAuth();
 
 setInterval(()=>{
+  /* 경기 상세 화면이 열려 있으면 남은 시간을 갈아 끼웁니다 */
+  const rcd = $('#rcd');
+  if(rcd) rcd.textContent = liveLeft(+rcd.dataset.ms);
   if(tab === 'alert') paintCountdown();
   if(tab === 'cal' && calMode === 'cal') renderHero();   /* 남은 시간이 실시간으로 줄어들도록 */
   if(tab === 'chat' && googleUser() && !netOn()){
