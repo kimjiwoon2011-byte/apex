@@ -172,3 +172,170 @@ export async function saveCards(rows) {
     return r.ok ? rows.length : 0;
   } catch (e) { return 0; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   자세한 풀이 — 카드를 눌렀을 때 나오는 긴 글
+
+   왜 서버인가 — 카드와 같은 이유입니다. 기기에 키가 없으면 아무것도
+   안 나왔습니다. 한 번 만든 글은 Supabase 에 쌓여 모두가 나눠 씁니다.
+
+   왜 원문을 읽는가 — RSS 도입부는 200자뿐입니다. 그걸로 길게 쓰라고
+   하면 지어내는 수밖에 없습니다. 원문을 읽혀야 길이가 정직해집니다.
+   ══════════════════════════════════════════════════════════════ */
+
+export const DEEP_SYS = [
+  '너는 한국 모터스포츠 기자다.',
+  '영어 기사를 받아, 우리말로 풀어 쓴다.',
+  '',
+  '── 형식 ──',
+  '[무슨 일] 3~4문장. 누가 무엇을 언제 어디서 했는지, 기사에 나온 구체적인 대목까지.',
+  '[왜 중요] 2~3문장. 이 소식이 어떤 의미인지, 무엇이 달라지는지.',
+  '[알아둘 것] 2~3문장. 배경, 얽힌 사람이나 팀, 앞으로의 일정.',
+  '',
+  '── 절대 규칙 ──',
+  '- 준 글에 없는 사실을 절대 지어내지 마라. 이게 제일 중요하다.',
+  '- 숫자, 순위, 랩 수, 날짜, 점수, 나이를 만들지 마라. 준 글에 있는 것만 쓴다.',
+  '- 준 글로 알 수 없는 항목은 그 줄에 - 한 글자만 적어라. 억지로 채우지 마라.',
+  '- 길이를 채우려고 같은 말을 되풀이하지 마라. 쓸 내용이 없으면 짧게 끝내라.',
+  '- 원문 문장을 그대로 옮기지 마라. 반드시 네 말로 간추려라.',
+  '- 사람·팀·서킷 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
+  '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
+  '',
+  '── 보기 ──',
+  '출력  [무슨 일] 페라리의 샤를 르클레르가 몬차에서 겪은 시력 이상을 설명했다. 그는 2랩에서 차량 조종을 잃고 배리어를 들이받았다. 사고 직후에는 원인을 밝히지 않았다.',
+  '      [왜 중요] 시력 이상이 아주 짧았다고 밝혀, 사고 원인을 둘러싼 의문에 직접 답했다. 팀은 차량 결함 가능성을 일단 접어 두게 됐다.',
+  '      [알아둘 것] -',
+  '',
+  '위 보기는 형식만 보여준다. 문구를 그대로 가져다 쓰지 마라.',
+  '',
+  '── 출력 ──',
+  '- 대괄호 항목 세 개만 출력한다. 항목마다 줄을 바꾼다.',
+  '- 생각 과정을 쓰지 마라.',
+].join('\n');
+
+const unent = x => String(x || '')
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#0?39;|&rsquo;|&#8217;|&apos;/g, "'")
+  .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/g, '"')
+  .replace(/&hellip;|&#8230;/g, '...')
+  .replace(/&mdash;|&#8212;|&ndash;|&#8211;/g, '-');
+
+/* 기사 페이지에서 본문 글만 뽑습니다. 요약에 쓸 재료일 뿐이고
+   원문을 그대로 보여주지는 않습니다 (프롬프트에서도 막아 뒀습니다). */
+export async function articleText(link) {
+  const url = String(link || '').split('?')[0];
+  if (!/^https:\/\/[\w.-]*motorsport\.com\//i.test(url)) return '';   /* 아는 곳만 */
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 12000);
+    let html;
+    try {
+      const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36' } });
+      if (!r.ok) return '';
+      html = await r.text();
+    } finally { clearTimeout(timer); }
+
+    /* ① 페이지에 심어 둔 구조화 데이터가 가장 깨끗합니다 */
+    const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const b of blocks) {
+      let j;
+      try { j = JSON.parse(b.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '')); }
+      catch (e) { continue; }
+      for (const node of (Array.isArray(j) ? j : (j['@graph'] || [j]))) {
+        if (node && typeof node.articleBody === 'string' && node.articleBody.length > 200)
+          return unent(node.articleBody).replace(/\s+/g, ' ').trim().slice(0, 3500);
+      }
+    }
+
+    /* ② 없으면 본문 칸 안의 문단만. 짧은 줄은 사진 설명이나 버튼입니다 */
+    const m = html.match(/class="[^"]*ms-article-content[^"]*"[\s\S]*?(<p[\s\S]*)/i);
+    if (!m) return '';
+    const ps = [];
+    const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+    let x;
+    while ((x = re.exec(m[1].slice(0, 200000)))) {
+      const txt = unent(x[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+      if (txt.length >= 60) ps.push(txt);
+      if (ps.join(' ').length > 3500) break;
+    }
+    return ps.join(' ').slice(0, 3500);
+  } catch (e) { return ''; }
+}
+
+export const deepIdOf = link => 'deep|' + String(link || '').slice(0, 400).slice(-160);
+
+/* 이미 만들어 둔 풀이를 찾아옵니다 */
+export async function loadDeep(links) {
+  const { url, headers } = sbConf();
+  const out = {};
+  if (!links.length) return out;
+  try {
+    const ids = links.map(deepIdOf)
+      .map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + ids + ')&select=*', { headers });
+    if (r.ok) (await r.json()).forEach(row => {
+      out[row.id] = { what: row.hook || '', why: row.punch || '', note: row.line || '' };
+    });
+  } catch (e) { /* 없으면 빈손으로 */ }
+  return out;
+}
+
+function deepParse(text) {
+  const s = String(text || '');
+  const grab = name => {
+    const m = s.match(new RegExp('\\[' + name + '\\]\\s*([\\s\\S]*?)(?=\\n?\\[|$)'));
+    const v = m ? m[1].replace(/\s+/g, ' ').trim() : '';
+    return (!v || /^-+$/.test(v)) ? '' : v;
+  };
+  const out = { what: grab('무슨 일'), why: grab('왜 중요'), note: grab('알아둘 것') };
+  return out.what ? out : null;
+}
+
+/* 기사 하나를 길게 풀어 씁니다 */
+export async function makeDeep(item, glossary, key, budgetMs) {
+  const full = await articleText(item.link);
+  const src = full || String(item.lead || '');
+  if (!item.title) return { deep: null, reason: 'no-title' };
+
+  const msg = (glossary && glossary.length
+      ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' : '')
+    + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
+
+  const deadline = Date.now() + (budgetMs || 45000);
+  for (const model of OR_MODELS) {
+    const room = deadline - Date.now() - 2000;
+    const callMs = Math.min(25000, room);
+    if (callMs < 10000) break;
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), callMs);
+    try {
+      const res = await fetch(OR_URL, {
+        method: 'POST', signal: ac.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model, temperature: 0.3, max_tokens: 6000,
+          messages: [{ role: 'system', content: DEEP_SYS }, { role: 'user', content: msg }],
+        }),
+      });
+      if (res.status === 429) {
+        const e = await res.json().catch(() => ({}));
+        const meta = (e && e.error && e.error.metadata) || {};
+        if (/per-day|daily/i.test(String((e.error || {}).message || '') + (meta.limit_source || '')))
+          return { deep: null, reason: 'daily-limit' };
+        continue;
+      }
+      if (!res.ok) continue;
+      const j = await res.json();
+      const got = deepParse(j && j.choices && j.choices[0] && j.choices[0].message.content);
+      if (got) return { deep: got, model, usedFull: !!full };
+    } catch (e) { /* 다음 모델로 */ }
+    finally { clearTimeout(timer); }
+  }
+  return { deep: null, reason: 'all-models-failed' };
+}
