@@ -47,14 +47,18 @@ export default async function handler(req, res) {
   const out = await makeDeep(item, glossary, KEY, 45000);
   if (!out.deep) return res.status(200).json({ deep: null, note: out.reason });
 
-  await saveCards([{
+  /* 표에 걸린 길이 제한 안으로 자릅니다. 넘기면 통째로 거절당하고,
+     saveCards 는 조용히 0 을 돌려주므로 실패가 눈에 안 띕니다. */
+  const saved = await saveCards([{
     id,
-    hook: out.deep.what || '',
-    punch: out.deep.why || '',
-    line: out.deep.note || '',
+    hook: (out.deep.what || '').slice(0, 600),
+    punch: (out.deep.why || '').slice(0, 400),
+    line: (out.deep.note || '').slice(0, 400),
     at: Date.now(),
   }]);
 
-  res.status(200).json({ deep: out.deep, cached: false,
+  /* 저장 성공 여부를 숨기지 않습니다. 0 이면 다음 사람이 또 만들게 되므로
+     그냥 넘어가면 안 되는 신호입니다 (표의 길이 제한을 늘려야 합니다). */
+  res.status(200).json({ deep: out.deep, cached: false, saved: saved > 0,
                          model: out.model, full: !!out.usedFull });
 }

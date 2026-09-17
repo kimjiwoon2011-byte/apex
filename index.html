@@ -5096,10 +5096,17 @@ create policy "write cards" on cards for all    using (true) with check (true);
 
 -- 한 사람이 긴 글을 넣어 무료 용량을 태우지 못하게 막습니다
 alter table cards drop constraint if exists cards_len;
+-- 카드는 짧아야 하지만, 눌렀을 때 나오는 자세한 풀이(deep|)는 길어야 합니다.
 alter table cards add  constraint cards_len check (
-  char_length(coalesce(hook,'')) <= 40 and
-  char_length(coalesce(punch,'')) <= 40 and
-  char_length(coalesce(line,'')) <= 120
+  case when id like 'deep|%' then
+    char_length(coalesce(hook,''))  <= 600 and
+    char_length(coalesce(punch,'')) <= 400 and
+    char_length(coalesce(line,''))  <= 400
+  else
+    char_length(coalesce(hook,''))  <= 40 and
+    char_length(coalesce(punch,'')) <= 40 and
+    char_length(coalesce(line,''))  <= 120
+  end
 );
 -- 새 대화가 실시간으로 밀려오도록 (지금은 주기적으로 받아오지만, 켜 두면 나중에 바로 씁니다)
 do $$
