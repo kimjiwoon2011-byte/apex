@@ -83,12 +83,23 @@ export async function makeCards(items, glossary, key, budgetMs) {
     ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' + body
     : body;
 
-  const deadline = Date.now() + (budgetMs || 42000);
+  const deadline = Date.now() + (budgetMs || 50000);
   for (const model of OR_MODELS) {
-    if (Date.now() + 21000 > deadline) break;   /* 한 번 돌릴 시간이 없으면 중단 */
+    /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
+       기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
+       20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
+       남으면 짧게 한 번 더 해 봅니다. 뒤에 저장과 다음 부문 호출이
+       남아 있으므로 2초는 떼어 둡니다. */
+    const room = deadline - Date.now() - 2000;
+    const callMs = Math.min(28000, room);
+    if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
+
+    /* 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자 껐더니,
+       답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이 기다렸고
+       함수가 60초에 죽었습니다. */
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), callMs);
     try {
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 20000);
       const res = await fetch(OR_URL, {
         method: 'POST', signal: ac.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
@@ -97,7 +108,6 @@ export async function makeCards(items, glossary, key, budgetMs) {
           messages: [{ role: 'system', content: OR_SYS }, { role: 'user', content: msg }],
         }),
       });
-      clearTimeout(timer);
       if (res.status === 429) {
         const e = await res.json().catch(() => ({}));
         const meta = (e && e.error && e.error.metadata) || {};
@@ -118,6 +128,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
       });
       if (cards.some(Boolean)) return { cards, model };
     } catch (e) { /* 다음 모델로 */ }
+    finally { clearTimeout(timer); }
   }
   return { cards: null, reason: 'all-models-failed' };
 }
@@ -160,4 +171,250 @@ export async function saveCards(rows) {
     });
     return r.ok ? rows.length : 0;
   } catch (e) { return 0; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   자세한 풀이 — 카드를 눌렀을 때 나오는 긴 글
+
+   왜 서버인가 — 카드와 같은 이유입니다. 기기에 키가 없으면 아무것도
+   안 나왔습니다. 한 번 만든 글은 Supabase 에 쌓여 모두가 나눠 씁니다.
+
+   왜 원문을 읽는가 — RSS 도입부는 200자뿐입니다. 그걸로 길게 쓰라고
+   하면 지어내는 수밖에 없습니다. 원문을 읽혀야 길이가 정직해집니다.
+   ══════════════════════════════════════════════════════════════ */
+
+export const DEEP_SYS = [
+  '너는 모터스포츠를 오래 봐 온 기자다. 아는 것이 많지만, 경기를 처음 보는',
+  '사람도 알아듣게 쉬운 말로 쓴다.',
+  '',
+  '── 형식 ──',
+  '[무슨 일] 누가 언제 어디서 무엇을 했는지. 3~5문장.',
+  '[왜 중요] 그래서 무엇이 달라지는지. 2~3문장.',
+  '[알아둘 것] 배경과 앞일. 2~3문장.',
+  '',
+  '── 무엇을 쓰는가 — 이게 제일 중요하다 ──',
+  '- 구체적인 것을 써라. 이름, 숫자, 순위, 포인트 차, 랩, 날짜, 서킷, 팀 이름.',
+  '  원문에 있으면 반드시 넣어라. 그게 이 글의 값어치다.',
+  '- 누가 한 말이 원문에 있으면 한 마디만 따옴표로 넣어라. 한 문장을 넘기지 마라.',
+  '- 경기 용어가 나오면 괄호로 짧게 풀어 줘라. 독자는 모를 수 있다.',
+  '  보기: VSC(가상 세이프티카. 전 구간이 속도를 줄인다)',
+  '  이건 용어를 풀어 주는 것뿐이다. 사건에 없던 사실을 보태라는 말이 아니다.',
+  '',
+  '── 이런 문장은 한 줄도 쓰지 마라 ──',
+  '- "큰 관심이 쏠린다", "귀추가 주목된다", "중요한 의미를 가진다" 처럼',
+  '  읽고 나도 아는 게 하나도 안 늘어나는 문장.',
+  '- 원문에 없는 전망이나 평가. "앞으로 나아질 것으로 보인다" 같은 말.',
+  '- 제목을 말만 바꿔 되풀이한 문장. 제목에 없는 것을 써라.',
+  '',
+  '── 문장 쓰는 법 ──',
+  '- 한 문장에 사실 하나. 두 가지를 접속사로 억지로 잇지 마라.',
+  '- 한 문장은 60자 안쪽으로. 길어지면 끊어라.',
+  '- 주어를 분명히 써라. 누가 한 일인지 헷갈리면 안 된다.',
+  '- 어려운 한자어 대신 쉬운 말을 써라.',
+  '',
+  '── 절대 규칙 ──',
+  '- 준 글에 없는 사실을 절대 지어내지 마라.',
+  '- 숫자, 순위, 랩 수, 날짜, 점수, 나이를 만들지 마라. 준 글에 있는 것만 쓴다.',
+  '- 알 수 없는 항목은 그 줄에 - 한 글자만 적어라. 억지로 채우지 마라.',
+  '- 원문 문장을 그대로 옮기지 마라. 따옴표 한 마디만 예외다.',
+  '- 표기표에 있는 이름은 표기표대로 쓴다.',
+  '- 표기표에 없는 사람·팀·서킷 이름은 한글로 옮기지 마라. 영어 그대로 둬라.',
+  '  네가 소리 나는 대로 적으면 같은 사람이 글마다 다른 이름이 된다.',
+  '  보기: Isack Hadjar 를 이자크 하다르 라고 적지 마라. Isack Hadjar 로 둬라.',
+  '- 영어로 두는 건 사람·팀·서킷의 고유한 이름뿐이다. 보통 낱말은 반드시',
+  '  우리말로 옮겨라. team principal 은 팀 대표, engineer 는 엔지니어,',
+  '  practice 는 연습주행, qualifying 은 예선이다.',
+  '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
+  '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
+  '',
+  '── 보기 ──',
+  '나쁨 [무슨 일] 해밀턴이 언론 보도를 부인했다. 이번 일로 팀 내부 상황에 큰 관심이 쏠린다.',
+  '     왜 나쁜가 — 무엇을 부인했는지가 없다. 둘째 문장은 읽어도 아는 게 안 는다.',
+  '',
+  '좋음 [무슨 일] 해밀턴이 페라리에 팀 관계자를 바꿔 달라고 요구했다는 보도를 부인했다.',
+  '     이탈리아 신문 코리에레 델라 세라가 먼저 쓴 내용이다.',
+  '     그는 "그런 요청을 한 적 없다"고 말했다.',
+  '     다만 2026시즌을 앞두고 그의 레이싱 엔지니어는 실제로 바뀌었다.',
+  '',
+  '위 보기는 쓰는 법만 보여준다. 문구를 그대로 가져다 쓰지 마라.',
+  '',
+  '── 출력 ──',
+  '- 대괄호 항목 세 개만 출력한다. 항목마다 줄을 바꾼다.',
+  '- 생각 과정을 쓰지 마라.',
+].join('\n');
+
+const unent = x => String(x || '')
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#0?39;|&rsquo;|&#8217;|&apos;/g, "'")
+  .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/g, '"')
+  .replace(/&hellip;|&#8230;/g, '...')
+  .replace(/&mdash;|&#8212;|&ndash;|&#8211;/g, '-');
+
+/* 기사 페이지에서 본문 글만 뽑습니다. 요약에 쓸 재료일 뿐이고
+   원문을 그대로 보여주지는 않습니다 (프롬프트에서도 막아 뒀습니다).
+
+   앱은 세 곳에서 소식을 받는데 페이지 생김새가 제각각입니다.
+     motorsport.com  구조화 데이터에 본문이 들어 있습니다
+     autosport.com   같은 방식입니다
+     crash.net       구조화 데이터가 없어 문단을 직접 긁어야 합니다
+   그래서 세 갈래로 시도합니다.                                      */
+
+/* 기사가 아니라 화면 장식인 문구들. 그냥 두면 요약에 섞여 들어갑니다. */
+const JUNK = [
+  /Prefer Crash\.Net on Google/gi,
+  /See our stories more often/gi,
+  /Sign up to our newsletter/gi,
+  /Subscribe to [^.]{0,40}/gi,
+  /Read more:?/gi,
+  /Follow us on [^.]{0,30}/gi,
+];
+const clean = t => JUNK.reduce((x, re) => x.replace(re, ' '), t).replace(/\s+/g, ' ').trim();
+
+function paras(html, limit) {
+  const ps = [];
+  const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let x;
+  while ((x = re.exec(html))) {
+    const t = clean(unent(x[1].replace(/<[^>]+>/g, '')));
+    if (t.length >= 60) ps.push(t);          /* 짧은 줄은 사진 설명이나 버튼 */
+    if (ps.join(' ').length > limit) break;
+  }
+  return ps;
+}
+
+export async function articleText(link) {
+  const url = String(link || '').split('?')[0];
+  /* 앱이 소식을 받아 오는 곳만 읽습니다 */
+  if (!/^https:\/\/[\w.-]*(motorsport\.com|autosport\.com|crash\.net)\//i.test(url)) return '';
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 12000);
+    let html;
+    try {
+      const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36' } });
+      if (!r.ok) return '';
+      html = await r.text();
+    } finally { clearTimeout(timer); }
+
+    /* ① 페이지에 심어 둔 구조화 데이터가 가장 깨끗합니다 */
+    const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const one of blocks) {
+      let j;
+      try { j = JSON.parse(one.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '')); }
+      catch (e) { continue; }
+      for (const node of (Array.isArray(j) ? j : (j['@graph'] || [j]))) {
+        if (node && typeof node.articleBody === 'string' && node.articleBody.length > 200)
+          return clean(unent(node.articleBody)).slice(0, 3500);
+      }
+    }
+
+    /* 글이 아닌 덩어리를 걷어냅니다 */
+    const doc = html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+      .replace(/<figure[\s\S]*?<\/figure>/gi, ' ')
+      .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+      .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+      .replace(/<form[\s\S]*?<\/form>/gi, ' ');
+
+    /* ② 본문 칸이 표시돼 있으면 그 안만 */
+    const m = doc.match(/class="[^"]*(?:ms-article-content|text-article|article-body|entry-content)[^"]*"[\s\S]*?(<p[\s\S]*)/i);
+    if (m) {
+      const ps = paras(m[1].slice(0, 300000), 3500);
+      if (ps.join(' ').length > 400) return ps.join(' ').slice(0, 3500);
+    }
+
+    /* ③ 표시가 없으면 페이지 전체의 문단에서 */
+    const ps = paras(doc, 3500);
+    return ps.join(' ').length > 400 ? ps.join(' ').slice(0, 3500) : '';
+  } catch (e) { return ''; }
+}
+
+export const deepIdOf = link => 'deep|' + String(link || '').slice(0, 400).slice(-160);
+
+/* 이미 만들어 둔 풀이를 찾아옵니다 */
+export async function loadDeep(links) {
+  const { url, headers } = sbConf();
+  const out = {};
+  if (!links.length) return out;
+  try {
+    const ids = links.map(deepIdOf)
+      .map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + ids + ')&select=*', { headers });
+    if (r.ok) (await r.json()).forEach(row => {
+      out[row.id] = { what: row.hook || '', why: row.punch || '', note: row.line || '' };
+    });
+  } catch (e) { /* 없으면 빈손으로 */ }
+  return out;
+}
+
+function deepParse(text) {
+  const s = String(text || '');
+  const grab = name => {
+    const m = s.match(new RegExp('\\[' + name + '\\]\\s*([\\s\\S]*?)(?=\\n?\\[|$)'));
+    const v = m ? m[1].replace(/\s+/g, ' ').trim() : '';
+    return (!v || /^-+$/.test(v)) ? '' : v;
+  };
+  const out = { what: grab('무슨 일'), why: grab('왜 중요'), note: grab('알아둘 것') };
+  return out.what ? out : null;
+}
+
+/* 기사 하나를 길게 풀어 씁니다 */
+export async function makeDeep(item, glossary, key, budgetMs) {
+  /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
+     원문 12초 + 모델 45초 = 57초가 되어 상한(60초)에 아슬아슬합니다. */
+  const t0 = Date.now();
+  const full = await articleText(item.link);
+  const src = full || String(item.lead || '');
+  if (!item.title) return { deep: null, reason: 'no-title' };
+
+  const msg = (glossary && glossary.length
+      ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' : '')
+    + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
+
+  const deadline = t0 + (budgetMs || 45000);
+  let raw = '';
+  for (const model of OR_MODELS) {
+    const room = deadline - Date.now() - 2000;
+    const callMs = Math.min(28000, room);
+    if (callMs < 10000) break;
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), callMs);
+    try {
+      const res = await fetch(OR_URL, {
+        method: 'POST', signal: ac.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          /* 자세한 풀이는 카드보다 훨씬 깁니다. 6000 으로 뒀더니 생각 과정이
+             한도를 다 먹고 본문이 한 글자도 안 나오는 일이 있었습니다. */
+          model, temperature: 0.3, max_tokens: 14000,
+          messages: [{ role: 'system', content: DEEP_SYS }, { role: 'user', content: msg }],
+        }),
+      });
+      if (res.status === 429) {
+        const e = await res.json().catch(() => ({}));
+        const meta = (e && e.error && e.error.metadata) || {};
+        if (/per-day|daily/i.test(String((e.error || {}).message || '') + (meta.limit_source || '')))
+          return { deep: null, reason: 'daily-limit' };
+        continue;
+      }
+      if (!res.ok) continue;
+      const j = await res.json();
+      const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
+      const got = deepParse(txt);
+      if (got) return { deep: got, model, usedFull: !!full };
+      raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
+    } catch (e) { /* 다음 모델로 */ }
+    finally { clearTimeout(timer); }
+  }
+  return { deep: null, reason: 'all-models-failed', raw };
 }
