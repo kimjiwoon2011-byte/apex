@@ -48,7 +48,8 @@ export default async function handler(req, res) {
   const out = await makeCards(todo, glossary, KEY);
   if (!out.cards)
     return res.status(200).json({ made: 0, cached: Object.keys(existing).length,
-                                  cards: existing, note: out.reason });
+                                  cards: existing, note: out.reason,
+                                  why: out.why || [] });
 
   const rows = [];
   out.cards.forEach((c, i) => {

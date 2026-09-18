@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ deep: have[id], cached: true });
 
   const out = await makeDeep(item, glossary, KEY, 45000);
-  if (!out.deep) return res.status(200).json({ deep: null, note: out.reason, raw: out.raw || '' });
+  if (!out.deep) return res.status(200).json({ deep: null, note: out.reason,
+                                              raw: out.raw || '', why: out.why || [] });
 
   /* 표에 걸린 길이 제한 안으로 자릅니다. 넘기면 통째로 거절당하고,
      saveCards 는 조용히 0 을 돌려주므로 실패가 눈에 안 띕니다. */

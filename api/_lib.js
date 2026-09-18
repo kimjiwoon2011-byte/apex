@@ -84,6 +84,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
     : body;
 
   const deadline = Date.now() + (budgetMs || 50000);
+  const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   for (const model of OR_MODELS) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
@@ -111,11 +112,13 @@ export async function makeCards(items, glossary, key, budgetMs) {
       if (res.status === 429) {
         const e = await res.json().catch(() => ({}));
         const meta = (e && e.error && e.error.metadata) || {};
-        if (/per-day|daily/i.test(String((e.error || {}).message || '') + (meta.limit_source || '')))
-          return { cards: null, reason: 'daily-limit' };
+        const msg = String((e.error || {}).message || '') + ' ' + (meta.limit_source || '');
+        if (/per-day|daily/i.test(msg))
+          return { cards: null, reason: 'daily-limit', why: why.concat('하루한도') };
+        why.push('429 ' + msg.trim().slice(0, 60));
         continue;                                /* 잠깐 몰린 것뿐이니 다음 모델로 */
       }
-      if (!res.ok) continue;
+      if (!res.ok) { why.push('HTTP ' + res.status); continue; }
       const j = await res.json();
       const got = orParse(j && j.choices && j.choices[0] && j.choices[0].message.content, items.length);
       if (!got) continue;
@@ -127,10 +130,11 @@ export async function makeCards(items, glossary, key, budgetMs) {
         return cardOk(c) ? c : null;
       });
       if (cards.some(Boolean)) return { cards, model };
-    } catch (e) { /* 다음 모델로 */ }
+      why.push('형식 어긋남');
+    } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
     finally { clearTimeout(timer); }
   }
-  return { cards: null, reason: 'all-models-failed' };
+  return { cards: null, reason: 'all-models-failed', why };
 }
 
 /* ── Supabase ── */
@@ -382,6 +386,7 @@ export async function makeDeep(item, glossary, key, budgetMs) {
 
   const deadline = t0 + (budgetMs || 45000);
   let raw = '';
+  const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   for (const model of OR_MODELS) {
     const room = deadline - Date.now() - 2000;
     const callMs = Math.min(28000, room);
@@ -403,18 +408,21 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       if (res.status === 429) {
         const e = await res.json().catch(() => ({}));
         const meta = (e && e.error && e.error.metadata) || {};
-        if (/per-day|daily/i.test(String((e.error || {}).message || '') + (meta.limit_source || '')))
-          return { deep: null, reason: 'daily-limit' };
+        const msg = String((e.error || {}).message || '') + ' ' + (meta.limit_source || '');
+        if (/per-day|daily/i.test(msg))
+          return { deep: null, reason: 'daily-limit', why: why.concat('하루한도') };
+        why.push('429 ' + msg.trim().slice(0, 60));
         continue;
       }
-      if (!res.ok) continue;
+      if (!res.ok) { why.push('HTTP ' + res.status); continue; }
       const j = await res.json();
       const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
       const got = deepParse(txt);
       if (got) return { deep: got, model, usedFull: !!full };
       raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
-    } catch (e) { /* 다음 모델로 */ }
+      why.push(txt ? '형식 어긋남' : '빈 답');
+    } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
     finally { clearTimeout(timer); }
   }
-  return { deep: null, reason: 'all-models-failed', raw };
+  return { deep: null, reason: 'all-models-failed', raw, why };
 }
