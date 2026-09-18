@@ -4,12 +4,13 @@
  * 앱 껍데기를 담아 두면 지하철이나 전파가 약한 곳에서도 열립니다.
  *
  * 규칙을 둘로 나눴습니다.
- *   앱 파일·아이콘  담아 둔 것을 먼저 보여 주고, 뒤에서 새것을 받아 둡니다.
- *                   (앱이 즉시 열리는 게 먼저입니다)
+ *   앱 화면(HTML)  항상 새로 받습니다. 3초 안에 안 오면 담아 둔 것으로.
+ *                   (옛 화면이 뜨면 고친 것이 안 보입니다)
+ *   아이콘·일정     담아 둔 것을 먼저 보여 주고, 뒤에서 새것을 받아 둡니다.
  *   소식·번역·서버   항상 새로 받습니다. 안 되면 담아 둔 것으로 대신합니다.
  *                   (오래된 소식을 보여 주느니 안 보여 주는 게 낫습니다)
  */
-const VER = 'apex-2026-09-18c';
+const VER = 'apex-2026-09-18d';
 const SHELL = VER + '-shell';
 const DATA  = VER + '-data';
 
@@ -71,6 +72,36 @@ self.addEventListener('fetch', e => {
         })
         .catch(() => caches.match(req))       /* 안 되면 담아 둔 것 */
     );
+    return;
+  }
+
+  /* 앱 화면(HTML)은 새것이 먼저입니다.
+
+     담아 둔 것을 먼저 내주면 고친 내용이 폰에 닿으려면 앱을 두 번 열어야
+     합니다. 구글 로그인에서 돌아오는 것도 새 페이지 이동이라, 돌아올
+     때마다 옛 화면이 떴습니다. 그래서 지운 부문이 되살아나고, 카드와
+     자세한 풀이가 안 붙는 것처럼 보였습니다.
+
+     통신이 느릴 때를 위해 3초만 기다리고, 안 되면 담아 둔 것으로 넘어갑니다.
+     지하철에서도 앱이 열리는 것은 그대로입니다. */
+  const isPage = req.mode === 'navigate' ||
+                 (req.headers.get('accept') || '').includes('text/html');
+  if (isPage) {
+    e.respondWith((async () => {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 3000);
+        let res;
+        try { res = await fetch(req, { signal: ctl.signal }); }
+        finally { clearTimeout(timer); }
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(SHELL).then(c => c.put(req, copy)).catch(() => {});
+          return res;
+        }
+      } catch (err) { /* 통신이 안 되거나 너무 느립니다 */ }
+      return (await caches.match(req)) || (await caches.match('/')) || Response.error();
+    })());
     return;
   }
 
