@@ -13,15 +13,23 @@ import { makeCards, keyOf, loadExisting, saveCards,
 
 export const maxDuration = 60;
 
-/* 부문과 Motorsport.com 피드 이름 */
+/* 부문과 언론사 피드 이름.
+
+   앱은 세 곳에서 소식을 받습니다. 그런데 자동 갱신은 Motorsport.com 만
+   보고 있었습니다. 그래서 Autosport 와 Crash.net 기사는 카드가 한 장도
+   안 만들어졌습니다 — 화면에 뜨는 기사의 3분의 2입니다.
+   세 곳을 모두 받아 최신순으로 합칩니다. */
 const SERIES = [
-  { k: 'f1',   feed: 'f1' },
-  { k: 'wec',  feed: 'wec' },
-  { k: 'imsa', feed: 'imsa' },
-  { k: 'dtm',  feed: 'dtm' },
-  { k: 'sgt',  feed: 'supergt' },
-  { k: 'gt',   feed: 'gt' },
+  { k: 'f1',   feed: 'f1',      crash: 'f1' },
+  { k: 'wec',  feed: 'wec',     crash: 'sportscars' },
+  { k: 'imsa', feed: 'imsa',    crash: 'sportscars' },
+  { k: 'dtm',  feed: 'dtm',     crash: 'dtm' },
+  { k: 'sgt',  feed: 'supergt', crash: 'sportscars' },
+  { k: 'gt',   feed: 'gt',      crash: 'sportscars' },
 ];
+
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+           '(KHTML, like Gecko) Chrome/131.0 Safari/537.36';
 const CARDS_PER_SERIES = 10;
 
 /* 눌렀을 때 나오는 자세한 풀이도 미리 만들어 둡니다.
@@ -57,10 +65,41 @@ function parseRss(xml) {
     };
     const link = pick('link').split('?')[0];
     const title = pick('title');
-    if (link && title) items.push({ link, title, lead: pick('description') });
+    const when = Date.parse(pick('pubDate')) || 0;
+    if (link && title) items.push({ link, title, lead: pick('description'), when });
     if (items.length >= CARDS_PER_SERIES) break;
   }
   return items;
+}
+
+/* 세 언론사에서 받아 주소가 겹치는 것을 걸러 내고 최신순으로 자릅니다.
+   한 곳이 죽어도 나머지로 돌아갑니다. */
+async function gather(one) {
+  const urls = [
+    'https://www.motorsport.com/rss/' + one.feed + '/news/',
+    'https://www.autosport.com/rss/' + one.feed + '/news/',
+    'https://www.crash.net/rss/' + one.crash,
+  ];
+  const lists = await Promise.all(urls.map(async u => {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 9000);
+      try {
+        const r = await fetch(u, { signal: ac.signal, headers: { 'User-Agent': UA } });
+        if (!r.ok) return [];
+        return parseRss(await r.text());
+      } finally { clearTimeout(timer); }
+    } catch (e) { return []; }
+  }));
+
+  const seen = new Set(), all = [];
+  for (const list of lists) for (const it of list) {
+    if (seen.has(it.link)) continue;
+    seen.add(it.link);
+    all.push(it);
+  }
+  all.sort((x, y) => (y.when || 0) - (x.when || 0));
+  return all.slice(0, CARDS_PER_SERIES);
 }
 
 export default async function handler(req, res) {
@@ -132,10 +171,7 @@ export default async function handler(req, res) {
   const out = { series: s.k, made: 0, cached: 0, deep: 0 };
 
   try {
-    const r = await fetch('https://www.motorsport.com/rss/' + s.feed + '/news/',
-                          { headers: { 'User-Agent': 'APEX/1.0' } });
-    if (!r.ok) throw new Error('RSS HTTP ' + r.status);
-    const items = parseRss(await r.text());
+    const items = await gather(s);
     if (!items.length) throw new Error('기사 없음');
 
     const existing = await loadExisting(items.map(x => x.link));
