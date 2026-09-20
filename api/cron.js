@@ -43,6 +43,17 @@ const CARDS_PER_SERIES = 10;
    만들어지므로 안 나오는 일은 없습니다. */
 const DEEP_PER_SERIES = 3;
 
+/* 카드를 한 번에 몇 건씩 묶어 보낼지.
+
+   10건을 통째로 보냈더니 SUPER GT 에서 시간초과가 났습니다. 한 번에
+   실패하면 그때까지 만든 것도 전부 버려집니다 — 돌려받는 게 통째로
+   하나이기 때문입니다.
+
+   5건씩 나눠 보냅니다. 한 묶음이 실패해도 앞 묶음은 이미 저장돼
+   있습니다. 새 기사가 5건 이하인 보통 날에는 지금처럼 한 번만
+   부릅니다. 호출이 늘어나는 건 기사가 쏟아지는 날뿐입니다. */
+const CARD_CHUNK = 5;
+
 /* 함수 상한이 60초입니다. 저장과 응답 몫을 남겨 54초에서 접습니다. */
 const WORKER_MS = 54000;
 
@@ -178,26 +189,31 @@ export default async function handler(req, res) {
     const todo = items.filter(x => !existing[keyOf(x.link)]);
     out.cached = items.length - todo.length;
 
-    if (todo.length) {
-      /* 카드가 먼저입니다. 다만 42초까지만 쓰게 해서 자세한 풀이 몫을
-         남깁니다. 새 기사가 없는 날은 카드가 2초에 끝나므로 남는
-         시간이 통째로 풀이에 갑니다. */
-      const budget = Math.min(42000, endAt - Date.now());
-      const made = await makeCards(todo, [], KEY, budget);
-      if (made.cards) {
-        const rows = [];
-        made.cards.forEach((c, n) => {
-          if (!c || !c.p) return;
-          rows.push({ id: keyOf(todo[n].link),
-                      hook: (c.h || '').slice(0, 40), punch: (c.p || '').slice(0, 40),
-                      line: (c.d || '').slice(0, 120), at: Date.now() });
-        });
-        out.made = await saveCards(rows);
-        out.model = made.model;
-      } else {
-        out.note = made.reason;   /* daily-limit 이면 이 부문만 건너뜁니다 */
-        out.why  = made.why || [];  /* 모델마다 무엇 때문에 실패했는지 */
+    /* 카드가 먼저입니다. 묶음마다 만들고 바로 저장하므로, 뒤 묶음이
+       실패해도 앞 묶음은 남습니다. 자세한 풀이 몫으로 6초는 남겨 둡니다. */
+    for (let at = 0; at < todo.length; at += CARD_CHUNK) {
+      const budget = Math.min(26000, endAt - Date.now() - 6000);
+      if (budget < 12000) { out.note = out.note || '시간 모자람'; break; }
+
+      const part = todo.slice(at, at + CARD_CHUNK);
+      const made = await makeCards(part, [], KEY, budget);
+
+      if (!made.cards) {
+        out.note = made.reason;   /* daily-limit 이면 더 해봐야 소용없습니다 */
+        out.why  = (out.why || []).concat(made.why || []);
+        if (made.reason === 'daily-limit') break;
+        continue;                 /* 이 묶음만 건너뛰고 다음 묶음을 해 봅니다 */
       }
+
+      const rows = [];
+      made.cards.forEach((c, n) => {
+        if (!c || !c.p) return;
+        rows.push({ id: keyOf(part[n].link),
+                    hook: (c.h || '').slice(0, 40), punch: (c.p || '').slice(0, 40),
+                    line: (c.d || '').slice(0, 120), at: Date.now() });
+      });
+      out.made += await saveCards(rows);
+      out.model = made.model;
     }
     /* 자세한 풀이를 미리 만들어 둡니다. 한 건에 10초쯤 걸리므로 남는
        시간만큼만 합니다. 이미 있는 것은 건너뜁니다. */
