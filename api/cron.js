@@ -160,6 +160,7 @@ export default async function handler(req, res) {
         out.model = made.model;
       } else {
         out.note = made.reason;   /* daily-limit 이면 이 부문만 건너뜁니다 */
+        out.why  = made.why || [];  /* 모델마다 무엇 때문에 실패했는지 */
       }
     }
     /* 자세한 풀이를 미리 만들어 둡니다. 한 건에 10초쯤 걸리므로 남는
@@ -189,6 +190,7 @@ export default async function handler(req, res) {
   /* 무엇을 했는지 한 줄 남깁니다. 이게 없으면 자동 갱신이 돌았는지,
      어느 부문에서 멈췄는지 나중에 알 방법이 없습니다. */
   console.log('cron ' + s.k + ' made=' + out.made + ' cached=' + out.cached + ' deep=' + out.deep
+              + (out.why && out.why.length ? ' why=' + out.why.join('|') : '')
               + (out.note ? ' note=' + out.note : '')
               + (out.error ? ' error=' + out.error : ''));
   out.ms = Date.now() - t0;
