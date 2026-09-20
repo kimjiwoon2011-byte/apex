@@ -85,6 +85,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
 
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
+  let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
   for (const model of OR_MODELS) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
@@ -120,8 +121,9 @@ export async function makeCards(items, glossary, key, budgetMs) {
       }
       if (!res.ok) { why.push('HTTP ' + res.status); continue; }
       const j = await res.json();
-      const got = orParse(j && j.choices && j.choices[0] && j.choices[0].message.content, items.length);
-      if (!got) continue;
+      const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
+      const got = orParse(txt, items.length);
+      if (!got) { why.push('번호를 못 읽음'); raw = String(txt || '(빈 답)').slice(0, 400); continue; }
       const cards = got.map(s => {
         if (!s) return null;
         const p = s.split(/\s*:{2,}\s*/).map(x => x.trim()).filter(Boolean);
@@ -131,10 +133,11 @@ export async function makeCards(items, glossary, key, budgetMs) {
       });
       if (cards.some(Boolean)) return { cards, model };
       why.push('형식 어긋남');
+      raw = String(txt || '').slice(0, 400);
     } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
     finally { clearTimeout(timer); }
   }
-  return { cards: null, reason: 'all-models-failed', why };
+  return { cards: null, reason: 'all-models-failed', why, raw };
 }
 
 /* ── Supabase ── */

@@ -49,7 +49,7 @@ export default async function handler(req, res) {
   if (!out.cards)
     return res.status(200).json({ made: 0, cached: Object.keys(existing).length,
                                   cards: existing, note: out.reason,
-                                  why: out.why || [] });
+                                  why: out.why || [], raw: out.raw || '' });
 
   const rows = [];
   out.cards.forEach((c, i) => {
