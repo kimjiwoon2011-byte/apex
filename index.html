@@ -5103,7 +5103,11 @@ const msgKey = m => (m.sys ? 's' : 'm') + '|' + (m.who || '') + '|' + m.text + '
 function mirrorMsgs(roomId, fresh){
   const map = new Map();
   DB.get('mir-' + roomId, []).concat(fresh).forEach(m => map.set(msgKey(m), m));
-  const merged = [...map.values()].sort((a,b)=>a.at - b.at).slice(-300);
+  /* 서버 번호(id)가 다 있으면 서버가 받은 순서로 세웁니다. 폰 시계 순(at)으로
+     세우면 시계가 느린 폰에서 보낸 말이 대화 맨 위로 올라갔습니다. */
+  const all = [...map.values()];
+  const byId = all.length && all.every(m => m.id);
+  const merged = all.sort((a,b)=> byId ? a.id - b.id : a.at - b.at).slice(-300);
   DB.set('mir-' + roomId, merged);
   return merged;
 }
