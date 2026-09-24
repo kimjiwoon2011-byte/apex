@@ -225,7 +225,8 @@ export default async function handler(req, res) {
       at += part.length;
       const d = await makeDeepBatch(part, KEY, room - 2000);
       if (d.reason === 'daily-limit') { out.note = 'daily-limit'; break; }
-      if (!d.deeps) { out.why = (out.why || []).concat(d.why || []); continue; }
+      if (d.why && d.why.length) out.why = (out.why || []).concat(d.why);
+      if (!d.deeps) continue;
       const rows = [];
       d.deeps.forEach((x, k) => {
         if (!x || !x.what) return;

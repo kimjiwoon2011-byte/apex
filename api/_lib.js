@@ -283,7 +283,7 @@ export const DEEP_SYS = [
   '  보기: Isack Hadjar 를 이자크 하다르 라고 적지 마라. Isack Hadjar 로 둬라.',
   '- 영어로 두는 건 사람·팀·서킷의 고유한 이름뿐이다. 보통 낱말은 반드시',
   '  우리말로 옮겨라. team principal 은 팀 대표, engineer 는 엔지니어,',
-  '  practice 는 연습주행, qualifying 은 예선이다.',
+  '  practice 는 연습주행, qualifying 은 예선, standings 는 순위다.',
   '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
   '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
   '',
@@ -418,7 +418,7 @@ export async function loadDeep(links) {
 function deepParse(text) {
   const s = String(text || '');
   const grab = name => {
-    const m = s.match(new RegExp('\\[' + name + '\\]\\s*([\\s\\S]*?)(?=\\n?\\[|$)'));
+    const m = s.match(new RegExp('\\[' + name + '\\]\\s*([\\s\\S]*?)(?=\\s*\\[(?:무슨 일|왜 중요|알아둘 것)\\]|$)'));
     const v = m ? m[1].replace(/\s+/g, ' ').trim() : '';
     return (!v || /^-+$/.test(v)) ? '' : v;
   };
@@ -502,7 +502,8 @@ export async function makeDeep(item, glossary, key, budgetMs) {
    대신 한 번에 쓰는 글이 길어서 시간이 더 걸립니다. */
 const DEEP_MANY_SYS = DEEP_SYS + '\n\n' + [
   '── 기사를 여러 개 받았을 때 ──',
-  '- 기사마다 따로 쓴다. 한 기사의 사실을 다른 기사에 섞지 마라.',
+  '- 기사마다 따로 쓴다. 그 번호 기사의 본문에 있는 사실만 쓴다.',
+  '- 다른 번호 기사에 나온 사람·팀·숫자를 절대 가져오지 마라.',
   '- 기사마다 받은 번호 줄(=== 1 === 처럼)을 먼저 쓰고, 그 아래에 대괄호 항목 세 개를 쓴다.',
   '- 받은 기사 수만큼 빠짐없이 쓴다.',
 ].join('\n');
@@ -539,5 +540,28 @@ export async function makeDeepBatch(items, key, budgetMs) {
     return got.some(Boolean) ? got : null;     /* 일부만 나와도 받습니다 */
   });
   if (!r.got) return { deeps: null, reason: r.reason, raw: r.raw || '', why: r.why };
-  return { deeps: r.got.map(d => d ? named(d) : null), model: r.model };
+
+  /* 섞임 검사. 묶어 보내면 모델이 기사끼리 헷갈릴 때가 있습니다.
+     실제로 페레스(캐딜락 소속) 기사와 하자르 기사를 함께 보냈더니, 하자르
+     풀이에 "레드불이 캐딜락으로 이름을 바꿨다"는 없는 말이 들어갔습니다.
+     그 기사에는 안 나오고 같은 묶음의 다른 기사에만 나오는 이름이 풀이에
+     있으면 버립니다. 버린 기사는 다음 갱신 때 다시 만들어집니다. */
+  /* 이름과 그 낱말 하나하나를 모읍니다. 원문에 성만 나와도 풀이가
+     "아이작 하자르"처럼 온이름을 쓰는 건 섞인 게 아닙니다. */
+  const own = items.map((it, n) => new Set(
+    nameGlossary([it.title, it.lead || '', fulls[n]], 999).map(g => g.split(' = ')[1])));
+  const mine = own.map(set => new Set([...set].flatMap(ko => [ko, ...ko.split(' ')])));
+  const why = [];
+  const deeps = r.got.map((d, k) => {
+    if (!d) return null;
+    const x = named(d);
+    const txt = [x.what, x.why, x.note].join(' ');
+    const alien = own.flatMap((set, j) => j === k ? [] : [...set])
+      .filter(ko => ko.length >= 2 && !mine[k].has(ko) && !mine[k].has(ko.split(' ').pop())
+                    && txt.includes(ko));
+    if (alien.length) { why.push((k + 1) + '번 섞임 ' + [...new Set(alien)].join(',')); return null; }
+    return x;
+  });
+  return { deeps: deeps.some(Boolean) ? deeps : null, model: r.model, why,
+           reason: deeps.some(Boolean) ? undefined : 'mixed' };
 }
