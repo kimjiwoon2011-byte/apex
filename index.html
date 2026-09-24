@@ -422,6 +422,11 @@ main{padding:14px 16px 0}
 .cardn .line{font-size:13px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.9);
   margin:0 0 12px;text-shadow:0 1px 6px rgba(0,0,0,.6);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 글씨 맞추기 — 칸에 안 들어가면 "…"로 자르지 않고 글씨를 줄입니다 (fitCard).
+   큰 제목(핵심)만 자르기를 끕니다. 설명 줄은 도입부가 길면 900자까지 되므로
+   지금처럼 두 줄에서 자릅니다. 최소 크기까지 줄여도 넘칠 때만 이 표시를
+   떼서 예전처럼 "…"로 자릅니다. */
+.cardn.fitting .punch{display:block;-webkit-line-clamp:unset;overflow:visible}
 /* 글자가 많아 아래쪽 그늘을 조금 더 올립니다 */
 .cardn .sc{background:linear-gradient(0deg,rgba(3,7,15,.97) 30%,rgba(3,7,15,.55) 62%,rgba(3,7,15,.28))}
 
@@ -2533,8 +2538,10 @@ if(SERIES[newsSeries]?.noNews) newsSeries = 'f1';
 const HOSTED = location.protocol === 'https:' || location.protocol === 'http:';
 /* 예비 소스 Crash.net의 경로 — 시리즈 이름이 우리 것과 달라 짝을 지어 둡니다.
    스포츠카 피드 하나가 WEC·IMSA·GT를 함께 다룹니다 */
+/* SUPER GT 는 Crash.net 에 전용 피드가 없습니다. 스포츠카 전체 피드를 쓰면
+   China GT 같은 다른 대회 기사가 SUPER GT 로 들어가서 뺐습니다. */
 const CRASH_PATH = { f1:'f1', dtm:'dtm', wec:'sportscars', imsa:'sportscars',
-                     gt:'sportscars', supergt:'sportscars' };
+                     gt:'sportscars' };
 const FEEDS = [
   ...(HOSTED ? [
     { src:'Motorsport.com', url: f => `/api/ms/${f}/news/` },
@@ -2739,6 +2746,14 @@ const EXTRA_NAMES = [
   ['Andrea Stella','안드레아 스텔라'], ['Zak Brown','잭 브라운'],
   ['Monza','몬차'], ['Suzuka','스즈카'], ['Interlagos','인터라고스'],
   ['Mercedes','메르세데스'], ['Ferrari','페라리'], ['McLaren','맥라렌'],
+  ['Azerbaijan','아제르바이잔'], ['Baku','바쿠'], ['Madrid','마드리드'],
+  ['Monaco','모나코'], ['Racing Bulls','레이싱 불스'], ['Woking','워킹'],
+  ['Arvid Lindblad','아르비드 린드블라드'], ['Lindblad','린드블라드'],
+  ['Mark Walter','마크 월터'], ['Jolyon Palmer','졸리언 파머'],
+  ['Emerson Fittipaldi','에메르송 피티팔디'], ['Mario Andretti','마리오 안드레티'],
+  ['Jacky Ickx','재키 익스'], ['James Hinchcliffe','제임스 힌치클리프'],
+  ['Antonio Felix da Costa','안토니우 펠릭스 다 코스타'],
+  ['Beyond the Grid','비욘드 더 그리드'],
 ];
 
 /* WEC·IMSA·DTM·SUPER GT 는 F1 DRIVERS 목록에 없어서, 넣어 두지 않으면
@@ -2793,6 +2808,15 @@ const SPORTSCAR_NAMES = [
   ['Lucas Auer','루카스 아우어'],
   ['Marco Wittmann','마르코 비트만'], ['Wittmann','비트만'],
   ['Jack Aitken','잭 에이킨'], ['Aitken','에이킨'],
+  ['Engel','엥겔'], ['Auer','아우어'],
+  ['Sheldon van der Linde','셸던 판 데르 린데'], ['van der Linde','판 데르 린데'],
+  ['Jules Gounon','쥘 구농'], ['Gounon','구농'],
+  ['Nicki Thiim','니키 티임'], ['Thiim','티임'],
+  ['Ben Dorr','벤 되르'], ['Ben Dörr','벤 되르'], ['Dorr','되르'], ['Dörr','되르'],
+  ['Tom Kalender','톰 칼렌더'], ['Kalender','칼렌더'],
+  ['Renger van der Zande','렝어르 판 데르 잔더'], ['van der Zande','판 데르 잔더'],
+  ['Matteo Cairoli','마테오 카이롤리'], ['Cairoli','카이롤리'],
+  ['Winward','윈워드'], ['Landgraf','란트그라프'],
   /* SUPER GT */
   ['Naoki Yamamoto','야마모토 나오키'], ['Yamamoto','야마모토'],
   ['Tomoki Nojiri','노지리 도모키'], ['Nojiri','노지리'],
@@ -2802,6 +2826,18 @@ const SPORTSCAR_NAMES = [
   ['Koudai Tsukakoshi','쓰카코시 고다이'], ['Tsukakoshi','쓰카코시'],
   ['Bertrand Baguette','베르트랑 바게트'], ['Baguette','바게트'],
   ['Katsumasa Chiyo','지요 가쓰마사'],
+  ['SUPER GT','슈퍼 GT'], ['Super GT','슈퍼 GT'],
+  ['Ritomo Miyata','미야타 리토모'], ['Miyata','미야타'],
+  /* GT·기타 스포츠카 */
+  ['China GT','차이나 GT'],
+  ['Ollie Millroy','올리 밀로이'], ['Millroy','밀로이'],
+  ['Loek Hartog','룩 하르토흐'], ['Hartog','하르토흐'],
+  ['Laurin Heinrich','라우린 하인리히'], ['Heinrich','하인리히'],
+  ['Nick Yelloly','닉 옐롤리'], ['Yelloly','옐롤리'],
+  ['Doriane Pin','도리안 팽'],
+  ['Jamie Chadwick','제이미 채드윅'], ['Chadwick','채드윅'],
+  ['Fred Makowiecki','프레드 마코비에츠키'], ['Makowiecki','마코비에츠키'],
+  ['Emmanuel Esnault','에마뉘엘 에스노'], ['Esnault','에스노'],
   /* 서킷 */
   ['Fuji Speedway','후지 스피드웨이'], ['Motegi','모테기'],
   ['Okayama','오카야마'], ['Autopolis','오토폴리스'], ['Sugo','스고'],
@@ -2812,6 +2848,12 @@ const SPORTSCAR_NAMES = [
   ['Petit Le Mans','프티 르망'], ['Indianapolis','인디애나폴리스'],
   ['Bathurst','배서스트'], ['Imola','이몰라'], ['Portimao','포르티망'],
   ['Fuji','후지'],
+  ['Nürburgring','뉘르부르크링'],
+  ['Circuit of the Americas','서킷 오브 디 아메리카스'], ['Austin','오스틴'],
+  ['Lone Star Le Mans','론스타 르망'],
+  ['Shanghai','상하이'], ['Sepang','세팡'], ['Long Beach','롱비치'],
+  ['Algarve','알가르브'], ['Road Atlanta','로드 애틀랜타'],
+  ['Battle on the Bricks','배틀 온 더 브릭스'],
   /* 팀·제조사 */
   ['Cadillac','캐딜락'], ['Porsche Penske','포르쉐 펜스케'],
   ['Penske','펜스케'], ['Wayne Taylor Racing','웨인 테일러 레이싱'],
@@ -2823,10 +2865,15 @@ const SPORTSCAR_NAMES = [
   ['Manthey','만타이'], ['Jota','요타'], ['Proton','프로톤'],
   ['Iron Lynx','아이언 링스'], ['AF Corse','AF 코르세'],
   ['Abt','압트'], ['Schubert','슈베르트'], ['Rowe','로베'],
+  ['Era Motorsport','에라 모터스포츠'],
+  ['Meyer Shank Racing','마이어 생크 레이싱'], ['Meyer Shank','마이어 생크'],
+  ['Prema Racing','프레마 레이싱'], ['Prema','프레마'],
+  ['Mercedes-AMG','메르세데스-AMG'], ['IndyCar','인디카'], ['Rolex 24','롤렉스 24'],
   /* 자주 나오는 용어 */
   ['Hypercar','하이퍼카'], ['Hyperpole','하이퍼폴'],
   ['Balance of Performance','성능 균등화'],
   ['safety car','세이프티카'], ['full course yellow','풀코스 옐로'],
+  ['Virtual Safety Car','버추얼 세이프티카'], ['shootout','슈트아웃'],
 ];
 
 
@@ -2983,7 +3030,15 @@ const OR_SYS = [
   '── 규칙 ──',
   '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·날짜를 만들지 마라.',
   '- 배경이 원문에 없으면 훅을 빈칸으로 둔다.',
-  '- 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 사람·팀·서킷 이름은 표기표가 있으면 표기표대로 쓴다.',
+  '- 표기표에 없는 이름은 한글로 옮기지 말고 영어 그대로 둔다. 네가 소리 나는',
+  '  대로 적으면 같은 사람이 카드마다 다른 이름이 된다.',
+  '  (Isack Hadjar 를 이자크 하다르 라고 쓰지 마라. Isack Hadjar 로 둬라.)',
+  '- 이름이 아닌 보통 낱말은 반드시 우리말로 옮긴다.',
+  '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
+  '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
+  '- 자주 틀리는 말: shootout=슈트아웃, wet=젖은 노면, lost his temper=격분,',
+  '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀.',
   '- 존댓말·마침표·한자·느낌표 금지.',
   '',
   '── 출력 ──  [번호] 훅 ::: 핵심 ::: 설명',
@@ -3373,8 +3428,11 @@ const DEEP_SYS = [
   '- 준 글에 없는 사실을 절대 지어내지 마라. 이게 제일 중요하다.',
   '- 숫자, 순위, 랩 수, 날짜, 점수, 나이를 만들지 마라. 준 글에 있는 것만 쓴다.',
   '- 준 글로 알 수 없는 항목은 그 줄에 - 한 글자만 적어라. 추측해서 채우지 마라.',
+  '- 원문의 강도를 바꾸지 마라. 검토·추진·설·가능성을 정해진 일처럼 쓰지 마라.',
   '- 특히 [왜 중요]와 [알아둘 것]은 모르면 - 로 둔다. 억지로 쓰지 마라.',
-  '- 사람·팀·서킷 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 표기표에 있는 이름은 표기표대로 쓴다.',
+  '- 표기표에 없는 사람·팀·서킷 이름은 한글로 옮기지 마라. 영어 그대로 둬라.',
+  '  네가 소리 나는 대로 적으면 같은 사람이 글마다 다른 이름이 된다.',
   '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
   '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
   '',
@@ -3616,6 +3674,55 @@ function fitPhoto(img){
   };
 }
 
+/* 카드 글씨가 칸에 안 맞으면 글씨를 줄입니다.
+
+   예전에는 핵심을 3줄, 설명을 2줄에서 "…"로 잘랐습니다. 번역된 제목을
+   통째로 싣는 카드는 길어서 "…시작되었습니니" 처럼 뒤가 날아갔습니다.
+   이제 먼저 글씨를 줄여 보고, 가장 작게 해도 안 될 때만 자릅니다.
+
+   순서는 핵심 → 설명 → 훅입니다. 핵심은 사진이 가려지지 않게 카드 높이의
+   42% 안에 들어가게 합니다. 카드 크기는 화면마다 다르므로 그려진 뒤에 재고,
+   화면을 돌리거나 글꼴이 늦게 도착하면 다시 잽니다. */
+function fitCard(c){
+  const inn = c.querySelector('.in'), punch = c.querySelector('.punch');
+  if(!inn || !punch) return true;                      /* 표지 카드 */
+  const line = c.querySelector('.line'), hook = c.querySelector('.hook');
+  const H = c.clientHeight;
+  if(!H) return false;                                 /* 아직 화면에 없음 */
+
+  c.classList.add('fitting');
+  [punch, line, hook].forEach(e => { if(e) e.style.fontSize = ''; });
+  const px  = e => parseFloat(getComputedStyle(e).fontSize);
+  const over = () => inn.scrollHeight > inn.clientHeight + 1;
+
+  const pMin = punch.classList.contains('full') ? 16 : 22;
+  let ps = px(punch);
+  while(ps > pMin && (punch.offsetHeight > H * 0.42 || over())){
+    ps = Math.max(pMin, ps - 2); punch.style.fontSize = ps + 'px';
+  }
+  if(line){
+    let ls = px(line);
+    while(ls > 11 && over()){
+      ls = Math.max(11, ls - 0.5); line.style.fontSize = ls + 'px';
+    }
+  }
+  if(hook){
+    let hs = px(hook);
+    while(hs > 12 && over()){ hs = Math.max(12, hs - 0.5); hook.style.fontSize = hs + 'px'; }
+  }
+  if(over()) c.classList.remove('fitting');           /* 마지막 수단 — "…" */
+  return true;
+}
+function fitDeck(root, tries = 0){
+  const cards = [...(root || document).querySelectorAll('.cardn')];
+  const pending = cards.filter(c => !fitCard(c));
+  /* 탭이 가려져 있으면 크기를 못 잽니다. 잠깐 뒤에 다시 해 봅니다 */
+  if(pending.length && tries < 20) setTimeout(() => fitDeck(root, tries + 1), 250);
+}
+let fitTimer = 0;
+addEventListener('resize', () => { clearTimeout(fitTimer); fitTimer = setTimeout(() => fitDeck(), 150); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitDeck());
+
 function paintDeck(data, titles, descs){
   const s = SERIES[newsSeries], list = $('#newsList');
   const nice  = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
@@ -3697,6 +3804,7 @@ function paintDeck(data, titles, descs){
   bar.appendChild(prev); bar.appendChild(dots); bar.appendChild(next);
 
   list.innerHTML = ''; list.appendChild(deck); list.appendChild(bar);
+  fitDeck(deck);                              /* 칸에 안 맞는 글씨를 줄입니다 */
 
   /* 지금 몇 번째인지 — 옮길 때와 같은 기준(스크롤 위치)으로 재야 어긋나지 않습니다 */
   const current = () => {
@@ -4889,7 +4997,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-18 · 로그인 후 옛화면 수정';
+const BUILD = '2026-09-24 · 번역 개선·글씨 맞추기';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

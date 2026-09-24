@@ -45,22 +45,36 @@ export default async function handler(req, res) {
   if (!todo.length)
     return res.status(200).json({ made: 0, cached: items.length, cards: existing });
 
-  const out = await makeCards(todo, glossary, KEY);
-  if (!out.cards)
-    return res.status(200).json({ made: 0, cached: Object.keys(existing).length,
-                                  cards: existing, note: out.reason,
-                                  why: out.why || [], raw: out.raw || '' });
-
-  const rows = [];
-  out.cards.forEach((c, i) => {
-    if (!c || !c.p) return;
-    const id = keyOf(todo[i].link);
-    existing[id] = c;
-    rows.push({ id, hook: (c.h || '').slice(0, 40), punch: (c.p || '').slice(0, 40),
-                line: (c.d || '').slice(0, 120), at: Date.now() });
-  });
-  const saved = await saveCards(rows);
+  /* 5건씩 나눠 만들고 묶음마다 바로 저장합니다.
+     10건을 한 번에 보내면 오후에 올라온 기사가 몰린 날 시간초과로 통째로
+     실패했습니다. 그러면 앱을 연 사람은 카드를 하나도 못 봅니다.
+     나눠 보내면 앞 묶음은 남고, 모자란 건 다음에 열 때 채워집니다. */
+  const CHUNK = 5;
+  const deadline = Date.now() + 52000;          /* 함수 상한 60초 안에서 */
+  let saved = 0, model = '', note = '', why = [], modelRaw = '';
+  for (let at = 0; at < todo.length; at += CHUNK) {
+    const budget = Math.min(26000, deadline - Date.now() - 3000);
+    if (budget < 12000) { note = note || '시간 모자람'; break; }
+    const part = todo.slice(at, at + CHUNK);
+    const out = await makeCards(part, glossary, KEY, budget);
+    if (!out.cards) {
+      note = out.reason; why = why.concat(out.why || []); modelRaw = out.raw || modelRaw;
+      if (out.reason === 'daily-limit') break;  /* 더 해봐야 소용없습니다 */
+      continue;
+    }
+    const rows = [];
+    out.cards.forEach((c, i) => {
+      if (!c || !c.p) return;
+      const id = keyOf(part[i].link);
+      existing[id] = c;
+      rows.push({ id, hook: (c.h || '').slice(0, 40), punch: (c.p || '').slice(0, 40),
+                  line: (c.d || '').slice(0, 120), at: Date.now() });
+    });
+    saved += await saveCards(rows);
+    model = out.model;
+  }
 
   res.status(200).json({ made: saved, cached: items.length - todo.length,
-                         model: out.model, cards: existing });
+                         model, cards: existing,
+                         ...(note ? { note, why, raw: modelRaw } : {}) });
 }

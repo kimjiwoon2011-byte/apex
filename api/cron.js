@@ -15,16 +15,19 @@ export const maxDuration = 60;
 
 /* 부문과 언론사 피드 이름.
 
-   앱은 세 곳에서 소식을 받습니다. 그런데 자동 갱신은 Motorsport.com 만
-   보고 있었습니다. 그래서 Autosport 와 Crash.net 기사는 카드가 한 장도
-   안 만들어졌습니다 — 화면에 뜨는 기사의 3분의 2입니다.
-   세 곳을 모두 받아 최신순으로 합칩니다. */
+   앱과 똑같은 기사를 골라야 합니다. 앱은 세 곳을 합치지 않고
+   Motorsport.com 을 먼저 받아, 그게 실패할 때만 Autosport → Crash.net
+   순으로 넘어갑니다 (fetchNews). 한때 여기서 세 곳을 합쳤더니, 앱에는
+   나오지도 않는 기사에 호출을 쓰고 정작 화면의 기사는 빠뜨렸습니다.
+
+   SUPER GT 는 Crash.net 에 전용 피드가 없습니다. 스포츠카 전체 피드를
+   쓰면 China GT 같은 다른 대회 기사가 SUPER GT 로 들어가서 뺐습니다. */
 const SERIES = [
   { k: 'f1',   feed: 'f1',      crash: 'f1' },
   { k: 'wec',  feed: 'wec',     crash: 'sportscars' },
   { k: 'imsa', feed: 'imsa',    crash: 'sportscars' },
   { k: 'dtm',  feed: 'dtm',     crash: 'dtm' },
-  { k: 'sgt',  feed: 'supergt', crash: 'sportscars' },
+  { k: 'sgt',  feed: 'supergt', crash: null },
   { k: 'gt',   feed: 'gt',      crash: 'sportscars' },
 ];
 
@@ -83,34 +86,27 @@ function parseRss(xml) {
   return items;
 }
 
-/* 세 언론사에서 받아 주소가 겹치는 것을 걸러 내고 최신순으로 자릅니다.
-   한 곳이 죽어도 나머지로 돌아갑니다. */
+/* 앱의 fetchNews 와 같은 순서로 받아, 처음 성공한 곳의 앞 10건을 씁니다.
+   앱이 화면에 올리는 기사와 정확히 같아야 카드가 제자리에 붙습니다. */
 async function gather(one) {
   const urls = [
     'https://www.motorsport.com/rss/' + one.feed + '/news/',
     'https://www.autosport.com/rss/' + one.feed + '/news/',
-    'https://www.crash.net/rss/' + one.crash,
-  ];
-  const lists = await Promise.all(urls.map(async u => {
+    one.crash ? 'https://www.crash.net/rss/' + one.crash : null,
+  ].filter(Boolean);
+  for (const u of urls) {
     try {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), 9000);
       try {
         const r = await fetch(u, { signal: ac.signal, headers: { 'User-Agent': UA } });
-        if (!r.ok) return [];
-        return parseRss(await r.text());
+        if (!r.ok) continue;
+        const items = parseRss(await r.text());
+        if (items.length) return items.slice(0, CARDS_PER_SERIES);
       } finally { clearTimeout(timer); }
-    } catch (e) { return []; }
-  }));
-
-  const seen = new Set(), all = [];
-  for (const list of lists) for (const it of list) {
-    if (seen.has(it.link)) continue;
-    seen.add(it.link);
-    all.push(it);
+    } catch (e) { /* 다음 곳으로 */ }
   }
-  all.sort((x, y) => (y.when || 0) - (x.when || 0));
-  return all.slice(0, CARDS_PER_SERIES);
+  return [];
 }
 
 export default async function handler(req, res) {

@@ -2,6 +2,43 @@
  * 시각에 저절로 도는 것) 가 같이 씁니다. 파일 이름이 _ 로 시작하면
  * Vercel 이 주소로 열어 주지 않습니다. */
 
+import { readFileSync } from 'node:fs';
+
+/* ── 이름표 ──
+   앱이 쓰는 것과 똑같은 표입니다 (tools/export-names.js 가 index.html 에서
+   뽑아 냅니다). 지금까지 서버는 모델에게 빈 목록을 보냈고, 모델은 이름을
+   제멋대로 한글로 옮겼습니다 — Sachsenring 이 어떤 카드에선 작센링,
+   어떤 카드에선 작링. 앱은 영어 이름만 고칠 수 있어서 이미 한글이 된
+   오역은 손댈 수가 없었습니다.
+   이제 모델에게 표를 보내고, 받은 글에도 한 번 더 입힙니다. */
+let NAME_RE = [];
+try {
+  const pairs = JSON.parse(readFileSync(new URL('./_names.json', import.meta.url), 'utf8'));
+  NAME_RE = pairs.map(([src, ko]) => [new RegExp(src, 'g'), ko]);
+} catch (e) { /* 표가 없으면 예전처럼 동작합니다 */ }
+
+/* 글에 나오는 이름만 골라 "영어 = 한글" 줄로 만듭니다 (앱의 nameGlossary 와 같음) */
+export function nameGlossary(lines, max = 40) {
+  const hay = lines.filter(Boolean).join(' ');
+  const seen = new Set(), out = [];
+  for (const [re, ko] of NAME_RE) {
+    re.lastIndex = 0;
+    const m = re.exec(hay);
+    if (!m || seen.has(ko)) continue;
+    seen.add(ko);
+    out.push(m[0] + ' = ' + ko);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/* 모델이 영어로 남긴 이름을 표대로 바꿉니다 (앱의 postNames 와 같음) */
+export function applyNames(str) {
+  let out = String(str || '');
+  for (const [re, ko] of NAME_RE) { re.lastIndex = 0; out = out.replace(re, ko); }
+  return out;
+}
+
 export const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 export const OR_MODELS = [
   'inclusionai/ling-3.0-flash-fin:free',
@@ -38,7 +75,15 @@ export const OR_SYS = [
   '── 규칙 ──',
   '- 원문에 없는 내용을 지어내지 마라. 숫자·순위·날짜를 만들지 마라.',
   '- 배경이 원문에 없으면 훅을 빈칸으로 둔다.',
-  '- 이름은 표기표를 그대로 써라. 표기표에 없으면 영어 그대로 둔다.',
+  '- 사람·팀·서킷 이름은 표기표가 있으면 표기표대로 쓴다.',
+  '- 표기표에 없는 이름은 한글로 옮기지 말고 영어 그대로 둔다. 네가 소리 나는',
+  '  대로 적으면 같은 사람이 카드마다 다른 이름이 된다.',
+  '  (Isack Hadjar 를 이자크 하다르 라고 쓰지 마라. Isack Hadjar 로 둬라.)',
+  '- 이름이 아닌 보통 낱말은 반드시 우리말로 옮긴다.',
+  '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
+  '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
+  '- 자주 틀리는 말: shootout=슈트아웃, wet=젖은 노면, lost his temper=격분,',
+  '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀.',
   '- 존댓말·마침표·한자·느낌표 금지.',
   '',
   '── 출력 ──  [번호] 훅 ::: 핵심 ::: 설명',
@@ -79,8 +124,11 @@ export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
 export async function makeCards(items, glossary, key, budgetMs) {
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
-  const msg = (glossary && glossary.length)
-    ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' + body
+  /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
+  const gl = (glossary && glossary.length) ? glossary
+    : nameGlossary(items.map(it => it.title + ' ' + (it.lead || '')));
+  const msg = gl.length
+    ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' + body
     : body;
 
   const deadline = Date.now() + (budgetMs || 50000);
@@ -128,7 +176,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
         if (!s) return null;
         const p = s.split(/\s*:{2,}\s*/).map(x => x.trim()).filter(Boolean);
         if (p.length < 2) return null;
-        const c = { h: p[0] || '', p: p[1] || '', d: p[2] || '' };
+        const c = { h: applyNames(p[0] || ''), p: applyNames(p[1] || ''), d: applyNames(p[2] || '') };
         return cardOk(c) ? c : null;
       });
       if (cards.some(Boolean)) return { cards, model };
@@ -224,6 +272,7 @@ export const DEEP_SYS = [
   '- 준 글에 없는 사실을 절대 지어내지 마라.',
   '- 숫자, 순위, 랩 수, 날짜, 점수, 나이를 만들지 마라. 준 글에 있는 것만 쓴다.',
   '- 알 수 없는 항목은 그 줄에 - 한 글자만 적어라. 억지로 채우지 마라.',
+  '- 원문의 강도를 바꾸지 마라. 검토·추진·설·가능성을 정해진 일처럼 쓰지 마라.',
   '- 원문 문장을 그대로 옮기지 마라. 따옴표 한 마디만 예외다.',
   '- 표기표에 있는 이름은 표기표대로 쓴다.',
   '- 표기표에 없는 사람·팀·서킷 이름은 한글로 옮기지 마라. 영어 그대로 둬라.',
@@ -383,8 +432,11 @@ export async function makeDeep(item, glossary, key, budgetMs) {
   const src = full || String(item.lead || '');
   if (!item.title) return { deep: null, reason: 'no-title' };
 
-  const msg = (glossary && glossary.length
-      ? '아래 이름은 반드시 이 표기를 써라:\n' + glossary.join('\n') + '\n\n' : '')
+  /* 앱이 보낸 것에 더해, 원문 전체에 나오는 이름도 찾아 넣습니다 */
+  const gl = [...new Set((glossary || []).concat(
+    nameGlossary([item.title, item.lead || '', full])))].slice(0, 50);
+  const msg = (gl.length
+      ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' : '')
     + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
 
   const deadline = t0 + (budgetMs || 45000);
@@ -421,7 +473,8 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       const j = await res.json();
       const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
       const got = deepParse(txt);
-      if (got) return { deep: got, model, usedFull: !!full };
+      if (got) return { deep: { what: applyNames(got.what), why: applyNames(got.why),
+                                note: applyNames(got.note) }, model, usedFull: !!full };
       raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
       why.push(txt ? '형식 어긋남' : '빈 답');
     } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
