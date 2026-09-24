@@ -1194,7 +1194,7 @@ ko:{
  'my.news':'{0} 소식','my.newsAll':'관심 시리즈 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
- 'art.deepWait':'내용을 정리하는 중…','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
+ 'art.deepWait':'내용을 정리하는 중… 처음 여는 기사는 20초쯤 걸려요','art.deepFail':'설명문을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.','art.deepLimit':'오늘 무료로 만들 수 있는 양을 다 썼어요. 내일 아침 자동 갱신 때 준비됩니다.','art.deepRetry':'다시 시도','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상','watch.videoSb':'유튜브에서 바로 찾기',
  'watch.openYt':'유튜브에서 이 경기 영상 보기',
@@ -1340,7 +1340,7 @@ en:{
  'my.news':'{0} news','my.newsAll':'News from your series','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
- 'art.deepWait':'Summarising…','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
+ 'art.deepWait':'Summarising… a new article takes about 20 seconds','art.deepFail':"Couldn't prepare the summary. Please try again shortly.",'art.deepLimit':"Today's free limit is used up. It will be ready after tomorrow morning's update.",'art.deepRetry':'Try again','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video','watch.videoSb':'Find it on YouTube',
  'watch.openYt':'Watch this race on YouTube',
@@ -1484,7 +1484,7 @@ ja:{
  'my.news':'{0}のニュース','my.newsAll':'興味のあるシリーズのニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
- 'art.deepWait':'内容をまとめています…','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
+ 'art.deepWait':'内容をまとめています… 初めての記事は20秒ほどかかります','art.deepFail':'解説を作れませんでした。少し後でもう一度お試しください。','art.deepLimit':'本日の無料枠を使い切りました。明朝の自動更新で用意されます。','art.deepRetry':'再試行','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像','watch.videoSb':'YouTubeで探す',
  'watch.openYt':'YouTubeでこのレースを見る',
@@ -3288,7 +3288,10 @@ async function askServerCards(items, glossary){
 }
 /* 자세한 풀이를 서버에 부탁합니다. 서버가 원문을 읽고 우리말로 간추려
    Supabase 에 저장까지 하므로 다음 사람은 기다리지 않습니다. */
+/* 서버가 왜 못 만들었는지. 화면에 이유를 알려 줄 때 씁니다 */
+let deepWhy = '';
 async function askServerDeep(it, glossary){
+  deepWhy = '';
   if(!HOSTED || !it || !it.link) return null;
   try{
     const ac = new AbortController();
@@ -3300,10 +3303,12 @@ async function askServerDeep(it, glossary){
         lead: (it.desc || '').replace(/\s+/g,' ').trim(),
         glossary: glossary || [] }) });
     clearTimeout(timer);
-    if(!res.ok) return null;
+    if(!res.ok){ deepWhy = 'http'; return null; }
     const j = await res.json();
-    return (j && j.deep && j.deep.what) ? j.deep : null;
-  }catch(e){ return null; }
+    if(j && j.deep && j.deep.what) return j.deep;
+    deepWhy = (j && j.note) || 'fail';
+    return null;
+  }catch(e){ deepWhy = 'net'; return null; }
 }
 async function ensureTitles(key, data, onStep, noAi){
   if(L === 'en' || !data.items.length) return false;
@@ -3643,7 +3648,7 @@ function openArticle(it, title, lead){
 
   /* 자세한 풀이 — 받아오는 동안에도 도입부가 이미 떠 있어 화면이 비지 않습니다.
      한 번 받으면 저장해 두므로 같은 기사를 다시 열 때는 바로 뜹니다. */
-  (async () => {
+  const drawDeep = async () => {
     const box = $('#deepBox'); if(!box) return;
     const has = DB.get(deepKey(it), null);
     /* 서버가 만들어 주므로 이 기기에 키가 없어도 됩니다. 인터넷 주소로
@@ -3654,7 +3659,14 @@ function openArticle(it, title, lead){
     let d = null;
     try{ d = await deepRead(it); }catch(e){}
     const cur = $('#deepBox'); if(!cur) return;    /* 그새 창을 닫았습니다 */
-    if(!d){ cur.innerHTML = ''; return; }
+    if(!d){
+      /* 빈칸으로 두면 기능이 없는 줄 압니다. 이유와 다시 시도를 보여 줍니다 */
+      const lim = deepWhy === 'daily-limit';
+      cur.innerHTML = `<div class="deep wait">${t(lim ? 'art.deepLimit' : 'art.deepFail')}
+        <button class="btn ghost sm" type="button" id="deepRetry">${t('art.deepRetry')}</button></div>`;
+      $('#deepRetry').onclick = drawDeep;
+      return;
+    }
     cur.innerHTML = `<div class="deep">
       <p class="what">${esc(d.what)}</p>
       ${d.why  ? `<p class="why"><b>${t('art.deepWhy')}</b>${esc(d.why)}</p>` : ''}
@@ -3665,7 +3677,8 @@ function openArticle(it, title, lead){
        제목만 볼 때보다 훨씬 많이 걸립니다. */
     const tb = $('#termBox');
     if(tb) tb.innerHTML = termsHtml(hay + ' ' + [d.what, d.why, d.note].join(' '));
-  })();
+  };
+  drawDeep();
 }
 
 function buildNewsView(){
@@ -5017,7 +5030,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-24 · 단톡방 수리';
+const BUILD = '2026-09-24 · 설명문 전부';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

@@ -426,6 +426,53 @@ function deepParse(text) {
   return out.what ? out : null;
 }
 
+/* 풀이용으로 모델을 부릅니다. 앞 모델이 안 되면 다음 모델로 넘어갑니다.
+   parse 가 쓸 만한 답이라고 돌려준 것만 받습니다. */
+async function deepAsk(sys, msg, key, deadline, capMs, parse) {
+  let raw = '';
+  const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
+  for (const model of OR_MODELS) {
+    const room = deadline - Date.now() - 2000;
+    const callMs = Math.min(capMs, room);
+    if (callMs < 10000) break;
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), callMs);
+    try {
+      const res = await fetch(OR_URL, {
+        method: 'POST', signal: ac.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          /* 자세한 풀이는 카드보다 훨씬 깁니다. 6000 으로 뒀더니 생각 과정이
+             한도를 다 먹고 본문이 한 글자도 안 나오는 일이 있었습니다. */
+          model, temperature: 0.3, max_tokens: 14000,
+          messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }],
+        }),
+      });
+      if (res.status === 429) {
+        const e = await res.json().catch(() => ({}));
+        const meta = (e && e.error && e.error.metadata) || {};
+        const msg = String((e.error || {}).message || '') + ' ' + (meta.limit_source || '');
+        if (/per-day|daily/i.test(msg))
+          return { got: null, reason: 'daily-limit', why: why.concat('하루한도') };
+        why.push('429 ' + msg.trim().slice(0, 60));
+        continue;
+      }
+      if (!res.ok) { why.push('HTTP ' + res.status); continue; }
+      const j = await res.json();
+      const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
+      const got = parse(txt);
+      if (got) return { got, model };
+      raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
+      why.push(txt ? '형식 어긋남' : '빈 답');
+    } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
+    finally { clearTimeout(timer); }
+  }
+  return { got: null, reason: 'all-models-failed', raw, why };
+}
+
+const named = d => ({ what: applyNames(d.what), why: applyNames(d.why), note: applyNames(d.note) });
+
 /* 기사 하나를 길게 풀어 씁니다 */
 export async function makeDeep(item, glossary, key, budgetMs) {
   /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
@@ -442,46 +489,55 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' : '')
     + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
 
-  const deadline = t0 + (budgetMs || 45000);
-  let raw = '';
-  const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
-  for (const model of OR_MODELS) {
-    const room = deadline - Date.now() - 2000;
-    const callMs = Math.min(28000, room);
-    if (callMs < 10000) break;
+  const r = await deepAsk(DEEP_SYS, msg, key, t0 + (budgetMs || 45000), 28000, deepParse);
+  if (!r.got) return { deep: null, reason: r.reason, raw: r.raw || '', why: r.why };
+  return { deep: named(r.got), model: r.model, usedFull: !!full };
+}
 
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), callMs);
-    try {
-      const res = await fetch(OR_URL, {
-        method: 'POST', signal: ac.signal,
-        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          /* 자세한 풀이는 카드보다 훨씬 깁니다. 6000 으로 뒀더니 생각 과정이
-             한도를 다 먹고 본문이 한 글자도 안 나오는 일이 있었습니다. */
-          model, temperature: 0.3, max_tokens: 14000,
-          messages: [{ role: 'system', content: DEEP_SYS }, { role: 'user', content: msg }],
-        }),
-      });
-      if (res.status === 429) {
-        const e = await res.json().catch(() => ({}));
-        const meta = (e && e.error && e.error.metadata) || {};
-        const msg = String((e.error || {}).message || '') + ' ' + (meta.limit_source || '');
-        if (/per-day|daily/i.test(msg))
-          return { deep: null, reason: 'daily-limit', why: why.concat('하루한도') };
-        why.push('429 ' + msg.trim().slice(0, 60));
-        continue;
-      }
-      if (!res.ok) { why.push('HTTP ' + res.status); continue; }
-      const j = await res.json();
-      const txt = j && j.choices && j.choices[0] && j.choices[0].message.content;
-      const got = deepParse(txt);
-      if (got) return { deep: { what: applyNames(got.what), why: applyNames(got.why),
-                                note: applyNames(got.note) }, model, usedFull: !!full };
-      raw = String(txt || '(빈 답)').slice(0, 300);   /* 왜 실패했는지 남깁니다 */
-      why.push(txt ? '형식 어긋남' : '빈 답');
-    } catch (e) { why.push(/abort/i.test(String(e)) ? '시간초과' : String(e).slice(0, 40)); }
-    finally { clearTimeout(timer); }
+/* 기사 여러 건을 한 번에 풀어 씁니다.
+
+   무료 한도는 글자 수가 아니라 '부른 횟수'로 셉니다 (하루 50회).
+   한 건씩 부르면 화면의 60건에 60회라 한도를 넘습니다. 3건씩 묶으면
+   20회로 끝납니다. 같은 한도로 세 배를 만드는 셈입니다.
+   대신 한 번에 쓰는 글이 길어서 시간이 더 걸립니다. */
+const DEEP_MANY_SYS = DEEP_SYS + '\n\n' + [
+  '── 기사를 여러 개 받았을 때 ──',
+  '- 기사마다 따로 쓴다. 한 기사의 사실을 다른 기사에 섞지 마라.',
+  '- 기사마다 받은 번호 줄(=== 1 === 처럼)을 먼저 쓰고, 그 아래에 대괄호 항목 세 개를 쓴다.',
+  '- 받은 기사 수만큼 빠짐없이 쓴다.',
+].join('\n');
+
+/* "=== 2 ===" 줄로 나눠 기사마다 풀이를 꺼냅니다. 못 꺼낸 자리는 null */
+function deepSplit(text, n) {
+  const out = new Array(n).fill(null);
+  const parts = String(text || '').split(/^[\s*#]*=+[^\d\n]*(\d+)[^\n=]*=+[\s*]*$/m);
+  for (let k = 1; k + 1 < parts.length; k += 2) {
+    const i = parseInt(parts[k], 10) - 1;
+    if (i >= 0 && i < n && !out[i]) out[i] = deepParse(parts[k + 1]);
   }
-  return { deep: null, reason: 'all-models-failed', raw, why };
+  return out;
+}
+
+export async function makeDeepBatch(items, key, budgetMs) {
+  if (items.length === 1) {
+    const one = await makeDeep(items[0], [], key, budgetMs);
+    return { deeps: one.deep ? [one.deep] : null, reason: one.reason, why: one.why, model: one.model };
+  }
+  const t0 = Date.now();
+  const fulls = await Promise.all(items.map(it => articleText(it.link)));
+  const gl = [...new Set(nameGlossary(items.flatMap((it, n) =>
+    [it.title, it.lead || '', fulls[n]])))].slice(0, 60);
+  /* 기사당 2500자. 셋이면 7500자로, 모델이 앞 기사만 읽고 지치지 않을 만큼 */
+  const msg = (gl.length
+      ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' : '')
+    + items.map((it, n) => '=== ' + (n + 1) + ' ===\n제목: ' + it.title + '\n본문: '
+        + String(fulls[n] || it.lead || '(없음)').slice(0, 2500)).join('\n\n');
+
+  /* 한 건짜리보다 오래 걸리므로 모델 하나에 45초까지 줍니다 */
+  const r = await deepAsk(DEEP_MANY_SYS, msg, key, t0 + budgetMs, 45000, txt => {
+    const got = deepSplit(txt, items.length);
+    return got.some(Boolean) ? got : null;     /* 일부만 나와도 받습니다 */
+  });
+  if (!r.got) return { deeps: null, reason: r.reason, raw: r.raw || '', why: r.why };
+  return { deeps: r.got.map(d => d ? named(d) : null), model: r.model };
 }

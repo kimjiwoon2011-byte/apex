@@ -9,7 +9,7 @@
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
 import { makeCards, keyOf, loadExisting, saveCards,
-         makeDeep, deepIdOf, loadDeep } from './_lib.js';
+         makeDeepBatch, deepIdOf, loadDeep } from './_lib.js';
 
 export const maxDuration = 60;
 
@@ -37,14 +37,14 @@ const CARDS_PER_SERIES = 10;
 
 /* 눌렀을 때 나오는 자세한 풀이도 미리 만들어 둡니다.
 
-   다 만들 수는 없습니다. 무료 한도가 하루 50회인데 6부문 × 10건이면
-   60회입니다. 카드(6회)까지 더하면 66회라 한도를 넘습니다.
+   무료 한도가 하루 50회입니다. 한 건씩 부르면 6부문 × 10건 = 60회라
+   다 못 만듭니다. 그래서 전에는 부문마다 3건까지만 만들었고, 나머지는
+   누가 눌러야 만들어졌습니다 (실측: 60건 중 26건만 준비돼 있었음).
 
-   그래서 부문마다 최신 3건까지만 미리 만듭니다. 6부문이면 18회,
-   카드 6회를 더해 24회입니다. 나머지 26회는 사람이 눌러서 만들
-   몫으로 남겨 둡니다. 미리 안 만들어진 기사를 눌러도 그 자리에서
-   만들어지므로 안 나오는 일은 없습니다. */
-const DEEP_PER_SERIES = 3;
+   3건을 묶어 한 번에 부릅니다. 같은 1회로 3건이 나옵니다. 상한은 두지
+   않고 시간이 되는 만큼 만듭니다. 이미 만든 기사는 건너뛰므로, 하루에
+   새로 필요한 건 그날 새로 올라온 기사 몫뿐입니다. */
+const DEEP_BATCH = 3;
 
 /* 카드를 한 번에 몇 건씩 묶어 보낼지.
 
@@ -212,25 +212,28 @@ export default async function handler(req, res) {
       out.made += await saveCards(rows);
       out.model = made.model;
     }
-    /* 자세한 풀이를 미리 만들어 둡니다. 한 건에 10초쯤 걸리므로 남는
-       시간만큼만 합니다. 이미 있는 것은 건너뜁니다. */
+    /* 자세한 풀이를 미리 만들어 둡니다. 3건 묶음은 30초 가까이 걸리므로
+       그만큼 남았을 때만 묶고, 모자라면 1건씩 합니다. 이미 있는 것은
+       건너뜁니다. 못 한 기사는 다음 갱신이나 누가 눌렀을 때 만들어집니다. */
     const have = await loadDeep(items.map(x => x.link));
-    for (const it of items) {
-      if (out.deep >= DEEP_PER_SERIES) break;
-      if (endAt - Date.now() < 16000) break;      /* 한 건 할 시간이 없음 */
-      if (have[deepIdOf(it.link)]) continue;      /* 이미 있음 */
-      const d = await makeDeep(it, [], KEY,
-                               Math.min(30000, endAt - Date.now() - 2000));
+    const need = items.filter(x => !have[deepIdOf(x.link)]);
+    for (let at = 0; at < need.length; ) {
+      const room = endAt - Date.now();
+      const n = room >= 36000 ? DEEP_BATCH : room >= 16000 ? 1 : 0;
+      if (!n) break;                               /* 한 건 할 시간도 없음 */
+      const part = need.slice(at, at + n);
+      at += part.length;
+      const d = await makeDeepBatch(part, KEY, room - 2000);
       if (d.reason === 'daily-limit') { out.note = 'daily-limit'; break; }
-      if (!d.deep) continue;
-      const n = await saveCards([{
-        id: deepIdOf(it.link),
-        hook: (d.deep.what || '').slice(0, 600),
-        punch: (d.deep.why || '').slice(0, 400),
-        line: (d.deep.note || '').slice(0, 400),
-        at: Date.now(),
-      }]);
-      if (n) out.deep++;
+      if (!d.deeps) { out.why = (out.why || []).concat(d.why || []); continue; }
+      const rows = [];
+      d.deeps.forEach((x, k) => {
+        if (!x || !x.what) return;
+        rows.push({ id: deepIdOf(part[k].link),
+                    hook: x.what.slice(0, 600), punch: (x.why || '').slice(0, 400),
+                    line: (x.note || '').slice(0, 400), at: Date.now() });
+      });
+      out.deep += await saveCards(rows);
     }
   } catch (e) {
     out.error = String(e).slice(0, 120);
