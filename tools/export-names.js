@@ -10,7 +10,7 @@
  * 똑같이 가져갑니다.
  *
  * 이름표를 고친 뒤에는 이걸 다시 돌려야 합니다.
- *   node tools/export-names.js
+ *   node tools/export-names.js     (api/_names.js 를 새로 씁니다)
  */
 const fs = require('fs');
 const path = require('path');
@@ -74,6 +74,11 @@ vm.runInContext(part, ctx, { filename: 'index.html' });
 const pairs = ctx.__PAIRS;
 if (!Array.isArray(pairs) || pairs.length < 100) throw new Error('이름이 너무 적습니다: ' + (pairs && pairs.length));
 
-const out = path.join(ROOT, 'api', '_names.json');
-fs.writeFileSync(out, JSON.stringify(pairs));
-console.log('이름 ' + pairs.length + '개 → api/_names.json');
+/* .json 을 파일로 읽으면 Vercel 에서 죽습니다. 서버 파일을 CommonJS 로 바꿔
+   돌리는데 import.meta 는 그 방식에서 문법 오류입니다. 이미 잘 도는
+   import { ... } from './_lib.js' 와 같은 모양으로 불러오게 .js 로 씁니다. */
+const out = path.join(ROOT, 'api', '_names.js');
+fs.writeFileSync(out,
+  '/* tools/export-names.js 가 만든 파일입니다. 손으로 고치지 마세요. */\n' +
+  'export const NAME_PAIRS = ' + JSON.stringify(pairs) + ';\n');
+console.log('이름 ' + pairs.length + '개 → api/_names.js');

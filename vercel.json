@@ -45,16 +45,13 @@
   ],
   "functions": {
     "api/cards.js": {
-      "maxDuration": 60,
-      "includeFiles": "api/_names.json"
+      "maxDuration": 60
     },
     "api/cron.js": {
-      "maxDuration": 60,
-      "includeFiles": "api/_names.json"
+      "maxDuration": 60
     },
     "api/deep.js": {
-      "maxDuration": 60,
-      "includeFiles": "api/_names.json"
+      "maxDuration": 60
     }
   },
   "crons": [

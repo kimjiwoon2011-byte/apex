@@ -2,7 +2,7 @@
  * 시각에 저절로 도는 것) 가 같이 씁니다. 파일 이름이 _ 로 시작하면
  * Vercel 이 주소로 열어 주지 않습니다. */
 
-import { readFileSync } from 'node:fs';
+import { NAME_PAIRS } from './_names.js';
 
 /* ── 이름표 ──
    앱이 쓰는 것과 똑같은 표입니다 (tools/export-names.js 가 index.html 에서
@@ -11,11 +11,7 @@ import { readFileSync } from 'node:fs';
    어떤 카드에선 작링. 앱은 영어 이름만 고칠 수 있어서 이미 한글이 된
    오역은 손댈 수가 없었습니다.
    이제 모델에게 표를 보내고, 받은 글에도 한 번 더 입힙니다. */
-let NAME_RE = [];
-try {
-  const pairs = JSON.parse(readFileSync(new URL('./_names.json', import.meta.url), 'utf8'));
-  NAME_RE = pairs.map(([src, ko]) => [new RegExp(src, 'g'), ko]);
-} catch (e) { /* 표가 없으면 예전처럼 동작합니다 */ }
+const NAME_RE = NAME_PAIRS.map(([src, ko]) => [new RegExp(src, 'g'), ko]);
 
 /* 글에 나오는 이름만 골라 "영어 = 한글" 줄로 만듭니다 (앱의 nameGlossary 와 같음) */
 export function nameGlossary(lines, max = 40) {
