@@ -8,7 +8,7 @@
  * 불리면 지휘자가 되어 6개 부문을 한꺼번에 띄우고 다 끝날 때까지 지켜봅니다.
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
-import { makeCards, keyOf, loadExisting, saveCards,
+import { makeCards, keyOf, loadExisting, saveCards, OR_MODELS,
          makeDeep, deepIdOf, loadDeep } from './_lib.js';
 
 export const maxDuration = 60;
@@ -136,6 +136,19 @@ export default async function handler(req, res) {
      한꺼번에 띄우면 겹치는 층이 하나뿐입니다. 지휘자가 끝까지 붙어
      있으므로 아무도 중간에 끊기지 않습니다. 부문끼리 나란히 도니까
      제일 오래 걸리는 부문만큼만 기다리면 됩니다. */
+  /* ── 모델 비교 시험 (임시) ── */
+  if (req.query.test === 'model') {
+    const m = OR_MODELS[parseInt(req.query.m, 10) || 0];
+    const one = SERIES.find(x => x.k === (req.query.s || 'wec')) || SERIES[1];
+    const items = (await gather(one)).slice(0, 5);
+    const t0 = Date.now();
+    const made = await makeCards(items, [], KEY, 50000, [m]);
+    return res.status(200).json({ model: m, ms: Date.now() - t0,
+      ok: !!made.cards, why: made.why || [], raw: made.raw || '',
+      items: items.map((it, n) => ({ title: it.title,
+        card: made.cards && made.cards[n] ? made.cards[n] : null })) });
+  }
+
   if (req.query.i === undefined) {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const runs = await Promise.all(SERIES.map((one, n) =>

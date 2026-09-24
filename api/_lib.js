@@ -78,7 +78,7 @@ export const OR_SYS = [
   '- 이름이 아닌 보통 낱말은 반드시 우리말로 옮긴다.',
   '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
   '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
-  '- 자주 틀리는 말: shootout=슈트아웃, wet=젖은 노면, lost his temper=격분,',
+  '- 자주 틀리는 말: shootout=슛아웃, wet=젖은 노면, lost his temper=격분,',
   '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀.',
   '- 존댓말·마침표·한자·느낌표 금지.',
   '',
@@ -118,7 +118,7 @@ const cut = s => {
 export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160);
 
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
-export async function makeCards(items, glossary, key, budgetMs) {
+export async function makeCards(items, glossary, key, budgetMs, models = OR_MODELS) {
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
   /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
   const gl = (glossary && glossary.length) ? glossary
@@ -130,7 +130,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
-  for (const model of OR_MODELS) {
+  for (const model of models) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
        20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
