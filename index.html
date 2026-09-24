@@ -5017,7 +5017,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-24 · 구글 버튼 디자인';
+const BUILD = '2026-09-24 · 단톡방 수리';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -5203,6 +5203,9 @@ create table if not exists messages (
   sys     boolean default false,
   at      int8
 );
+-- 사진 주소와 "누가 보냈는지"(구글 계정 고유번호). 나중에 더한 칸이라 따로 붙입니다
+alter table messages add column if not exists img text;
+alter table messages add column if not exists uid text;
 
 -- 방 대화를 시간순으로 빠르게 가져오기 위한 색인
 create index if not exists messages_room_idx on messages (room_id, at);
@@ -5356,12 +5359,45 @@ const toRow   = r => ({ id:r.id, title:r.title, descr:r.desc, max_n:r.max,
 async function freeMembers(roomId){
   const evs = await ntfyPoll(roomTopic(roomId));
   const set = new Set();
-  evs.forEach(d=>{ if(d.k === 'join') set.add(d.who); else if(d.k === 'leave') set.delete(d.who); });
+  evs.forEach(d=>{ const k = d.uid || d.who;
+    if(d.k === 'join') set.add(k); else if(d.k === 'leave') set.delete(k); });
   return [...set];
 }
 
 /* 방마다 전체를 한 번 받았는지 (앱이 켜져 있는 동안만 기억) */
 const fullLoaded = {};
+
+/* ── 단톡방에서 "나"를 알아보는 기준 ──
+   전에는 닉네임이었습니다. 닉네임은 기기마다 따로 저장돼서 같은 구글
+   계정이 PC 에선 kimjiwoon2011, 폰에선 김지운 — 서버에서는 두 사람이
+   됐습니다. 내 방에 "김지운님이 들어왔어요"가 뜨고, 참여자가 2명으로
+   세어지고, 내 예전 말이 남의 말풍선으로 보였습니다. 닉네임을 바꿔도
+   똑같이 남이 됐습니다.
+   이제 구글 계정의 고유번호(로그인 때 받은 표의 sub)로 알아봅니다.
+   어느 기기에서 로그인해도 같은 번호이고, 이메일이 아니라 공개돼도 됩니다.
+   닉네임은 이름을 보여 줄 때만 씁니다. */
+function myUid(){
+  const g = DB.get('gtok', null);
+  const pl = g && g.tok ? jwtBody(g.tok) : null;
+  return (pl && pl.sub) ? String(pl.sub) : '';
+}
+/* 이 기기에서 내가 써 온 이름들 — 고유번호가 없던 예전 메시지를 알아보는 데 씁니다 */
+function myNames(){
+  const me = new Set([CFG.nick].concat(DB.get('pastNicks', [])).filter(Boolean));
+  const g = DB.get('gtok', null), all = accounts();
+  if(g && g.email) Object.keys(all).forEach(k => { if(all[k].email === g.email) me.add(k); });
+  return me;
+}
+const isMine    = m => (m.uid && myUid()) ? m.uid === myUid() : myNames().has(m.who);
+const memberKey = () => myUid() || CFG.nick;
+/* 닉네임을 바꿀 때 옛 이름을 기억해 둡니다 */
+function rememberNick(old){
+  if(!old) return;
+  const list = DB.get('pastNicks', []);
+  if(!list.includes(old)){ list.push(old); DB.set('pastNicks', list.slice(-10)); }
+}
+/* 서버 표에 uid 칸을 아직 안 만들었으면(SQL 실행 전) 빼고 보냅니다 */
+let noUidCol = false;
 
 const CHAT = {
   async rooms(){
@@ -5436,20 +5472,28 @@ const CHAT = {
       return mirrorMsgs(roomId, fresh);   /* 12시간 지나 서버에서 빠져도 남습니다 */
     }
     /* 새로 올라온 것만 받습니다. 받은 것은 사본에 합쳐 두어
-       서버가 잠들거나 오프라인이어도 이전 대화가 남습니다. */
+       서버가 잠들거나 오프라인이어도 이전 대화가 남습니다.
+       "새 것"은 서버가 매긴 번호(id)로 가립니다. 예전에는 보낸 사람 폰의
+       시계(at)로 가렸는데, 폰 시계가 1~2초만 어긋나도 거의 동시에 보낸
+       말이 "이미 지난 것"으로 판단돼 다른 사람 화면에 영영 안 떴습니다.
+       번호는 서버에 들어온 순서대로 붙으므로 시계와 상관없습니다.
+       번호가 없는 옛 사본이면 한 번 최근 300개를 통째로 받습니다. */
     const seen = DB.get('mir-' + roomId, []);
-    const since = seen.length ? Math.max(...seen.map(m=>m.at)) : 0;
-    const rows = await sb('messages?room_id=eq.' + encodeURIComponent(roomId)
-                          + (since ? '&at=gt.' + since : '')
-                          + '&select=*&order=at.asc&limit=300');
-    return mirrorMsgs(roomId, rows.map(m=>({ who:m.who, text:m.text, sys:!!m.sys, at:+m.at, img:m.img || '' })));
+    const ids = seen.map(m => +m.id || 0);
+    const since = ids.length && ids.every(Boolean) ? Math.max(...ids) : 0;
+    const q = 'messages?room_id=eq.' + encodeURIComponent(roomId) + '&select=*';
+    const rows = since
+      ? await sb(q + '&id=gt.' + since + '&order=id.asc&limit=300')
+      : (await sb(q + '&order=id.desc&limit=300')).reverse();
+    return mirrorMsgs(roomId, rows.map(m=>({ id:+m.id, uid:m.uid || '', who:m.who, text:m.text,
+                                             sys:!!m.sys, at:+m.at, img:m.img || '' })));
   },
 
   /* kind: 'msg' | 'join' | 'leave' */
   async send(roomId, kind, payload, room){
     const at = Date.now();
     if(!netOn()){
-      pushMsgLocal(roomId, kind === 'msg' ? {who:payload.who, text:payload.text, at}
+      pushMsgLocal(roomId, kind === 'msg' ? {who:payload.who, uid:payload.uid || '', text:payload.text, at}
         : {sys:1, at, text:t(kind === 'join' ? 'chat.joined' : 'chat.leftMsg', payload.who)});
       return;
     }
@@ -5460,9 +5504,16 @@ const CHAT = {
     }
     const text = kind === 'msg' ? payload.text
                : t(kind === 'join' ? 'chat.joined' : 'chat.leftMsg', payload.who);
-    await sb('messages', {method:'POST', body:JSON.stringify(
-      {room_id:roomId, who:kind==='msg' ? payload.who : null, text, sys:kind!=='msg', at,
-       img: payload.img || null})});
+    const row = {room_id:roomId, who:kind==='msg' ? payload.who : null, text, sys:kind!=='msg', at,
+                 img: payload.img || null};
+    if(payload.uid && !noUidCol) row.uid = payload.uid;
+    try{ await sb('messages', {method:'POST', body:JSON.stringify(row)}); }
+    catch(e){
+      /* 서버 표에 uid 칸이 아직 없으면 빼고 한 번 더 보냅니다 */
+      if(!row.uid || !/uid/.test(String(e && e.message))) throw e;
+      noUidCol = true; delete row.uid;
+      await sb('messages', {method:'POST', body:JSON.stringify(row)});
+    }
     if(kind === 'msg') await CHAT.patch(roomId, {lastActivity:at});
   },
 };
@@ -5584,7 +5635,7 @@ async function renderRooms(){
         <span>${esc(r.title)}</span></div>
       <div class="rd">${esc(r.desc || t('chat.noDesc'))}</div>
       <div class="rf">
-        <span class="cnt">${ic('user')}${r.members.length}/${r.max}${r.members.length>=r.max?' ('+t('chat.capFull')+')':''}</span>
+        <span class="cnt">${ic('user')}${new Set(r.members).size}/${r.max}${new Set(r.members).size>=r.max?' ('+t('chat.capFull')+')':''}</span>
         ${race?`<span>${ic('flag')}${esc(rname(race))}</span>`:''}
         ${netOn() ? '' : `<span>${ic('chat')}${(msgs[r.id]||[]).length}</span>`}
         <span class="${left < 3*3600000 ? 'ttl' : ''}">${ic('clock')}${esc(t('chat.ttl', leftTime(deadlineOf(r))))}</span>
@@ -5651,7 +5702,7 @@ function askNick(then){
   $('#nkOk').onclick = ()=>{
     const v = $('#nkIn').value.trim();
     if(!v){ toast(t('chat.needNick')); return; }
-    CFG.nick = v; saveCfg(); closeSheet(); then();
+    rememberNick(CFG.nick); CFG.nick = v; saveCfg(); closeSheet(); then();
   };
 }
 
@@ -5669,15 +5720,24 @@ async function enterRoom(id, known){
     try{ room.members = await freeMembers(room.id); }catch(e){ toast(t('net.err')); return; }
   }
 
-  const joined = room.members.includes(CFG.nick);
-  if(!joined && room.members.length >= room.max){ toast(t('chat.full')); return; }
+  /* 나를 고유번호로 알아봅니다. 이 기기에서 예전에 쓰던 이름으로 들어가
+     있으면 이미 들어온 것으로 보고, 그 이름을 고유번호로 바꿔 둡니다.
+     그래야 같은 사람이 참여자 두 명으로 세어지지 않습니다. */
+  const key = memberKey(), names = myNames();
+  const mineN = n => n === key || names.has(n);
+  const joined = room.members.some(mineN);
+  const next = [...new Set(room.members.filter(n => !mineN(n)).concat(key))];
+  if(!joined && new Set(room.members).size >= room.max){ toast(t('chat.full')); return; }
 
   if(!joined){
-    room.members.push(CFG.nick);
-    await CHAT.patch(room.id, {members:room.members, lastActivity:Date.now()}, room);
-    await CHAT.send(room.id, 'join', {who:CFG.nick}, room);
+    room.members = next;
+    await CHAT.patch(room.id, {members:next, lastActivity:Date.now()}, room);
+    await CHAT.send(room.id, 'join', {who:CFG.nick, uid:myUid()}, room);
   }else{
-    await CHAT.patch(room.id, {lastActivity:Date.now()}, room);
+    const tidy = next.length !== room.members.length || !room.members.includes(key);
+    room.members = next;
+    await CHAT.patch(room.id, tidy ? {members:next, lastActivity:Date.now()}
+                                   : {lastActivity:Date.now()}, room);
   }
   room.lastActivity = Date.now();
 
@@ -5686,7 +5746,7 @@ async function enterRoom(id, known){
   openSheet(`
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap">
       ${s?`<span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>`:''}
-      <span class="tag">${ic('user')} ${room.members.length}/${room.max}</span>
+      <span class="tag">${ic('user')} ${new Set(room.members).size}/${room.max}</span>
       <span class="tag grey" id="ttlBadge"></span>
     </div>
     <h3>${esc(room.title)}</h3>
@@ -5713,8 +5773,8 @@ async function enterRoom(id, known){
     const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 60;
     log.innerHTML = list.map(m => m.sys
       ? `<div class="msg sys">${esc(m.text)}</div>`
-      : `<div class="msg ${m.who===CFG.nick?'me':'other'}"${m.wait?' style="opacity:.55"':''}>
-           ${m.who===CFG.nick?'':`<span class="who">${esc(m.who)}</span>`}
+      : `<div class="msg ${isMine(m)?'me':'other'}"${m.wait?' style="opacity:.55"':''}>
+           ${isMine(m)?'':`<span class="who">${esc(m.who)}</span>`}
            ${m.img?`<img class="mimg" src="${esc(m.img)}" alt="" loading="lazy">`:''}
            ${esc(m.text)}<span class="tm num">${fmtTime(m.at)}</span></div>`).join('');
     if(atBottom || force) log.scrollTop = log.scrollHeight;
@@ -5727,7 +5787,10 @@ async function enterRoom(id, known){
     let msgs;
     try{ msgs = await CHAT.msgs(room.id); }catch(e){ return false; }
     /* 서버에 올라온 내 메시지는 임시 목록에서 뺍니다 */
-    pending = pending.filter(p => !msgs.some(m => !m.sys && m.who === p.who && m.text === p.text));
+    /* 사진은 글이 비어 있어서, 예전에는 앞서 보낸 아무 사진과도 같다고 보고
+       "보내는 중" 표시를 먼저 지웠습니다. 사진 주소까지 맞춰 봅니다. */
+    pending = pending.filter(p => !msgs.some(m => !m.sys && m.text === p.text
+      && (m.img || '') === (p.img || '') && (m.uid && p.uid ? m.uid === p.uid : m.who === p.who)));
     if(!force && msgs.length === seen && !pending.length) return true;
     seen = msgs.length; lastMsgs = msgs;
     draw(msgs.concat(pending), force);
@@ -5745,10 +5808,10 @@ async function enterRoom(id, known){
     const inp = $('#msgIn'), v = inp.value.trim(); if(!v) return;
     inp.value = '';
     /* 서버 반영에 몇 초 걸리므로 내 말풍선은 즉시 띄우고(흐리게) 나중에 맞춥니다 */
-    const mine = {who:CFG.nick, text:v, at:Date.now(), wait:true};
+    const mine = {who:CFG.nick, uid:myUid(), text:v, at:Date.now(), wait:true};
     pending.push(mine);
     draw(lastMsgs.concat(pending), true);
-    try{ await CHAT.send(room.id, 'msg', {who:CFG.nick, text:v}, room); }
+    try{ await CHAT.send(room.id, 'msg', {who:CFG.nick, uid:myUid(), text:v}, room); }
     catch(e){
       pending = pending.filter(p => p !== mine);
       draw(lastMsgs.concat(pending), true);
@@ -5768,9 +5831,9 @@ async function enterRoom(id, known){
       pick.disabled = true; toast(t('chat.sending'));
       try{
         const url = await uploadImage(f);
-        const mine = {who:CFG.nick, text:'', img:url, at:Date.now(), wait:true};
+        const mine = {who:CFG.nick, uid:myUid(), text:'', img:url, at:Date.now(), wait:true};
         pending.push(mine); draw(lastMsgs.concat(pending), true);
-        await CHAT.send(room.id, 'msg', {who:CFG.nick, text:'', img:url}, room);
+        await CHAT.send(room.id, 'msg', {who:CFG.nick, uid:myUid(), text:'', img:url}, room);
         await paint(true);
       }catch(e){
         toast(t(String(e.message).includes('too-big') ? 'chat.tooBig' : 'net.err'));
@@ -5782,9 +5845,10 @@ async function enterRoom(id, known){
   $('#closeRoom').onclick = ()=>{ clearInterval(poll); closeSheet(); renderRooms(); };
   $('#leaveRoom').onclick = async ()=>{
     clearInterval(poll);
-    room.members = room.members.filter(n=>n!==CFG.nick);
+    const key = memberKey(), names = myNames();
+    room.members = room.members.filter(n => n !== key && !names.has(n));
     await CHAT.patch(room.id, {members:room.members}, room);
-    await CHAT.send(room.id, 'leave', {who:CFG.nick}, room);
+    await CHAT.send(room.id, 'leave', {who:CFG.nick, uid:myUid()}, room);
     closeSheet(); renderRooms();
   };
 }
@@ -6339,7 +6403,7 @@ $('#btnSettings').onclick = ()=>{
     const v = $('#setNick').value.trim();
     if(!v){ toast(t('chat.needNick')); return; }
     if(v === CFG.nick){ closeSheet(); return; }      /* 그대로면 제한을 걸지 않습니다 */
-    CFG.nick = v; CFG.nickAt = Date.now(); saveCfg();
+    rememberNick(CFG.nick); CFG.nick = v; CFG.nickAt = Date.now(); saveCfg();
     toast(t('set.nickSaved')); closeSheet();
   };
   $('#clearNews').onclick = ()=>{
@@ -6371,6 +6435,21 @@ pruneRooms();
 if(googleReturn())               { /* 이미 로그인됨 */ }
 else if(session())               { if(!CFG.nick){ CFG.nick = session(); saveCfg(); } }
 else if(!DB.get('guest', false)) openAuth();
+
+/* 기본 닉네임을 구글 이름으로 맞춥니다. 처음 로그인한 때의 앱 버전에 따라
+   어떤 기기는 이메일 앞부분(kimjiwoon2011), 어떤 기기는 구글 이름(김지운)이
+   닉네임이 돼서, 같은 사람이 단톡방에 두 이름으로 나왔습니다.
+   설정에서 직접 바꾼 닉네임은 건드리지 않습니다 — 닉네임이 로그인 아이디와
+   같고 바꾼 기록(nickAt)이 없을 때만 자동으로 정해진 것으로 봅니다. */
+(function unifyNick(){
+  if(!googleUser() || CFG.nickAt || CFG.nick !== session()) return;
+  const g = DB.get('gtok', null), pl = g && g.tok ? jwtBody(g.tok) : null;
+  const meta = (pl && pl.user_metadata) || {};
+  const name = String(meta.name || meta.full_name || '').replace(/\s+/g, '')
+    .replace(/[^0-9A-Za-z가-힣ぁ-んァ-ヶ一-龥_-]/g, '').slice(0, 14);
+  if(name.length < 2 || name === CFG.nick) return;
+  rememberNick(CFG.nick); CFG.nick = name; saveCfg();
+})();
 
 setInterval(()=>{
   /* 경기 상세 화면이 열려 있으면 남은 시간을 갈아 끼웁니다 */
