@@ -146,6 +146,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
        먹어 다음 모델로 못 넘어갔습니다 (WEC·IMSA 가 그래서 통째로 실패). */
     const callMs = Math.min(24000, room);
     if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
+    await spend('card', model);
 
     /* 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자 껐더니,
        답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이 기다렸고
@@ -229,6 +230,51 @@ export async function saveCards(rows) {
     });
     return r.ok ? rows.length : 0;
   } catch (e) { return 0; }
+}
+
+/* ── 오늘 몇 번 불렀는지 ──────────────────────────────────────────
+   무료 한도는 하루 50회이고 UTC 0시(한국 오전 9시)에 다시 채워집니다.
+   카드는 모두가 첫 화면에서 보는 것이라 풀이보다 먼저입니다. 그런데 풀이가
+   한도를 먼저 다 써 버리면, 그 뒤에 올라온 기사는 카드를 못 만들어 구글
+   번역 제목이 그대로 나옵니다 (2026-09-25 새벽 F1 10장이 전부 그랬습니다).
+
+   부를 때마다 표에 한 줄씩 남기고 오늘 줄 수를 셉니다. 숫자 하나를 고쳐
+   쓰는 식으로 세면, 여섯 부문이 동시에 돌 때 서로 덮어써서 적게 셉니다.
+   줄을 따로 넣으면 그런 일이 없습니다. 지난 줄은 자동 갱신이 지웁니다. */
+export const DEEP_STOP = 35;       /* 이만큼 쓰면 풀이는 멈춥니다 — 15회는 카드 몫 */
+const quotaDay = () => new Date().toISOString().slice(0, 10);
+const QUOTA = '_q|';
+
+async function spend(kind, model) {
+  const { url, headers } = sbConf();
+  try {
+    await fetch(url + '/rest/v1/cards', {
+      method: 'POST', headers,
+      body: JSON.stringify([{
+        id: QUOTA + quotaDay() + '|' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        hook: kind, punch: '', line: String(model || '').slice(0, 120), at: Date.now(),
+      }]),
+    });
+  } catch (e) { /* 못 세더라도 부르는 것까지 막지는 않습니다 */ }
+}
+
+export async function spentToday() {
+  const { url, headers } = sbConf();
+  try {
+    const r = await fetch(url + '/rest/v1/cards?id=like.' +
+      encodeURIComponent(QUOTA + quotaDay() + '|') + '*&select=id', { headers });
+    if (r.ok) return (await r.json()).length;
+  } catch (e) { /* 못 세면 0 — 풀이를 막지 않는 쪽으로 */ }
+  return 0;
+}
+
+/* 사흘 지난 기록은 지웁니다 */
+export async function dropOldSpend() {
+  const { url, headers } = sbConf();
+  try {
+    await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent(QUOTA) + '*&at=lt.' +
+      (Date.now() - 3 * 86400000), { method: 'DELETE', headers });
+  } catch (e) { /* 다음 번에 지웁니다 */ }
 }
 
 
@@ -435,6 +481,7 @@ async function deepAsk(sys, msg, key, deadline, capMs, parse) {
     const room = deadline - Date.now() - 2000;
     const callMs = Math.min(capMs, room);
     if (callMs < 10000) break;
+    await spend('deep', model);
 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), callMs);
@@ -478,6 +525,8 @@ export async function makeDeep(item, glossary, key, budgetMs) {
   /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
      원문 12초 + 모델 45초 = 57초가 되어 상한(60초)에 아슬아슬합니다. */
   const t0 = Date.now();
+  if (await spentToday() >= DEEP_STOP)
+    return { deep: null, reason: 'reserve', why: ['카드 몫 남김'] };
   const full = await articleText(item.link);
   const src = full || String(item.lead || '');
   if (!item.title) return { deep: null, reason: 'no-title' };
@@ -525,6 +574,8 @@ export async function makeDeepBatch(items, key, budgetMs) {
     return { deeps: one.deep ? [one.deep] : null, reason: one.reason, why: one.why, model: one.model };
   }
   const t0 = Date.now();
+  if (await spentToday() >= DEEP_STOP)
+    return { deeps: null, reason: 'reserve', why: ['카드 몫 남김'] };
   const fulls = await Promise.all(items.map(it => articleText(it.link)));
   const gl = [...new Set(nameGlossary(items.flatMap((it, n) =>
     [it.title, it.lead || '', fulls[n]])))].slice(0, 60);

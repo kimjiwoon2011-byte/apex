@@ -3668,7 +3668,7 @@ function openArticle(it, title, lead){
     const cur = $('#deepBox'); if(!cur) return;    /* 그새 창을 닫았습니다 */
     if(!d){
       /* 빈칸으로 두면 기능이 없는 줄 압니다. 이유와 다시 시도를 보여 줍니다 */
-      const lim = deepWhy === 'daily-limit';
+      const lim = deepWhy === 'daily-limit' || deepWhy === 'reserve';
       cur.innerHTML = `<div class="deep wait">${t(lim ? 'art.deepLimit' : 'art.deepFail')}
         <button class="btn ghost sm" type="button" id="deepRetry">${t('art.deepRetry')}</button></div>`;
       $('#deepRetry').onclick = drawDeep;
@@ -5037,7 +5037,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 설명문 한도 조절';
+const BUILD = '2026-09-25 · 카드 몫 지키기';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

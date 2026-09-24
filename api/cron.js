@@ -9,7 +9,7 @@
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
 import { makeCards, keyOf, loadExisting, saveCards,
-         makeDeepBatch, deepIdOf, loadDeep } from './_lib.js';
+         makeDeepBatch, deepIdOf, loadDeep, spentToday, dropOldSpend } from './_lib.js';
 
 export const maxDuration = 60;
 
@@ -163,18 +163,20 @@ export default async function handler(req, res) {
        이 줄은 화면에 나오지 않습니다. 표를 따로 만들지 않아도 됩니다. */
     const total = runs.reduce((n, r) => n + (r.made || 0), 0);
     const deepTotal = runs.reduce((n, r) => n + (r.deep || 0), 0);
+    const used = await spentToday();
+    await dropOldSpend();
     await saveCards([{
       id: '_run|cron',
       hook: '자동 갱신',
-      punch: total + '장·풀이' + deepTotal,
+      punch: total + '장·풀이' + deepTotal + '·호출' + used,
       line: runs.map(r => r.series + ':' + (r.made || 0) + '+' + (r.deep || 0) +
-                          (r.note === 'daily-limit' ? '한도' : ''))
+                          (r.note === 'daily-limit' ? '한도' : r.note === 'reserve' ? '아낌' : ''))
                 .join(' ').slice(0, 120),
       at: Date.now(),
     }]);
 
     return res.status(200).json({ ran: new Date().toISOString(),
-                                  made: total, deep: deepTotal, runs });
+                                  made: total, deep: deepTotal, used, runs });
   }
 
   const i = Math.max(0, Math.min(SERIES.length - 1, parseInt(req.query.i, 10) || 0));
@@ -230,7 +232,8 @@ export default async function handler(req, res) {
       const part = need.slice(at, at + n);
       at += part.length;
       const d = await makeDeepBatch(part, KEY, room - 2000);
-      if (d.reason === 'daily-limit') { out.note = 'daily-limit'; break; }
+      /* 한도에 걸렸거나, 카드 몫을 남기려고 멈춘 것 */
+      if (d.reason === 'daily-limit' || d.reason === 'reserve') { out.note = d.reason; break; }
       if (d.why && d.why.length) out.why = (out.why || []).concat(d.why);
       if (!d.deeps) continue;
       const rows = [];
