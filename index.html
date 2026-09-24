@@ -5037,7 +5037,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 안드로이드 위젯 앱';
+const BUILD = '2026-09-25 · 위젯 앱 버튼';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6233,11 +6233,11 @@ const APK_URL = 'https://github.com/kimjiwoon2011-byte/apex/releases/download/wi
       ${ios ? `
         <div class="sec">${t('wid.iosStep')}</div>
         <div class="card"><div class="note" style="margin:0">${t('wid.iosWhy')}</div></div>
-        <a class="btn flow" href="/ios" target="_blank" rel="noopener">${t('wid.iosGo')}</a>
+        <a class="btn flow artlink" href="/ios" target="_blank" rel="noopener">${t('wid.iosGo')}</a>
       ` : `
         <div class="sec">${t('wid.aosStep')}</div>
         <div class="card"><div class="note" style="margin:0">${t('wid.aosApp')}</div></div>
-        <a class="btn flow" href="${APK_URL}" rel="noopener">${t('wid.aosGet')}</a>
+        <a class="btn flow artlink" href="${APK_URL}" rel="noopener">${t('wid.aosGet')}</a>
         <div class="note">${t('wid.aosAlt')}</div>
         <div class="urlbox" id="widUrl">${esc(url)}</div>
         <button class="btn ghost sm" id="widCopy">${t('wid.copy')}</button>
