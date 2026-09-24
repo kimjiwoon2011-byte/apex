@@ -820,11 +820,15 @@ textarea{resize:vertical;min-height:78px}
 .auth .pills{max-width:none;margin-bottom:6px}
 .auth .btn{margin-top:20px}
 .auth .btn.sm{margin-top:10px}
-/* 구글 버튼은 구글 브랜드 가이드대로 흰 바탕에 로고를 그대로 씁니다 */
-.btn.google{background:#fff;color:#1f1f1f;border:1px solid #dadce0;box-shadow:var(--sh1);
-  display:flex;align-items:center;justify-content:center;gap:9px}
+/* 구글 버튼 — G 로고는 구글 가이드대로 손대지 않고, 버튼의 모양과 색은
+   앱의 다른 버튼과 같은 규칙(토큰)을 씁니다. 가이드는 로고만 그대로면
+   바탕·테두리·모서리를 앱에 맞추는 걸 허용합니다.
+   전에는 구글 기본값(회색 테두리, 순검정 글자, 회색 다크 모드)을 박아 둬서
+   혼자 따로 놀았고, 테두리 1px 만큼 로그인 버튼보다 2px 높았습니다.
+   위아래 안쪽 여백을 1px 줄여 48px 로 맞춥니다. 다크 모드는 토큰이 바꿉니다. */
+.btn.google{background:var(--surface);color:var(--tx);border:1px solid var(--line);box-shadow:var(--sh1);
+  padding:13px 14px;display:flex;align-items:center;justify-content:center;gap:10px}
 .btn.google svg{width:18px;height:18px;flex:none}
-:root[data-theme="dark"] .btn.google{background:#2b2f36;color:#e8eaed;border-color:#3c4043}
 .auth-or{display:flex;align-items:center;gap:10px;margin-top:20px;color:var(--dim);
   font-size:12px;font-weight:700}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line)}
@@ -5013,7 +5017,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-24 · 번역 개선·베르스타펜';
+const BUILD = '2026-09-24 · 구글 버튼 디자인';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
