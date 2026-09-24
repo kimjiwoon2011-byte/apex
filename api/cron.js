@@ -41,10 +41,15 @@ const CARDS_PER_SERIES = 10;
    다 못 만듭니다. 그래서 전에는 부문마다 3건까지만 만들었고, 나머지는
    누가 눌러야 만들어졌습니다 (실측: 60건 중 26건만 준비돼 있었음).
 
-   3건을 묶어 한 번에 부릅니다. 같은 1회로 3건이 나옵니다. 상한은 두지
-   않고 시간이 되는 만큼 만듭니다. 이미 만든 기사는 건너뛰므로, 하루에
-   새로 필요한 건 그날 새로 올라온 기사 몫뿐입니다. */
+   3건을 묶어 한 번에 부릅니다. 같은 1회로 3건이 나옵니다. 이미 만든
+   기사는 건너뛰므로, 하루에 새로 필요한 건 그날 새로 올라온 기사 몫뿐입니다.
+
+   다만 한 번 돌 때 부문마다 2회(최대 6건)까지만 부릅니다. 상한 없이
+   돌렸더니 F1 한 부문이 한 번에 4회를 썼고, 아침·저녁 두 번이면 풀이만으로
+   하루 한도를 다 먹어 사람이 눌렀을 때 만들 몫이 남지 않았습니다.
+   2회 × 6부문 × 하루 2번 = 24회. 카드 몫을 더해도 10회 넘게 남습니다. */
 const DEEP_BATCH = 3;
+const DEEP_CALLS = 2;
 
 /* 카드를 한 번에 몇 건씩 묶어 보낼지.
 
@@ -162,7 +167,8 @@ export default async function handler(req, res) {
       id: '_run|cron',
       hook: '자동 갱신',
       punch: total + '장·풀이' + deepTotal,
-      line: runs.map(r => r.series + ':' + (r.made || 0) + '+' + (r.deep || 0))
+      line: runs.map(r => r.series + ':' + (r.made || 0) + '+' + (r.deep || 0) +
+                          (r.note === 'daily-limit' ? '한도' : ''))
                 .join(' ').slice(0, 120),
       at: Date.now(),
     }]);
@@ -217,7 +223,7 @@ export default async function handler(req, res) {
        건너뜁니다. 못 한 기사는 다음 갱신이나 누가 눌렀을 때 만들어집니다. */
     const have = await loadDeep(items.map(x => x.link));
     const need = items.filter(x => !have[deepIdOf(x.link)]);
-    for (let at = 0; at < need.length; ) {
+    for (let at = 0, calls = 0; at < need.length && calls < DEEP_CALLS; calls++) {
       const room = endAt - Date.now();
       const n = room >= 36000 ? DEEP_BATCH : room >= 16000 ? 1 : 0;
       if (!n) break;                               /* 한 건 할 시간도 없음 */
