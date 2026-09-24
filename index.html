@@ -830,6 +830,9 @@ textarea{resize:vertical;min-height:78px}
 .btn.google{background:var(--surface);color:var(--tx);border:1px solid var(--line);box-shadow:var(--sh1);
   padding:13px 14px;display:flex;align-items:center;justify-content:center;gap:10px}
 .btn.google svg{width:18px;height:18px;flex:none}
+/* 단톡방 안내(.empty) 안에 들어가면 큰 사람 아이콘용 규칙(가운데 정렬·아래 여백·흐리게)이
+   구글 로고에도 걸려, 로고가 옆으로 밀려 뜨고 버튼이 60px 로 커졌습니다. */
+.empty .btn.google svg{margin:0;opacity:1;display:block}
 .auth-or{display:flex;align-items:center;gap:10px;margin-top:20px;color:var(--dim);
   font-size:12px;font-weight:700}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line)}
@@ -5038,7 +5041,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 느린 통신에서도 새 버전';
+const BUILD = '2026-09-25 · 단톡방 구글 버튼';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
