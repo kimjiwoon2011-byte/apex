@@ -8,7 +8,7 @@
  * 불리면 지휘자가 되어 6개 부문을 한꺼번에 띄우고 다 끝날 때까지 지켜봅니다.
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
-import { makeCards, keyOf, loadExisting, saveCards, OR_MODELS,
+import { makeCards, keyOf, loadExisting, saveCards,
          makeDeep, deepIdOf, loadDeep } from './_lib.js';
 
 export const maxDuration = 60;
@@ -136,19 +136,6 @@ export default async function handler(req, res) {
      한꺼번에 띄우면 겹치는 층이 하나뿐입니다. 지휘자가 끝까지 붙어
      있으므로 아무도 중간에 끊기지 않습니다. 부문끼리 나란히 도니까
      제일 오래 걸리는 부문만큼만 기다리면 됩니다. */
-  /* ── 모델 비교 시험 (임시) ── */
-  if (req.query.test === 'model') {
-    const m = OR_MODELS[parseInt(req.query.m, 10) || 0];
-    const one = SERIES.find(x => x.k === (req.query.s || 'wec')) || SERIES[1];
-    const items = (await gather(one)).slice(0, 5);
-    const t0 = Date.now();
-    const made = await makeCards(items, [], KEY, 50000, [m]);
-    return res.status(200).json({ model: m, ms: Date.now() - t0,
-      ok: !!made.cards, why: made.why || [], raw: made.raw || '',
-      items: items.map((it, n) => ({ title: it.title,
-        card: made.cards && made.cards[n] ? made.cards[n] : null })) });
-  }
-
   if (req.query.i === undefined) {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const runs = await Promise.all(SERIES.map((one, n) =>
@@ -201,7 +188,8 @@ export default async function handler(req, res) {
     /* 카드가 먼저입니다. 묶음마다 만들고 바로 저장하므로, 뒤 묶음이
        실패해도 앞 묶음은 남습니다. 자세한 풀이 몫으로 6초는 남겨 둡니다. */
     for (let at = 0; at < todo.length; at += CARD_CHUNK) {
-      const budget = Math.min(26000, endAt - Date.now() - 6000);
+      /* 26초로 자르면 첫 모델이 느릴 때 2순위가 돌 시간이 없습니다 */
+      const budget = endAt - Date.now() - 6000;
       if (budget < 12000) { out.note = out.note || '시간 모자람'; break; }
 
       const part = todo.slice(at, at + CARD_CHUNK);

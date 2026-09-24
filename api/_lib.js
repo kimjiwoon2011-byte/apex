@@ -36,12 +36,17 @@ export function applyNames(str) {
 }
 
 export const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
+/* 순서는 같은 기사 5건으로 직접 재서 정했습니다 (2026-09-24).
+     ling-flash   18.3초 5/5      nex-mini   20.5초 5/5
+     gemma-4      다른 사용자가 몰려 거절(429) — 되면 빠릅니다
+     dots·nemotron  28초 시간초과 — 맨 뒤에 둡니다
+   앞의 둘은 번역 품질이 비슷하고, 둘 다 이름표를 정확히 따랐습니다. */
 export const OR_MODELS = [
   'inclusionai/ling-3.0-flash-fin:free',
   'nex-agi/nex-n2.5-mini:free',
+  'google/gemma-4-31b-it:free',
   'dots-studio/dots-3-note-preview:free',
   'nvidia/nemotron-3-ultra-550b-a55b:free',
-  'google/gemma-4-31b-it:free',
 ];
 const OR_SEP = ' ::: ';
 
@@ -118,7 +123,7 @@ const cut = s => {
 export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160);
 
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
-export async function makeCards(items, glossary, key, budgetMs, models = OR_MODELS) {
+export async function makeCards(items, glossary, key, budgetMs) {
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
   /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
   const gl = (glossary && glossary.length) ? glossary
@@ -130,14 +135,16 @@ export async function makeCards(items, glossary, key, budgetMs, models = OR_MODE
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
-  for (const model of models) {
+  for (const model of OR_MODELS) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
        20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
        남으면 짧게 한 번 더 해 봅니다. 뒤에 저장과 다음 부문 호출이
        남아 있으므로 2초는 떼어 둡니다. */
     const room = deadline - Date.now() - 2000;
-    const callMs = Math.min(28000, room);
+    /* 한 모델에 24초까지. 전에는 28초라 첫 모델이 느리면 묶음 시간을 다
+       먹어 다음 모델로 못 넘어갔습니다 (WEC·IMSA 가 그래서 통째로 실패). */
+    const callMs = Math.min(24000, room);
     if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
 
     /* 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자 껐더니,

@@ -53,7 +53,8 @@ export default async function handler(req, res) {
   const deadline = Date.now() + 52000;          /* 함수 상한 60초 안에서 */
   let saved = 0, model = '', note = '', why = [], modelRaw = '';
   for (let at = 0; at < todo.length; at += CHUNK) {
-    const budget = Math.min(26000, deadline - Date.now() - 3000);
+    /* 26초로 자르면 첫 모델이 느릴 때 2순위가 돌 시간이 없습니다 */
+    const budget = deadline - Date.now() - 3000;
     if (budget < 12000) { note = note || '시간 모자람'; break; }
     const part = todo.slice(at, at + CHUNK);
     const out = await makeCards(part, glossary, KEY, budget);
