@@ -1,0 +1,78 @@
+# 안드로이드 위젯 앱(android/)을 GitHub 서버에서 빌드해, 고정 주소에 올립니다.
+#   https://github.com/kimjiwoon2011-byte/apex/releases/download/widget/apex-widget.apk
+# 서명 키는 저장소에 없습니다. 저장소 설정의 비밀값 APEX_SIGNING_KEY 에서 풉니다.
+# 비밀값이 없으면 빌드가 되는지만 확인하고 올리지는 않습니다.
+name: 안드로이드 위젯 앱
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-widget.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: 서명 키 풀기
+        env:
+          KEY_B64: ${{ secrets.APEX_SIGNING_KEY }}
+        run: |
+          if [ -n "$KEY_B64" ]; then
+            printf '%s' "$KEY_B64" | tr -d '\r\n ' | base64 -d > android/apex-widget.p12
+            echo "SIGNED=1" >> "$GITHUB_ENV"
+            echo "서명 키 있음"
+          else
+            echo "::warning::APEX_SIGNING_KEY 비밀값이 없어 빌드 확인만 합니다 (올리지 않음)"
+          fi
+
+      - name: 일정 넣기
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp races.json android/app/src/main/assets/races.json
+
+      - name: 빌드
+        working-directory: android
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log
+
+      # 로그는 로그인해야 보이지만 주석(annotation)은 누구나 볼 수 있습니다
+      - name: 실패 이유 남기기
+        if: failure()
+        run: |
+          grep -E "error:|e: |What went wrong|Could not|FAILED|> " build.log | head -30 |
+            while IFS= read -r line; do echo "::error::${line//%/%25}"; done
+
+      - name: 파일 이름 붙이기
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk apex-widget.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          CERT=$("$BT/apksigner" verify --print-certs apex-widget.apk | grep -m1 "SHA-256")
+          echo "::notice::$(stat -c %s apex-widget.apk) bytes · $CERT"
+
+      - name: 내려받기 주소에 올리기
+        if: env.SIGNED == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view widget >/dev/null 2>&1 ||
+            gh release create widget --title "APEX 위젯 앱" \
+              --notes "안드로이드 홈 화면 위젯입니다. 폰에서 apex-widget.apk 를 받아 설치하세요."
+          gh release upload widget apex-widget.apk --clobber

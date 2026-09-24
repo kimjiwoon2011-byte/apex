@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 웹 위젯(widget.html)과 같은 생김새입니다: 부문 색에서 어둡게 흐르는 바탕,
+     부문 딱지와 라운드, 굵은 경기 이름, 흐린 서킷 이름, 남은 시간 칸.
+     여기 적힌 글자는 위젯 고르는 화면의 미리보기에만 쓰입니다. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="fitXY"
+        android:src="@drawable/bg_f1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/pill"
+                android:fontFamily="sans-serif-black"
+                android:paddingHorizontal="7dp"
+                android:paddingVertical="1dp"
+                android:text="F1"
+                android:textColor="#FFFFFFFF"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/round"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="라운드 15 · 9/26 (토) 20:00"
+                android:textColor="#B8FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-black"
+            android:singleLine="true"
+            android:text="🇦🇿 아제르바이잔 그랑프리"
+            android:textColor="#FFFFFFFF"
+            android:textSize="19sp" />
+
+        <TextView
+            android:id="@+id/circuit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:text="바쿠 시가지"
+            android:textColor="#99FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <!-- 남은 시간: 날수는 글자, 시:분:초는 폰이 1초마다 줄여 주는 시계 -->
+        <LinearLayout
+            android:id="@+id/count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/box"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingVertical="5dp">
+
+                <TextView
+                    android:id="@+id/days"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:fontFeatureSettings="tnum"
+                    android:text="2"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="일"
+                    android:textColor="#99FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_weight="2"
+                android:background="@drawable/box"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingVertical="5dp">
+
+                <Chronometer
+                    android:id="@+id/clock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="시간 : 분 : 초"
+                    android:textColor="#99FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/live"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-black"
+            android:text="● 진행 중"
+            android:textColor="#FFFF5B5B"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/msg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#BFFFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

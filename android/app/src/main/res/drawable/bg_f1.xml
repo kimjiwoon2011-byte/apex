@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 웹 위젯과 같은 흐름: 부문 색에서 시작해 거의 검은 남색으로 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="20dp" />
+    <gradient
+        android:angle="315"
+        android:centerColor="#F20A0F1C"
+        android:endColor="#F7060A14"
+        android:startColor="#FFE10600"
+        android:type="linear" />
+</shape>

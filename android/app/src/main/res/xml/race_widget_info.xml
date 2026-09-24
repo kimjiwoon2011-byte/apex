@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4×2 칸. 일정은 3시간마다 확인합니다(실제로 받는 건 6시간에 한 번).
+     초 단위로 줄어드는 시계는 폰이 알아서 돌리므로 자주 깨울 필요가 없습니다. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_desc"
+    android:initialLayout="@layout/widget_race"
+    android:minHeight="110dp"
+    android:minResizeHeight="100dp"
+    android:minResizeWidth="180dp"
+    android:minWidth="250dp"
+    android:previewLayout="@layout/widget_race"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="4"
+    android:updatePeriodMillis="10800000"
+    android:widgetCategory="home_screen" />

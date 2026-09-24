@@ -7,3 +7,12 @@ store/app-release-*.aab
 store/app-release-*.apk
 store/.bubblewrap/
 node_modules/
+
+# 안드로이드 위젯 앱 — 서명 키와 빌드 결과물
+*.p12
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+# 빌드할 때 races.json 을 복사해 넣습니다
+android/app/src/main/assets/

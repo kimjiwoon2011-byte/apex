@@ -1,0 +1,52 @@
+plugins {
+    id 'com.android.application'
+}
+
+/* 서명 키는 저장소에 올리지 않습니다. GitHub 이 빌드할 때 비밀값(APEX_SIGNING_KEY)
+   에서 이 자리에 풀어 놓습니다. 비밀번호가 여기 적혀 있어도 괜찮은 건, 키 파일
+   자체가 비밀이기 때문입니다. 파일이 없으면(비밀값을 아직 안 넣었을 때) 시험용
+   디버그 키로 서명합니다 — 그 파일은 배포하지 않습니다. */
+def keyFile = rootProject.file('apex-widget.p12')
+
+android {
+    namespace 'kr.apex.widget'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'kr.apex.widget'
+        minSdk 26
+        targetSdk 35
+        /* 새 버전이 기존 앱 위에 깔리려면 번호가 커져야 합니다. GitHub 빌드 번호를 씁니다. */
+        versionCode Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
+        versionName '1.0.' + (System.getenv('GITHUB_RUN_NUMBER') ?: '0')
+    }
+
+    signingConfigs {
+        release {
+            if (keyFile.exists()) {
+                storeFile keyFile
+                storeType 'pkcs12'
+                storePassword 'apex-widget'
+                keyAlias 'apex'
+                keyPassword 'apex-widget'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig keyFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
