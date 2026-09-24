@@ -10,7 +10,7 @@
  *   소식·번역·서버   항상 새로 받습니다. 안 되면 담아 둔 것으로 대신합니다.
  *                   (오래된 소식을 보여 주느니 안 보여 주는 게 낫습니다)
  */
-const VER = 'apex-2026-09-25d';
+const VER = 'apex-2026-09-25e';
 const SHELL = VER + '-shell';
 const DATA  = VER + '-data';
 
@@ -87,20 +87,40 @@ self.addEventListener('fetch', e => {
   const isPage = req.mode === 'navigate' ||
                  (req.headers.get('accept') || '').includes('text/html');
   if (isPage) {
+    /* 받기는 끝까지 하고, 다 오면 담아 둡니다.
+
+       예전에는 3초에서 받기를 끊었습니다. 그러면 통신이 느린 폰(앱 화면이
+       400KB 입니다)은 새 버전을 한 번도 못 담아서, 몇 번을 열어도 옛 화면만
+       떴습니다 — "배포가 안 된 것 같다". 이제 이번엔 옛 화면이어도 뒤에서 새
+       버전을 끝까지 받아 두고, 정말 바뀌었으면 화면에 알려 줍니다. */
+    const stale = { hit: null };
+    const net = fetch(req).then(res => {
+      if (res && res.ok) {
+        const copy = res.clone();
+        return caches.open(SHELL).then(c => c.put(req, copy)).then(() => res, () => res);
+      }
+      return res;
+    });
+    const clientId = e.resultingClientId || e.clientId;
+    e.waitUntil(net.then(async fresh => {
+      if (!stale.hit || !fresh || !fresh.ok) return;          /* 새것을 바로 보여 줬음 */
+      const was = stale.hit.headers.get('etag'), now = fresh.headers.get('etag');
+      if (!was || !now || was === now) return;                /* 바뀐 게 없음 */
+      const c = clientId && await self.clients.get(clientId);
+      if (c) c.postMessage({ type: 'apex-updated' });
+    }).catch(() => {}));
+
     e.respondWith((async () => {
-      try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 3000);
-        let res;
-        try { res = await fetch(req, { signal: ctl.signal }); }
-        finally { clearTimeout(timer); }
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(SHELL).then(c => c.put(req, copy)).catch(() => {});
-          return res;
-        }
-      } catch (err) { /* 통신이 안 되거나 너무 느립니다 */ }
-      return (await caches.match(req)) || (await caches.match('/')) || Response.error();
+      const slow = new Promise(r => setTimeout(() => r(null), 3000));
+      let res = null;
+      try { res = await Promise.race([net, slow]); } catch (err) { /* 통신이 안 됩니다 */ }
+      if (res && res.ok) return res;
+      const hit = (await caches.match(req)) || (await caches.match('/'));
+      if (!hit) {
+        try { return await net; } catch (err) { return Response.error(); }   /* 늦더라도 새것을 */
+      }
+      if (res === null) stale.hit = hit;      /* 느려서 옛 화면을 먼저 보여 줌 */
+      return hit;
     })());
     return;
   }
