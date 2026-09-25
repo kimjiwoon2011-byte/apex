@@ -390,10 +390,16 @@ function paras(html, limit) {
   return ps;
 }
 
+/* 앱이 소식을 받아 오는 세 곳의 기사 주소인지.
+   /api/cards 와 /api/deep 은 누구나 부를 수 있어서, 이게 없으면 아무 주소와
+   아무 제목이나 보내 공용 카드 표에 저장시킬 수 있었습니다.
+   도메인 경계까지 봅니다 — 앞에 글자만 붙인 notmotorsport.com 은 안 됩니다. */
+export const isPublisherLink = link =>
+  /^https:\/\/(?:[\w-]+\.)*(?:motorsport\.com|autosport\.com|crash\.net)\//i.test(String(link || ''));
+
 export async function articleText(link) {
   const url = String(link || '').split('?')[0];
-  /* 앱이 소식을 받아 오는 곳만 읽습니다 */
-  if (!/^https:\/\/[\w.-]*(motorsport\.com|autosport\.com|crash\.net)\//i.test(url)) return '';
+  if (!isPublisherLink(url)) return '';     /* 앱이 소식을 받아 오는 곳만 읽습니다 */
   try {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 12000);

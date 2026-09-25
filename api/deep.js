@@ -13,7 +13,7 @@
  *
  * 필요한 환경변수는 cards.js 와 같습니다 (OPENROUTER_KEY).
  */
-import { makeDeep, deepIdOf, loadDeep, saveCards } from './_lib.js';
+import { makeDeep, deepIdOf, loadDeep, saveCards, isPublisherLink } from './_lib.js';
 
 export const maxDuration = 60;
 
@@ -29,6 +29,8 @@ export default async function handler(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = null; } }
   if (!body || !body.link || !body.title)
     return res.status(400).json({ error: 'link 와 title 이 필요합니다' });
+  if (!isPublisherLink(body.link))
+    return res.status(400).json({ error: '앱이 소식을 받는 곳의 기사만 됩니다' });
 
   /* 남이 이 주소로 아무 글이나 밀어 넣지 못하게 길이를 제한합니다 */
   const item = {
@@ -47,6 +49,13 @@ export default async function handler(req, res) {
   const out = await makeDeep(item, glossary, KEY, 45000);
   if (!out.deep) return res.status(200).json({ deep: null, note: out.reason,
                                               raw: out.raw || '', why: out.why || [] });
+
+  /* 원문을 못 읽고 보내 온 도입부만으로 만든 풀이는 부탁한 사람에게만 주고
+     공용 표에는 넣지 않습니다. 넣으면 누군가 가짜 도입부를 보내 진짜 기사
+     자리에 엉뚱한 풀이를 모두에게 보이게 할 수 있습니다. */
+  if (!out.usedFull)
+    return res.status(200).json({ deep: out.deep, cached: false, saved: false,
+                                  model: out.model, full: false });
 
   /* 표에 걸린 길이 제한 안으로 자릅니다. 넘기면 통째로 거절당하고,
      saveCards 는 조용히 0 을 돌려주므로 실패가 눈에 안 띕니다. */

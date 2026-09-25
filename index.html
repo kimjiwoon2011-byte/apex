@@ -631,9 +631,9 @@ textarea{resize:vertical;min-height:78px}
   overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
 .cd:active{transform:scale(.985)}
 .cd .cc{background:rgba(255,255,255,.24);color:#fff}
-.cd .lbl{color:rgba(255,255,255,.94)}   /* 파란 카드 위에서는 회색 라벨이 묻힙니다 */
+.cd .lbl{color:rgba(255,255,255,.94);   /* 파란 카드 위에서는 회색 라벨이 묻힙니다 */
+  font-size:11px;font-weight:800;opacity:.92;letter-spacing:.06em;text-transform:uppercase}
 .favcard .np .lbl{color:var(--tx-3)}
-.cd .lbl{font-size:11px;font-weight:800;opacity:.92;letter-spacing:.06em;text-transform:uppercase}
 .cd .nm{font-size:22px;font-weight:800;margin:8px 0 4px;line-height:1.22;letter-spacing:-.03em}
 .cd .ci{font-size:11.5px;opacity:.9;font-weight:600}
 .cdn{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
@@ -880,11 +880,10 @@ textarea{resize:vertical;min-height:78px}
   line-height:1.1;letter-spacing:-.03em;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .ht-stats .lbl{color:rgba(255,255,255,.66);font-size:8px;margin-top:3px}
 .hero-team.photo .ht-stats + .ht-credit{margin-top:9px;padding-top:0}
-.ht-car{position:relative;z-index:1;margin:2px -6px -4px}
+.ht-car{position:relative;z-index:1;margin:2px -6px -4px;animation:ht-roll .75s var(--ease) backwards}
 .ht-car svg{width:100%;height:auto;display:block;
   filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
 @keyframes ht-roll{from{transform:translateX(-7%)}to{transform:translateX(0)}}
-.ht-car{animation:ht-roll .75s var(--ease) backwards}
 
 .hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
 .hstat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r2);
@@ -1195,12 +1194,12 @@ ko:{
  'my.needSeries':'관심 모터스포츠를 하나 이상 골라주세요',
  'my.saved':'마이홈을 만들었어요','my.pts':'포인트','my.rank':'드라이버 순위','my.trank':'팀 순위',
  'my.gap':'선두와 차이','my.leader':'선두','my.teamPts':'팀 포인트','my.round':'{0}R 기준',
- 'my.news':'{0} 소식','my.newsAll':'관심 시리즈 소식','my.noNews':'아직 관련 소식이 없어요.',
+ 'my.news':'{0} 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
  'art.deepWait':'내용을 정리하는 중… 처음 여는 기사는 20초쯤 걸려요','art.deepFail':'설명문을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.','art.deepLimit':'오늘 무료로 만들 수 있는 양을 다 썼어요. 매일 아침 9시에 다시 채워져요.','art.deepRetry':'다시 시도','upd.ready':'새 버전을 받았어요 · 눌러서 바꾸기','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
- 'watch.video':'이 경기 영상','watch.videoSb':'유튜브에서 바로 찾기',
+ 'watch.video':'이 경기 영상',
  'watch.openYt':'유튜브에서 이 경기 영상 보기',
  'gm.q':'이번 경기, 누가 이길까요?','gm.pick':'우승자 예측하기','gm.change':'다시 고르기',
  'gm.picked':'내 예측 · <b>{0}</b>','gm.saved':'{0} 선택! 경기 끝나고 채점해요',
@@ -1209,14 +1208,14 @@ ko:{
  'gm.hit':'적중! +{0} 포인트','gm.miss':'아쉬워요, 다음 기회에','gm.answer':'정답은 {0}',
  'gm.streak':'{0}연속 적중 중',
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
- 'news.issues':'{0} 이슈','news.vList':'목록','news.vCard':'카드뉴스',
+ 'news.vList':'목록','news.vCard':'카드뉴스',
  'news.cards':'장','news.prev':'이전','news.next2':'다음','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
  'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 업데이트','news.failedShort':'불러오기 실패',
  'news.aiWork':'카드 정리 중… 20초쯤 걸려요','news.aiFail':'카드 정리 실패 — 번역본으로 보여드려요','news.aiRest':'오늘 AI 한도를 다 썼어요 — 번역본으로 보여드려요',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
  'news.stale':'갱신 실패 — 저장된 소식을 보여줍니다','news.empty':'표시할 소식이 없어요.',
- 'news.translate':'전문 번역','time.now':'방금',
+ 'time.now':'방금',
  'cal.all':'전체','cal.month':'{0} 경기 ({1})','cal.day':'{0} 경기','cal.upcoming':'다가오는 경기',
  'cal.none':'이 달에는 예정된 경기가 없어요.<br>다른 달을 확인해보세요.',
  'cal.dow':['일','월','화','수','목','금','토'],
@@ -1235,11 +1234,11 @@ ko:{
  'auth.errNo':'없는 아이디예요','auth.errWrong':'비밀번호가 틀렸어요',
  'auth.welcome':'{0}님, 반가워요','auth.bye':'로그아웃했어요',
  'set.account':'계정','set.loggedIn':'{0} 으로 로그인됨','set.logout':'로그아웃','set.loginBtn':'로그인 / 회원가입',
- 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.home':'홈 화면 위젯','wid.homeT':'앱을 안 열어도 보이게','wid.homeS':'날씨 앱처럼 홈 화면에서 다음 경기와 남은 시간을 바로 봅니다','wid.homeBtn':'놓는 법','wid.aosStep':'안드로이드','wid.aosWhy':'플레이 스토어에서 "웹 위젯"을 설치한 뒤, 홈 화면 빈 곳을 길게 눌러 위젯 → 그 앱을 고르고 아래 주소를 넣으세요. 갱신 주기는 30분~1시간이 알맞습니다.','wid.aosApp':'APEX 위젯 앱을 설치하면 홈 화면에서 다음 경기와 1초씩 줄어드는 남은 시간을 바로 봅니다. 설치할 때 "출처를 알 수 없는 앱" 허용을 한 번 물어봐요. 설치한 뒤 앱을 열고 "홈 화면에 위젯 놓기"를 누르세요.','wid.aosGet':'위젯 앱 받기 (안드로이드)','wid.aosAlt':'앱 설치가 싫다면: 플레이 스토어의 "웹 위젯" 앱에 아래 주소를 넣어도 됩니다.','wid.iosStep':'아이폰','wid.iosWhy':'아이폰은 웹페이지를 위젯으로 올릴 수 없어서 Scriptable(무료 앱)이 필요합니다. 아래를 누르면 설치 방법과 복사 버튼이 나옵니다.','wid.iosGo':'설치 방법 열기','wid.copy':'주소 복사','wid.copied':'주소를 복사했어요','wid.theme':'테마','wid.size':'크기','wid.lay':'글자 위치','wid.sizeNote':'{0} 로 저장됩니다 · 잠금화면 시계를 피하려면 글자 위치를 바꿔 보세요',
+ 'wid.title':'다음 경기 캘린더','wid.cta':'테마 10종 · 배경화면으로 저장','wid.open':'캘린더 만들기','wid.home':'홈 화면 위젯','wid.homeT':'앱을 안 열어도 보이게','wid.homeS':'날씨 앱처럼 홈 화면에서 다음 경기와 남은 시간을 바로 봅니다','wid.homeBtn':'놓는 법','wid.aosStep':'안드로이드','wid.aosApp':'APEX 위젯 앱을 설치하면 홈 화면에서 다음 경기와 1초씩 줄어드는 남은 시간을 바로 봅니다. 설치할 때 "출처를 알 수 없는 앱" 허용을 한 번 물어봐요. 설치한 뒤 앱을 열고 "홈 화면에 위젯 놓기"를 누르세요.','wid.aosGet':'위젯 앱 받기 (안드로이드)','wid.aosAlt':'앱 설치가 싫다면: 플레이 스토어의 "웹 위젯" 앱에 아래 주소를 넣어도 됩니다.','wid.iosStep':'아이폰','wid.iosWhy':'아이폰은 웹페이지를 위젯으로 올릴 수 없어서 Scriptable(무료 앱)이 필요합니다. 아래를 누르면 설치 방법과 복사 버튼이 나옵니다.','wid.iosGo':'설치 방법 열기','wid.copy':'주소 복사','wid.copied':'주소를 복사했어요','wid.theme':'테마','wid.size':'크기','wid.lay':'글자 위치','wid.sizeNote':'{0} 로 저장됩니다 · 잠금화면 시계를 피하려면 글자 위치를 바꿔 보세요',
  'wid.save':'배경화면으로 저장','wid.saved':'이미지를 내려받았어요','wid.fail':'이미지를 만들지 못했어요',
- 'wid.locked':'PRO 전용','wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
+ 'wid.hint':'저장한 뒤 휴대폰 배경화면이나 잠금화면으로 지정하면 다음 경기가 항상 보여요.',
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
- 'st.after':'F1 2026 · {0}라운드 종료 기준','st.wins':'우승','st.podium':'포디움','st.races':'출전',
+ 'st.after':'F1 2026 · {0}라운드 종료 기준','st.wins':'우승','st.podium':'포디움',
  'st.season':'2026 포디움 기록','st.noPodium':'아직 포디움 기록이 없어요.',
  'st.note':'챔피언십 순위는 <b>F1만</b> 제공됩니다. WEC·IMSA·DTM·GT3는 시리즈별 공식 사이트를 확인해주세요.',
  'fav.driver':'내 드라이버','fav.team':'내 팀',
@@ -1285,7 +1284,7 @@ ko:{
  'net.mSbDesc':'내 Supabase에 연결합니다. 대화가 <b>사라지지 않고</b> 24시간 규칙도 그대로예요. 무료 가입이 한 번 필요합니다.',
  'net.mOffDesc':'서버를 쓰지 않고 <b>이 기기 안에서만</b> 동작합니다. 다른 사람과 연결되지 않아요.',
  'chat.publicWarn':'누구나 들어올 수 있는 공개 방이에요. <b>이름·학교·연락처 같은 개인정보는 쓰지 마세요.</b>',
- 'net.url':'프로젝트 URL','net.key':'anon 키','net.save':'저장하고 연결 확인','net.clear':'연결 끊기',
+ 'net.url':'프로젝트 URL','net.key':'anon 키','net.save':'저장하고 연결 확인',
  'net.ok':'연결됐어요 — 이제 진짜 단톡방이에요','net.err':'서버에 연결하지 못했어요',
  'net.rate':'무료 서버 전송 제한이에요. 잠시 뒤에 다시 보내주세요',
  'net.errKey':'키가 맞지 않아요. publishable(또는 anon) 키인지 확인해주세요',
@@ -1296,8 +1295,8 @@ ko:{
  'net.exportFile':'설정 넣은 파일 내려받기',
  'net.exported':'내려받았어요 — 이 파일을 친구에게 주거나 올리시면 됩니다',
  'net.exportFail':'파일을 만들지 못했어요',
- 'net.need':'URL과 키를 모두 입력해주세요','net.cleared':'연결을 끊었어요 (다시 이 기기 전용)',
- 'net.how':'연결하는 법','net.sql':'아래 SQL을 Supabase → SQL Editor에 붙여넣고 실행하세요',
+ 'net.need':'URL과 키를 모두 입력해주세요',
+ 'net.sql':'아래 SQL을 Supabase → SQL Editor에 붙여넣고 실행하세요',
  'net.copy':'SQL 복사','net.copied':'복사했어요',
  'net.guide':'1) supabase.com 무료 가입 (만 13세 이상) → 2) 새 프로젝트 만들기 → 3) 아래 SQL 실행 → 4) Project Settings → API 에서 <b>URL</b>과 <b>anon public</b> 키를 여기에 붙여넣기',
  'net.warn':'anon 키는 공개용이라 노출돼도 됩니다. 다만 이 키를 아는 사람은 누구나 방을 읽고 쓸 수 있으니 <b>친구끼리만 공유</b>하세요.',
@@ -1341,12 +1340,12 @@ en:{
  'my.needSeries':'Please pick at least one series',
  'my.saved':'My Home is ready','my.pts':'points','my.rank':'Driver position','my.trank':'Team position',
  'my.gap':'Gap to leader','my.leader':'Leader','my.teamPts':'Team points','my.round':'after round {0}',
- 'my.news':'{0} news','my.newsAll':'News from your series','my.noNews':'No related news yet.',
+ 'my.news':'{0} news','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
  'art.deepWait':'Summarising… a new article takes about 20 seconds','art.deepFail':"Couldn't prepare the summary. Please try again shortly.",'art.deepLimit':"Today's free limit is used up. It refills every day at 00:00 UTC.",'art.deepRetry':'Try again','upd.ready':'New version ready · tap to update','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
  'art.terms':'Terms in this story','art.full':'Read the full article',
- 'watch.video':'Race video','watch.videoSb':'Find it on YouTube',
+ 'watch.video':'Race video',
  'watch.openYt':'Watch this race on YouTube',
  'gm.q':'Who wins this one?','gm.pick':'Make your pick','gm.change':'Change pick',
  'gm.picked':'Your pick · <b>{0}</b>','gm.saved':'{0} it is — we\u2019ll score it after the race',
@@ -1355,12 +1354,12 @@ en:{
  'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
- 'news.issues':'{0}','news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
  'news.aiWork':'Writing cards… about 20s','news.aiFail':'Could not write cards — showing the translation','news.aiRest':'Daily AI limit reached — showing the translation',
  'news.updated':'Updated {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
- 'news.translate':'Translate','time.now':'just now',
+ 'time.now':'just now',
  'cal.all':'All','cal.month':'{0} ({1} races)','cal.day':'{0}','cal.upcoming':'Coming up',
  'cal.none':'No races this month.<br>Try another month.',
  'cal.dow':['S','M','T','W','T','F','S'],
@@ -1379,11 +1378,11 @@ en:{
  'auth.errNo':'No such username','auth.errWrong':'Wrong password',
  'auth.welcome':'Welcome, {0}','auth.bye':'Logged out',
  'set.account':'Account','set.loggedIn':'Signed in as {0}','set.logout':'Log out','set.loginBtn':'Log in / Sign up',
- 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.home':'Home screen widget','wid.homeT':'See it without opening the app','wid.homeS':'Next race and countdown on your home screen, like a weather app','wid.homeBtn':'How to add','wid.aosStep':'Android','wid.aosWhy':'Install a "Web Widget" app from Play Store, long-press your home screen, add its widget, and paste the address below. A 30–60 minute refresh works well.','wid.aosApp':'Install the APEX Widget app to see the next race and a live countdown on your home screen. Android asks once to allow installs from this source. After installing, open the app and tap the first button.','wid.aosGet':'Get the widget app (Android)','wid.aosAlt':'Rather not install an app? Paste the address below into a "Web Widget" app from the Play Store.','wid.iosStep':'iPhone','wid.iosWhy':'iPhone cannot show a web page as a widget, so it needs Scriptable (free). Tap below for the steps and a copy button.','wid.iosGo':'Open the guide','wid.copy':'Copy address','wid.copied':'Address copied','wid.theme':'Theme','wid.size':'Size','wid.lay':'Text position','wid.sizeNote':'Saves at {0} · move the text to clear the lock-screen clock',
+ 'wid.cta':'10 themes · save as wallpaper','wid.title':'Next race calendar','wid.open':'Create calendar','wid.home':'Home screen widget','wid.homeT':'See it without opening the app','wid.homeS':'Next race and countdown on your home screen, like a weather app','wid.homeBtn':'How to add','wid.aosStep':'Android','wid.aosApp':'Install the APEX Widget app to see the next race and a live countdown on your home screen. Android asks once to allow installs from this source. After installing, open the app and tap the first button.','wid.aosGet':'Get the widget app (Android)','wid.aosAlt':'Rather not install an app? Paste the address below into a "Web Widget" app from the Play Store.','wid.iosStep':'iPhone','wid.iosWhy':'iPhone cannot show a web page as a widget, so it needs Scriptable (free). Tap below for the steps and a copy button.','wid.iosGo':'Open the guide','wid.copy':'Copy address','wid.copied':'Address copied','wid.theme':'Theme','wid.size':'Size','wid.lay':'Text position','wid.sizeNote':'Saves at {0} · move the text to clear the lock-screen clock',
  'wid.save':'Save as wallpaper','wid.saved':'Image downloaded','wid.fail':'Could not create the image',
- 'wid.locked':'PRO only','wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
+ 'wid.hint':'Set it as your wallpaper or lock screen and the next race is always in view.',
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
- 'st.after':'F1 2026 · after round {0}','st.wins':'Wins','st.podium':'Podiums','st.races':'Starts',
+ 'st.after':'F1 2026 · after round {0}','st.wins':'Wins','st.podium':'Podiums',
  'st.season':'2026 podiums','st.noPodium':'No podium yet this season.',
  'st.note':'Championship standings are provided for <b>F1 only</b>. For WEC, IMSA, DTM and GT3 check each series\' official site.',
  'fav.driver':'My driver','fav.team':'My team',
@@ -1429,7 +1428,7 @@ en:{
  'net.mSbDesc':'Connect your own Supabase. Messages are <b>kept permanently</b> and the 24-hour rule works as designed. Needs one free signup.',
  'net.mOffDesc':'No server — everything stays <b>on this device</b>. You will not be connected to anyone.',
  'chat.publicWarn':'These rooms are public and anyone can join. <b>Do not post your real name, school or contact details.</b>',
- 'net.url':'Project URL','net.key':'anon key','net.save':'Save and test','net.clear':'Disconnect',
+ 'net.url':'Project URL','net.key':'anon key','net.save':'Save and test',
  'net.ok':'Connected — the rooms are real now','net.err':'Could not reach the server',
  'net.rate':'Free server send limit reached. Try again in a moment',
  'net.errKey':'That key was rejected. Use the publishable (or anon) key',
@@ -1440,8 +1439,8 @@ en:{
  'net.exportFile':'Download a ready-to-share copy',
  'net.exported':'Downloaded — send this file to friends or upload it',
  'net.exportFail':'Could not build the file',
- 'net.need':'Enter both the URL and the key','net.cleared':'Disconnected (device-only again)',
- 'net.how':'How to connect','net.sql':'Paste this SQL into Supabase → SQL Editor and run it',
+ 'net.need':'Enter both the URL and the key',
+ 'net.sql':'Paste this SQL into Supabase → SQL Editor and run it',
  'net.copy':'Copy SQL','net.copied':'Copied',
  'net.guide':'1) Sign up free at supabase.com (13+) → 2) Create a project → 3) Run the SQL below → 4) Paste the <b>URL</b> and <b>anon public</b> key from Project Settings → API',
  'net.warn':'The anon key is meant to be public. But anyone who has it can read and write rooms, so <b>share it only with friends</b>.',
@@ -1485,12 +1484,12 @@ ja:{
  'my.needSeries':'シリーズを1つ以上選んでください',
  'my.saved':'マイホームができました','my.pts':'ポイント','my.rank':'ドライバー順位','my.trank':'チーム順位',
  'my.gap':'首位との差','my.leader':'首位','my.teamPts':'チームポイント','my.round':'第{0}戦終了時点',
- 'my.news':'{0}のニュース','my.newsAll':'興味のあるシリーズのニュース','my.noNews':'関連ニュースはまだありません。',
+ 'my.news':'{0}のニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
  'art.deepWait':'内容をまとめています… 初めての記事は20秒ほどかかります','art.deepFail':'解説を作れませんでした。少し後でもう一度お試しください。','art.deepLimit':'本日の無料枠を使い切りました。毎朝9時（日本時間）に回復します。','art.deepRetry':'再試行','upd.ready':'新しいバージョンがあります · タップで更新','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
- 'watch.video':'このレースの映像','watch.videoSb':'YouTubeで探す',
+ 'watch.video':'このレースの映像',
  'watch.openYt':'YouTubeでこのレースを見る',
  'gm.q':'今回、勝つのは誰？','gm.pick':'優勝者を予想する','gm.change':'選び直す',
  'gm.picked':'あなたの予想 · <b>{0}</b>','gm.saved':'{0}ですね。レース後に採点します',
@@ -1499,12 +1498,12 @@ ja:{
  'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
- 'news.issues':'{0}','news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
  'news.aiWork':'カードを作成中… 20秒ほど','news.aiFail':'カードを作成できませんでした — 翻訳を表示します','news.aiRest':'本日のAI上限に達しました — 翻訳を表示します',
  'news.updated':'{0}に更新','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
- 'news.translate':'全文翻訳','time.now':'たった今',
+ 'time.now':'たった今',
  'cal.all':'すべて','cal.month':'{0}（{1}戦）','cal.day':'{0}','cal.upcoming':'次のレース',
  'cal.none':'今月のレースはありません。<br>別の月を見てみましょう。',
  'cal.dow':['日','月','火','水','木','金','土'],
@@ -1523,11 +1522,11 @@ ja:{
  'auth.errNo':'そのユーザー名はありません','auth.errWrong':'パスワードが違います',
  'auth.welcome':'{0}さん、ようこそ','auth.bye':'ログアウトしました',
  'set.account':'アカウント','set.loggedIn':'{0} でログイン中','set.logout':'ログアウト','set.loginBtn':'ログイン / 新規登録',
- 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.home':'ホーム画面ウィジェット','wid.homeT':'アプリを開かずに見る','wid.homeS':'天気アプリのように次のレースと残り時間をホーム画面で','wid.homeBtn':'置き方','wid.aosStep':'Android','wid.aosWhy':'Play ストアで「Web Widget」を入れ、ホーム画面を長押し→ウィジェット→そのアプリを選び、下のアドレスを貼り付けます。更新は30分〜1時間が適切です。','wid.aosApp':'APEX ウィジェットアプリを入れると、ホーム画面で次のレースと1秒ずつ減る残り時間が見られます。インストール時に「提供元不明のアプリ」の許可を一度求められます。インストール後、アプリを開いて最初のボタンを押してください。','wid.aosGet':'ウィジェットアプリを入手（Android）','wid.aosAlt':'アプリを入れたくない場合は、Play ストアの「Web Widget」に下のアドレスを貼り付けてもOKです。','wid.iosStep':'iPhone','wid.iosWhy':'iPhone はウェブページをウィジェットにできないため Scriptable（無料）が必要です。下を押すと手順とコピーボタンが出ます。','wid.iosGo':'手順を開く','wid.copy':'アドレスをコピー','wid.copied':'コピーしました','wid.theme':'テーマ','wid.size':'サイズ','wid.lay':'文字の位置','wid.sizeNote':'{0} で保存されます · ロック画面の時計を避けるには位置を変えてください',
+ 'wid.cta':'テーマ10種 · 壁紙として保存','wid.title':'次のレースカレンダー','wid.open':'カレンダーを作る','wid.home':'ホーム画面ウィジェット','wid.homeT':'アプリを開かずに見る','wid.homeS':'天気アプリのように次のレースと残り時間をホーム画面で','wid.homeBtn':'置き方','wid.aosStep':'Android','wid.aosApp':'APEX ウィジェットアプリを入れると、ホーム画面で次のレースと1秒ずつ減る残り時間が見られます。インストール時に「提供元不明のアプリ」の許可を一度求められます。インストール後、アプリを開いて最初のボタンを押してください。','wid.aosGet':'ウィジェットアプリを入手（Android）','wid.aosAlt':'アプリを入れたくない場合は、Play ストアの「Web Widget」に下のアドレスを貼り付けてもOKです。','wid.iosStep':'iPhone','wid.iosWhy':'iPhone はウェブページをウィジェットにできないため Scriptable（無料）が必要です。下を押すと手順とコピーボタンが出ます。','wid.iosGo':'手順を開く','wid.copy':'アドレスをコピー','wid.copied':'コピーしました','wid.theme':'テーマ','wid.size':'サイズ','wid.lay':'文字の位置','wid.sizeNote':'{0} で保存されます · ロック画面の時計を避けるには位置を変えてください',
  'wid.save':'壁紙として保存','wid.saved':'画像を保存しました','wid.fail':'画像を作成できませんでした',
- 'wid.locked':'PRO限定','wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
+ 'wid.hint':'壁紙やロック画面に設定すれば、次のレースがいつでも目に入ります。',
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
- 'st.after':'F1 2026 · 第{0}戦終了時点','st.wins':'優勝','st.podium':'表彰台','st.races':'出走',
+ 'st.after':'F1 2026 · 第{0}戦終了時点','st.wins':'優勝','st.podium':'表彰台',
  'st.season':'2026 表彰台','st.noPodium':'今季の表彰台はまだありません。',
  'st.note':'ランキングは<b>F1のみ</b>提供しています。WEC・IMSA・DTM・GT3は各シリーズ公式サイトをご確認ください。',
  'fav.driver':'マイドライバー','fav.team':'マイチーム',
@@ -1573,7 +1572,7 @@ ja:{
  'net.mSbDesc':'自分のSupabaseに接続します。メッセージは<b>消えず</b>、24時間ルールもそのままです。無料登録が一度必要です。',
  'net.mOffDesc':'サーバーを使わず<b>この端末の中だけ</b>で動きます。他の人とはつながりません。',
  'chat.publicWarn':'誰でも入れる公開ルームです。<b>本名・学校・連絡先などの個人情報は書かないでください。</b>',
- 'net.url':'プロジェクトURL','net.key':'anonキー','net.save':'保存して接続確認','net.clear':'接続を解除',
+ 'net.url':'プロジェクトURL','net.key':'anonキー','net.save':'保存して接続確認',
  'net.ok':'接続しました — 本物のルームになりました','net.err':'サーバーに接続できませんでした',
  'net.rate':'無料サーバーの送信制限です。少し待ってからもう一度どうぞ',
  'net.errKey':'キーが違います。publishable（またはanon）キーをご確認ください',
@@ -1584,8 +1583,8 @@ ja:{
  'net.exportFile':'設定入りファイルをダウンロード',
  'net.exported':'ダウンロードしました — 友達に渡すかアップロードしてください',
  'net.exportFail':'ファイルを作成できませんでした',
- 'net.need':'URLとキーを両方入力してください','net.cleared':'接続を解除しました（再び端末のみ）',
- 'net.how':'接続方法','net.sql':'次のSQLをSupabase → SQL Editorに貼り付けて実行してください',
+ 'net.need':'URLとキーを両方入力してください',
+ 'net.sql':'次のSQLをSupabase → SQL Editorに貼り付けて実行してください',
  'net.copy':'SQLをコピー','net.copied':'コピーしました',
  'net.guide':'1) supabase.com で無料登録（13歳以上）→ 2) プロジェクト作成 → 3) 下のSQLを実行 → 4) Project Settings → API の<b>URL</b>と<b>anon public</b>キーをここに貼り付け',
  'net.warn':'anonキーは公開前提のキーです。ただし知っている人は誰でもルームを読み書きできるので<b>友達だけに共有</b>してください。',
@@ -1618,7 +1617,6 @@ ja:{
  'set.tz':'時刻は端末のタイムゾーン（{0}）に従います。','set.close':'閉じる',
 },
 };
-
 let L = 'ko';
 function t(k, ...a){
   let s = (T[L] && T[L][k]) ?? T.en[k] ?? k;
@@ -1782,15 +1780,9 @@ function track3d(key, color, size, id){
             <div class="stack">${s}</div></div>`;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   요금제 — 무료 / PRO
-   ⚠ 서버가 없어 결제를 강제할 수 없습니다. 지금은 요금제 '구조'만 있고
-     실제 과금은 붙어 있지 않습니다(개발자도구로 얼마든지 켤 수 있음).
-   ══════════════════════════════════════════════════════════════ */
-
 /* 다음 경기 캘린더 테마 — [ko, en, ja] */
 const THEMES = {
-  midnight :{ n:['미드나이트','Midnight','ミッドナイト'], free:true,
+  midnight :{ n:['미드나이트','Midnight','ミッドナイト'],
               bg:['#0b1430','#04070f'], fg:'#ffffff', dim:'#8fb4ff', useSeries:false },
   series   :{ n:['시리즈 컬러','Series colour','シリーズカラー'],
               bg:null, fg:'#ffffff', dim:'rgba(255,255,255,.72)', useSeries:true },
@@ -2541,7 +2533,7 @@ if(SERIES[newsSeries]?.noNews) newsSeries = 'f1';
 /* 뉴스 RSS 받아오는 경로.
    파일로 열 때(file://)는 Origin이 null이라 두 매체가 직접 허용해줍니다.
    그런데 웹에 올리면 실제 주소가 Origin이 되어 CORS로 막힙니다.
-   그래서 웹에서는 같은 주소의 프록시 경로(_redirects가 서버에서 대신 받아옴)를 먼저 쓰고,
+   그래서 웹에서는 같은 주소의 프록시 경로(vercel.json 의 rewrites 가 서버에서 대신 받아옴)를 먼저 쓰고,
    실패하면 직접 요청으로 넘어갑니다. */
 const HOSTED = location.protocol === 'https:' || location.protocol === 'http:';
 /* 예비 소스 Crash.net의 경로 — 시리즈 이름이 우리 것과 달라 짝을 지어 둡니다.
@@ -4527,13 +4519,22 @@ function heroRace(){
 function renderHero(){
   const card = $('#heroCard');
   const {r, more} = heroRace();
-  if(!r){ card.hidden = true; return; }
+  if(!r){ card.hidden = true; card.dataset.sig = ''; return; }
   card.hidden = false;
   const s = SERIES[r.s], st = status(r);
   const d = Math.max(0, r.ms - Date.now());
   const dd = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000),
         mm = Math.floor(d%3600000/60000), ss = Math.floor(d%60000/1000);
   const z = n => String(n).padStart(2,'0');
+  /* 1초마다 불립니다. 경기와 상태가 그대로면 숫자만 바꿉니다 — 서킷 3D 그림
+     (SVG 10장)까지 매초 새로 그리면 폰에서 쓸데없이 무겁습니다. */
+  const sig = [r.id, r.ms, st, calSel ? 1 : 0, more, L].join('|');
+  if(card.dataset.sig === sig){
+    const b = card.querySelectorAll('.cdu b');
+    if(st === 'soon' && b.length === 4) [dd, hh, mm, ss].forEach((v, i)=>{ b[i].textContent = z(v); });
+    return;
+  }
+  card.dataset.sig = sig;
   card.style.setProperty('--acc', s.color);
   const hk = circuitKey(r);
 
@@ -5041,7 +5042,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 단톡방 구글 버튼';
+const BUILD = '2026-09-25 · 정리·버그 수정';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -5795,9 +5796,12 @@ async function enterRoom(id, known){
     <div class="note">${netOn() ? t('chat.onlineNote') : t('chat.localNote')}</div>`);
 
   let seen = 0, lastMsgs = [], pending = [];   /* pending = 서버 반영 전 내 메시지 */
+  /* 이 방의 대화 칸. '#chatLog 가 있는가'로만 보면, 바깥을 눌러 닫고 2.5초 안에
+     다른 방을 열었을 때 지난 방의 새로고침이 새 방 칸에 지난 방 대화를 그렸습니다. */
+  const myLog = $('#chatLog');
 
   const draw = (list, force)=>{
-    const log = $('#chatLog'); if(!log) return;
+    const log = myLog; if(!log.isConnected) return;
     const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 60;
     log.innerHTML = list.map(m => m.sys
       ? `<div class="msg sys">${esc(m.text)}</div>`
@@ -5811,7 +5815,7 @@ async function enterRoom(id, known){
   };
 
   const paint = async (force)=>{
-    if(!$('#chatLog')) return false;
+    if(!myLog.isConnected) return false;
     let msgs;
     try{ msgs = await CHAT.msgs(room.id); }catch(e){ return false; }
     /* 서버에 올라온 내 메시지는 임시 목록에서 뺍니다 */
@@ -5828,7 +5832,7 @@ async function enterRoom(id, known){
 
   /* 온라인이면 새 메시지를 주기적으로 받아옵니다 (시트가 닫히면 멈춤) */
   const poll = setInterval(async ()=>{
-    if(!$('#scrim').classList.contains('open') || !$('#chatLog')){ clearInterval(poll); return; }
+    if(!$('#scrim').classList.contains('open') || !myLog.isConnected){ clearInterval(poll); return; }
     if(netOn()) await paint(false);
   }, 2500);
 
@@ -5872,11 +5876,14 @@ async function enterRoom(id, known){
   $('#msgIn').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
   $('#closeRoom').onclick = ()=>{ clearInterval(poll); closeSheet(); renderRooms(); };
   $('#leaveRoom').onclick = async ()=>{
-    clearInterval(poll);
-    const key = memberKey(), names = myNames();
+    const key = memberKey(), names = myNames(), was = room.members;
     room.members = room.members.filter(n => n !== key && !names.has(n));
-    await CHAT.patch(room.id, {members:room.members}, room);
-    await CHAT.send(room.id, 'leave', {who:CFG.nick, uid:myUid()}, room);
+    /* 통신이 실패하면 예전에는 버튼이 아무 반응 없이 멈추고 새로고침만 끊겼습니다 */
+    try{
+      await CHAT.patch(room.id, {members:room.members}, room);
+      await CHAT.send(room.id, 'leave', {who:CFG.nick, uid:myUid()}, room);
+    }catch(e){ room.members = was; toast(t('net.err')); return; }
+    clearInterval(poll);
     closeSheet(); renderRooms();
   };
 }
@@ -6003,6 +6010,16 @@ $('#btnPerm').onclick = async ()=>{
 };
 $('#leadSel').onchange = e=>{ CFG.lead = +e.target.value; saveCfg(); toast(t('alert.leadSaved')); };
 
+/* 안드로이드 크롬은 화면에서 new Notification() 을 막고 오류를 냅니다.
+   앱 일꾼(service worker)을 거쳐 띄우고, 일꾼이 없을 때만 예전 방식으로 띄웁니다. */
+async function notify(title, opts){
+  try{
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if(reg){ await reg.showNotification(title, opts); return; }
+  }catch(e){}
+  try{ new Notification(title, opts); }catch(e){}
+}
+
 function checkAlerts(){
   if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   const fired = DB.get('fired', {}), now = Date.now(), lead = CFG.lead*60000;
@@ -6011,17 +6028,15 @@ function checkAlerts(){
     if(!CFG.subs[r.s] || fired[r.id]) return;
     const d = r.ms - now;
     if(d > 0 && d <= lead){
-      new Notification(`${SERIES[r.s].name} ${rname(r)}`,
-        { body: t('alert.soon', leftTime(r.ms), rcirc(r)), tag: r.id });
+      notify(`${SERIES[r.s].name} ${rname(r)}`,
+        { body: t('alert.soon', leftTime(r.ms), rcirc(r)), tag: r.id, icon: '/icon-192.png',
+          data: { url: '/?tab=cal' } });
       fired[r.id] = 1; changed = true;
     }
   });
   if(changed) DB.set('fired', fired);
 }
 
-/* ══════════════════════════════════════════════════════════════
-   설정
-   ══════════════════════════════════════════════════════════════ */
 /* ══════════════════════════════════════════════════════════════
    로그인 / 회원가입
    ⚠ 서버가 없으므로 진짜 인증이 아닙니다. 계정은 이 브라우저에만 저장되고,
@@ -6265,8 +6280,6 @@ const APK_URL = 'https://github.com/kimjiwoon2011-byte/apex/releases/download/wi
   $('#widClose').onclick = closeSheet;
 }
 
-function refreshAll(){ switchTab(tab); }
-
 $('#btnSettings').onclick = ()=>{
   const who = session();
   openSheet(`
@@ -6447,7 +6460,8 @@ $('#btnSettings').onclick = ()=>{
   };
   $('#resetAll').onclick = ()=>{
     if(!confirm(t('set.resetAsk'))) return;
-    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','myhome','picks'].forEach(DB.del);
+    ['rooms','msgs','reviews','cfg','fired','fav','accts','session','guest','myhome','picks',
+     'gtok','pastNicks'].forEach(DB.del);
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('ms-mir-')) localStorage.removeItem(k); });
     Object.keys(SERIES).forEach(k=> DB.del('news3-'+k));
     location.reload();

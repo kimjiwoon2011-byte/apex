@@ -12,7 +12,7 @@
  *
  * 주의 — 키를 이 파일에 적지 마세요. 저장소가 공개라 그대로 남에게 넘어갑니다.
  */
-import { makeCards, keyOf, loadExisting, saveCards } from './_lib.js';
+import { makeCards, keyOf, loadExisting, saveCards, isPublisherLink } from './_lib.js';
 
 export const maxDuration = 60;
 
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
   /* 남이 이 주소로 아무 글이나 밀어 넣지 못하게 길이를 제한합니다 */
   const items = raw
-    .filter(it => it && it.link && it.title)
+    .filter(it => it && it.link && it.title && isPublisherLink(it.link))
     .map(it => ({ link: String(it.link).slice(0, 400),
                   title: String(it.title).slice(0, 300),
                   lead: String(it.lead || '').slice(0, 600) }));

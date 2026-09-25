@@ -10,7 +10,7 @@
  *   소식·번역·서버   항상 새로 받습니다. 안 되면 담아 둔 것으로 대신합니다.
  *                   (오래된 소식을 보여 주느니 안 보여 주는 게 낫습니다)
  */
-const VER = 'apex-2026-09-25f';
+const VER = 'apex-2026-09-25g';
 const SHELL = VER + '-shell';
 const DATA  = VER + '-data';
 
@@ -40,6 +40,16 @@ self.addEventListener('activate', e => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+/* 경기 알림을 누르면 앱을 엽니다. 이미 열려 있으면 그 창을 앞으로. */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return self.clients.openWindow(url);
+  }));
 });
 
 /* 담아 두면 안 되는 것 — 로그인, 서버 쓰기, AI 호출 */
