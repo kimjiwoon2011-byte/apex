@@ -47,8 +47,6 @@ function nextRace(d) {
   return null;
 }
 
-const z = n => (n < 10 ? '0' : '') + n;
-
 /* ── 위젯 그리기 ── */
 async function build() {
   const w = new ListWidget();
@@ -122,6 +120,7 @@ async function build() {
   /* 카운트다운 */
   const ms = new Date(r.t).getTime();
   const d = ms - Date.now();
+  let target = 0;                    /* 타이머가 0이 되는 때 = 날수가 바뀌는 때 */
   if (d <= 0) {
     const live = w.addText('● 진행 중');
     live.font = Font.heavySystemFont(15);
@@ -145,14 +144,34 @@ async function build() {
       l.textColor = new Color('#ffffff', 0.6);
       l.centerAlignText();
     };
-    cell(Math.floor(d / 86400000), '일');
-    cell(z(Math.floor(d % 86400000 / 3600000)), '시간');
-    cell(z(Math.floor(d % 3600000 / 60000)), '분');
+    const days = Math.floor(d / 86400000);
+    cell(days, '일');
+
+    /* 시:분:초는 아이폰이 1초마다 스스로 줄이는 타이머로 둡니다.
+       예전에는 숫자를 적어 두고 15분마다 다시 그려서, 시간이 멈춰 보였습니다.
+       타이머는 '날수가 하나 줄어드는 순간'까지 셉니다 (안드로이드 위젯과 같은 방식). */
+    target = ms - days * 86400000;
+    const b = cd.addStack();
+    b.layoutVertically();
+    b.centerAlignContent();
+    b.backgroundColor = new Color('#ffffff', 0.14);
+    b.cornerRadius = 9;
+    b.setPadding(6, 8, 5, 8);
+    const tm = b.addDate(new Date(target));
+    tm.applyTimerStyle();
+    tm.font = Font.heavySystemFont(17);
+    tm.textColor = Color.white();
+    tm.centerAlignText();
+    const l = b.addText('시간 : 분 : 초');
+    l.font = Font.semiboldSystemFont(8);
+    l.textColor = new Color('#ffffff', 0.6);
+    l.centerAlignText();
     cd.addSpacer();
   }
 
-  /* 위젯은 스스로 다시 그리지 않습니다. 15분 뒤 갱신을 요청해 둡니다 */
-  w.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
+  /* 위젯 전체는 스스로 다시 그리지 않습니다. 15분 뒤, 또는 날수가 바뀌는
+     순간 중 이른 쪽에 다시 그려 달라고 해 둡니다. */
+  w.refreshAfterDate = new Date(Math.min(Date.now() + 15 * 60 * 1000, target || Infinity));
   return w;
 }
 

@@ -1860,7 +1860,8 @@ function widgetSvg(r, key, W, H, lay){
             : th.acc || (key==='sunset' ? '#ffd66b' : key==='checker' ? '#ffffff' : '#5aa0ff');
   const bg  = th.useSeries ? [s.color, '#070b14'] : th.bg;
   const d   = Math.max(0, r.ms - Date.now());
-  const dd  = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000), mm = Math.floor(d%3600000/60000);
+  const dd  = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000), mm = Math.floor(d%3600000/60000),
+        ss  = Math.floor(d%60000/1000);
   const z   = n => String(n).padStart(2,'0');
   const done = status(r) === 'done';
   const esx = v => String(v).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -1910,13 +1911,20 @@ function widgetSvg(r, key, W, H, lay){
   const cd = done
     ? `<text x="${W/2}" y="${H*0.79}" fill="${th.fg}" font-size="86" font-weight="800"
              text-anchor="middle" font-family="sans-serif">${esx(t('hero.done'))}</text>`
-    : `<text x="${W/2}" y="${H*0.785}" fill="${acc}" font-size="132" font-weight="800"
-             text-anchor="middle" font-family="monospace" letter-spacing="-4">${z(dd)} : ${z(hh)} : ${z(mm)}</text>
-       <text x="${W/2}" y="${H*0.815}" fill="${th.dim}" font-size="34" font-weight="700"
-             text-anchor="middle" font-family="sans-serif" letter-spacing="14">${
-             esx(t('alert.d'))}      ${esx(t('alert.h'))}      ${esx(t('alert.m'))}</text>`;
+    /* 일·시간·분·초 네 칸. 칸마다 따로 두어 미리보기에서 숫자만 1초마다 바꿉니다
+       (tickWidgetSvgs). 저장한 배경화면에는 저장한 순간의 시간이 남습니다. */
+    : [[dd, 'alert.d'], [hh, 'alert.h'], [mm, 'alert.m'], [ss, 'alert.s']].map(([v, k], i)=>{
+        const x = W/2 + (i - 1.5) * CD_COL;
+        return `<text x="${x}" y="${H*0.785}" fill="${acc}" font-size="118" font-weight="800"
+             text-anchor="middle" font-family="monospace" letter-spacing="-4" data-cd="${i}">${z(v)}</text>
+       <text x="${x}" y="${H*0.815}" fill="${th.dim}" font-size="32" font-weight="700"
+             text-anchor="middle" font-family="sans-serif">${esx(t(k))}</text>`;
+      }).join('') + [0, 1, 2].map(i =>
+       `<text x="${W/2 + (i - 1) * CD_COL}" y="${H*0.785 - 14}" fill="${acc}" font-size="80" font-weight="800"
+             text-anchor="middle" font-family="monospace" opacity=".55">:</text>`).join('');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"${
+    done ? '' : ` data-ms="${r.ms}"`}>
   <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0.3" y2="1">
     <stop offset="0" stop-color="${bg[0]}"/><stop offset="1" stop-color="${bg[1]}"/>
   </linearGradient>${th.glow ? `<filter id="${gid}-glow" x="-40%" y="-40%" width="180%" height="180%">
@@ -1940,6 +1948,20 @@ function widgetSvg(r, key, W, H, lay){
   <text x="${W/2}" y="${H*0.945}" fill="${th.dim}" font-size="30" font-weight="800" text-anchor="middle"
         font-family="sans-serif" letter-spacing="8" opacity=".7">APEX</text>
 </svg>`;
+}
+
+/* 카운트다운 한 칸의 폭 (1080 폭 기준, 네 칸 + 사이 쌍점) */
+const CD_COL = 232;
+
+/* 화면에 떠 있는 캘린더 미리보기의 남은 시간을 줄입니다. 그림 전체를 다시
+   그리지 않고 숫자 네 개만 바꿉니다 — 무늬·서킷까지 매초 그리면 무겁습니다. */
+function tickWidgetSvgs(){
+  document.querySelectorAll('svg[data-ms]').forEach(svg=>{
+    const d = Math.max(0, +svg.dataset.ms - Date.now());
+    const v = [Math.floor(d/86400000), Math.floor(d%86400000/3600000),
+               Math.floor(d%3600000/60000), Math.floor(d%60000/1000)];
+    svg.querySelectorAll('[data-cd]').forEach(n=>{ n.textContent = String(v[+n.dataset.cd]).padStart(2,'0'); });
+  });
 }
 
 /* SVG를 PNG로 굽습니다. blob URL은 동일 출처라 캔버스가 오염되지 않습니다. */
@@ -5042,7 +5064,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 정리·버그 수정';
+const BUILD = '2026-09-25 · 캘린더 시간 흐르게';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6506,6 +6528,7 @@ setInterval(()=>{
   if(rcd) rcd.textContent = liveLeft(+rcd.dataset.ms);
   if(tab === 'alert') paintCountdown();
   if(tab === 'cal' && calMode === 'cal') renderHero();   /* 남은 시간이 실시간으로 줄어들도록 */
+  tickWidgetSvgs();                                         /* 다음 경기 캘린더 미리보기도 */
   if(tab === 'chat' && googleUser() && !netOn()){
     const before = DB.get('rooms', []).length;
     if(pruneRooms().length !== before) renderRooms();
