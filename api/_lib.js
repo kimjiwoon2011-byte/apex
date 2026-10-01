@@ -48,6 +48,28 @@ export const OR_MODELS = [
   'dots-studio/dots-3-note-preview:free',
   'nvidia/nemotron-3-ultra-550b-a55b:free',
 ];
+
+/* 지금 쓸 수 있는 것만 남깁니다.
+
+   무료 모델은 예고 없이 사라집니다. 2026-09 말에 1·2순위가 목록에서 빠져
+   404 만 돌려줬는데, 서버는 매번 그 둘부터 부르느라 시간과 호출을 버렸고
+   자동 갱신이 일주일 동안 카드를 거의 못 만들었습니다.
+   모델 목록은 열쇠 없이 받을 수 있습니다. 한 시간 동안 기억해 둡니다. */
+let liveCache = { at: 0, ids: null };
+export async function liveModels() {
+  if (liveCache.ids && Date.now() - liveCache.at < 3600000) return liveCache.ids;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 6000);
+  try {
+    const r = await fetch('https://openrouter.ai/api/v1/models', { signal: ac.signal });
+    const have = new Set(((await r.json()).data || []).map(m => m.id));
+    const ids = OR_MODELS.filter(m => have.has(m));
+    if (ids.length) { liveCache = { at: Date.now(), ids }; return ids; }
+  } catch (e) { /* 목록을 못 받으면 아래처럼 다 시도합니다 */ }
+  finally { clearTimeout(timer); }
+  return OR_MODELS;
+}
+
 const OR_SEP = ' ::: ';
 
 /* 앱 안의 프롬프트와 같은 것입니다. 서버가 프롬프트를 쥐고 있어야
@@ -123,7 +145,7 @@ const cut = s => {
 export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160);
 
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
-export async function makeCards(items, glossary, key, budgetMs) {
+export async function makeCards(items, glossary, key, budgetMs, models) {
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
   /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
   const gl = (glossary && glossary.length) ? glossary
@@ -135,7 +157,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
-  for (const model of OR_MODELS) {
+  for (const model of models || await liveModels()) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
        20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
@@ -483,7 +505,7 @@ function deepParse(text) {
 async function deepAsk(sys, msg, key, deadline, capMs, parse) {
   let raw = '';
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
-  for (const model of OR_MODELS) {
+  for (const model of await liveModels()) {
     const room = deadline - Date.now() - 2000;
     const callMs = Math.min(capMs, room);
     if (callMs < 10000) break;

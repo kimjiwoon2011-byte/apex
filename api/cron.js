@@ -141,6 +141,18 @@ export default async function handler(req, res) {
      한꺼번에 띄우면 겹치는 층이 하나뿐입니다. 지휘자가 끝까지 붙어
      있으므로 아무도 중간에 끊기지 않습니다. 부문끼리 나란히 도니까
      제일 오래 걸리는 부문만큼만 기다리면 됩니다. */
+  /* ── 모델 비교 시험 (임시) — 같은 기사 5건을 모델마다 따로 ── */
+  if (req.query.test) {
+    const items = (await gather(SERIES[Number(req.query.s) || 0])).slice(0, 5);
+    const out = await Promise.all(String(req.query.test).split(',').map(async m => {
+      const t = Date.now();
+      const r = await makeCards(items, [], KEY, 45000, [m]);
+      return { model: m, ms: Date.now() - t, n: r.cards ? r.cards.filter(c => c && c.p).length : 0,
+               why: r.why, cards: r.cards, raw: r.cards ? undefined : String(r.raw || '').slice(0, 200) };
+    }));
+    return res.status(200).json({ titles: items.map(x => x.title), out });
+  }
+
   if (req.query.i === undefined) {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const runs = await Promise.all(SERIES.map((one, n) =>
@@ -169,8 +181,11 @@ export default async function handler(req, res) {
       id: '_run|cron',
       hook: '자동 갱신',
       punch: total + '장·풀이' + deepTotal + '·호출' + used,
-      line: runs.map(r => r.series + ':' + (r.made || 0) + '+' + (r.deep || 0) +
-                          (r.note === 'daily-limit' ? '한도' : r.note === 'reserve' ? '아낌' : ''))
+      /* 왜 0장인지도 남깁니다. 오류는 '!', 모델이 다 실패하면 '실패' */
+      line: runs.map(r => (r.series || '?') + ':' + (r.made || 0) + '+' + (r.deep || 0) +
+                          (r.error ? '!' + String(r.error).replace(/^Error: /, '').slice(0, 8)
+                           : r.note === 'daily-limit' ? '한도' : r.note === 'reserve' ? '아낌'
+                           : r.note === 'all-models-failed' ? '실패' : ''))
                 .join(' ').slice(0, 120),
       at: Date.now(),
     }]);
