@@ -149,7 +149,7 @@ const cut = s => {
 export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160);
 
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
-export async function makeCards(items, glossary, key, budgetMs, models) {
+export async function makeCards(items, glossary, key, budgetMs) {
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
   /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
   const gl = (glossary && glossary.length) ? glossary
@@ -161,7 +161,7 @@ export async function makeCards(items, glossary, key, budgetMs, models) {
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
-  for (const model of models || await liveModels()) {
+  for (const model of await liveModels()) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
        20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이

@@ -141,20 +141,13 @@ export default async function handler(req, res) {
      한꺼번에 띄우면 겹치는 층이 하나뿐입니다. 지휘자가 끝까지 붙어
      있으므로 아무도 중간에 끊기지 않습니다. 부문끼리 나란히 도니까
      제일 오래 걸리는 부문만큼만 기다리면 됩니다. */
-  /* ── 모델 비교 시험 (임시) — 같은 기사 5건을 모델마다 따로 ── */
-  if (req.query.test) {
-    const items = (await gather(SERIES[Number(req.query.s) || 0])).slice(0, 5);
-    const out = await Promise.all(String(req.query.test).split(',').map(async m => {
-      const t = Date.now();
-      const r = await makeCards(items, [], KEY, 45000, [m]);
-      return { model: m, ms: Date.now() - t, n: r.cards ? r.cards.filter(c => c && c.p).length : 0,
-               why: r.why, cards: r.cards, raw: r.cards ? undefined : String(r.raw || '').slice(0, 200) };
-    }));
-    return res.status(200).json({ titles: items.map(x => x.title), out });
-  }
-
   if (req.query.i === undefined) {
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    /* 들어온 주소로 되부르면 안 됩니다. 정기 실행은 배포마다 붙는 주소
+       (apex-xxxx-forza3.vercel.app 등)로 들어올 수 있는데, 그 주소들에는 Vercel
+       로그인 보호가 걸려 있어 부문 호출이 전부 로그인 화면(302)으로 튕겼습니다.
+       9월 말부터 자동 갱신이 '0장 · 호출 0'이었던 까닭입니다. 손으로 돌릴 때는
+       대표 주소로 들어와서 멀쩡해 보였습니다. 보호가 없는 대표 주소로 부릅니다. */
+    const host = process.env.APEX_HOST || 'apex-five-theta.vercel.app';
     const runs = await Promise.all(SERIES.map((one, n) =>
       fetch('https://' + host + '/api/cron?i=' + n, { headers: callerHeaders })
         .then(r => r.json())
