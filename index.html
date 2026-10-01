@@ -2997,10 +2997,12 @@ const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 /* 실제로 응답이 돌아오는 모델만 남깁니다. NVIDIA 550B 는 2분 넘게 걸려
    상한 안에 못 들어오고, gemma 는 부를 때마다 429 였습니다.
    둘은 호출 수만 태우고 카드는 못 만들었습니다. */
+/* 서버(api/_lib.js)와 같은 순서입니다. 9월 말에 ling-flash-fin·nex-mini 가
+   무료 목록에서 사라져, 2026-10-02 에 다시 재서 바꿨습니다. */
 const OR_MODELS = [
-  'inclusionai/ling-3.0-flash-fin:free',      /* 실측 19~25초, 10/10 */
-  'nex-agi/nex-n2.5-mini:free',               /* 이름 표기가 정확합니다 */
-  'dots-studio/dots-3-note-preview:free',     /* 느리지만 형식을 잘 지킵니다 */
+  'inclusionai/ling-3.0-flash-sante:free',    /* 실측 10.2초 5/5 */
+  'google/gemma-4-31b-it:free',               /* 몰리면 429, 되면 빠릅니다 */
+  'qwen/qwen3.8-27b:free',
 ];
 const orKey = ()=> DB.get('orkey', '');
 
@@ -5064,7 +5066,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-09-25 · 캘린더 시간 흐르게';
+const BUILD = '2026-10-02 · 새 무료 모델';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

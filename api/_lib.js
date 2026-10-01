@@ -36,15 +36,19 @@ export function applyNames(str) {
 }
 
 export const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
-/* 순서는 같은 기사 5건으로 직접 재서 정했습니다 (2026-09-24).
-     ling-flash   18.3초 5/5      nex-mini   20.5초 5/5
-     gemma-4      다른 사용자가 몰려 거절(429) — 되면 빠릅니다
-     dots·nemotron  28초 시간초과 — 맨 뒤에 둡니다
-   앞의 둘은 번역 품질이 비슷하고, 둘 다 이름표를 정확히 따랐습니다. */
+/* 순서는 같은 기사 5건으로 직접 재서 정했습니다 (2026-10-02, F1·WEC 두 번).
+     ling-flash-sante  10.2초 5/5 (두 번째는 24초 시간초과) — 번역이 자연스러움
+     gemma-4 ×2 · qwen3.8   두 번 다 다른 사용자가 몰려 거절(429), 1초 안에 돌아옴
+     dots-3-note       13.8초 1/5, 글자가 깨짐("바 spoilers") — 맨 뒤 가까이
+     nemotron-3.5 lightning·super 시간초과, inkling-small 403 — 넣지 않음
+   429 는 1초 안에 돌아오므로 여럿 줄 세워 두는 게 이득입니다.
+   9월 말에 ling-3.0-flash-fin · nex-n2.5-mini 가 목록에서 사라졌습니다 —
+   사라진 모델은 liveModels() 가 알아서 건너뜁니다. */
 export const OR_MODELS = [
-  'inclusionai/ling-3.0-flash-fin:free',
-  'nex-agi/nex-n2.5-mini:free',
+  'inclusionai/ling-3.0-flash-sante:free',
   'google/gemma-4-31b-it:free',
+  'qwen/qwen3.8-27b:free',
+  'google/gemma-4-26b-a4b-it:free',
   'dots-studio/dots-3-note-preview:free',
   'nvidia/nemotron-3-ultra-550b-a55b:free',
 ];
