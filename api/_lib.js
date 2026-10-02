@@ -519,6 +519,64 @@ export async function articleText(link) {
   } catch (e) { return ''; }
 }
 
+/* ── 화제성 ─────────────────────────────────────────────────────
+   카드뉴스에는 화제성 있는 기사만 올리고, 카드·설명문도 그것만 만듭니다.
+   AI 를 쓰지 않습니다(호출 0회). 2026-10-02 실제 피드로 맞춘 기준입니다.
+
+     +2  다른 회사 매체(Crash.net)도 같은 이야기를 다룸
+     +1  같은 회사 매체(Autosport)도 다룸 — 거의 다 같이 실어서 약하게
+     +2  우승·폴·사고·페널티·계약·이적·은퇴·부상·챔피언 같은 사건
+     +1  큰 이름(베르스타펜·해밀턴·페라리·르망 …)
+     +2 / +1 / 0 / -2   24시간·3일·1주 이내 / 그보다 오래됨
+     -5  시청 방법·일정표·생중계·사진·퀴즈·팟캐스트 같은 안내 글
+     2주 넘은 기사는 빼고(SUPER GT 피드에 2024년 기사가 섞여 있었습니다),
+     2점 이상만, 부문마다 F1 8건·나머지 4건까지 → 하루 약 20건.
+   무료 한도(하루 50번, 붐비면 실패)로 카드와 설명문을 둘 다 완성할 수 있는 양입니다. */
+export const HOT_MAX = { f1: 8, other: 4 };
+const HOT_STOP = new Set(('The A An And Or But For With From After Before About Into Over Under Why How What When Where ' +
+  'Who This That These Those His Her Their Its Our Your Says Say Said Race Races Team Teams Driver Drivers New First ' +
+  'Last Next Season Year Week Weekend Formula Grand Prix GP F1 WEC IMSA DTM GT GT3 Super Championship World Series ' +
+  'Round Day Friday Saturday Sunday Practice Qualifying Free Will Can Could Would Should Has Have Had Not Get Gets ' +
+  'Got Out Now Still Just More Most Very').split(' '));
+const hotKeys = t => new Set((String(t).match(/[A-Z][A-Za-zÀ-ÿ'’-]{2,}/g) || [])
+  .map(w => w.replace(/['’]s$/, '')).filter(w => !HOT_STOP.has(w)));
+const HOT_BIG = /Verstappen|Hamilton|Leclerc|Norris|Piastri|Russell|Antonelli|Alonso|Hadjar|Ferrari|Red Bull|McLaren|Mercedes|Aston Martin|Toyota|Porsche|Cadillac|BMW|Penske|Ganassi|Le Mans|Daytona|Sebring|Spa|Suzuka|Fuji|Macau|Bathurst/i;
+const HOT_EVENT = /\b(wins?|won|victory|pole|crash(es|ed)?|penalt(y|ies|ised|ized)|disqualif\w*|ban(ned)?|fined?|champion(ship)?|title|clinch\w*|contract|sign(s|ed|ing)?|joins?|leav(e|es|ing)|exit|replac\w*|retire\w*|injur\w*|hospital|record|debut|protest|appeal\w*|investigat\w*|confirm(s|ed)?|announc\w*|deal|split|axed|dropped|seat)\b/i;
+const HOT_GUIDE = /how to watch|schedule|start time|live (updates|blog|commentary)|as it happened|gallery|photos?\b|in pictures|podcast|quiz|weather forecast|tv times|entry list|\bresults?:|timetable/i;
+
+/* items: {title, link, when}, others: {as:[{title,when}], cn:[…]} → 고른 기사 (점수 높은 순) */
+export function hotPicks(items, others, max) {
+  const now = Date.now(), DAY = 864e5;
+  const recent = list => (list || []).filter(o => !o.when || now - o.when < 14 * DAY);
+  const as = recent(others && others.as), cn = recent(others && others.cn);
+  const covered = (K, list) => list.some(o => {
+    let n = 0;
+    for (const w of hotKeys(o.title)) if (K.has(w) && ++n >= 2) return true;
+    return false;
+  });
+  return items.map(it => {
+    const age = (now - (it.when || now)) / 3600e3;
+    if (age > 14 * 24) return null;
+    const K = hotKeys(it.title);
+    let s = (covered(K, cn) ? 2 : 0) + (covered(K, as) ? 1 : 0)
+          + (HOT_EVENT.test(it.title) ? 2 : 0) + (HOT_BIG.test(it.title) ? 1 : 0)
+          + (age < 24 ? 2 : age < 72 ? 1 : age < 168 ? 0 : -2)
+          - (HOT_GUIDE.test(it.title) ? 5 : 0);
+    return { it, s };
+  }).filter(x => x && x.s >= 2)
+    .sort((a, b) => b.s - a.s || (b.it.when || 0) - (a.it.when || 0))
+    .slice(0, max).map(x => x.it);
+}
+
+/* 기사 주소의 짧은 지문. 고른 목록을 표의 한 칸(120자)에 담으려고 씁니다.
+   앱(index.html linkHash)과 똑같이 계산해야 합니다. */
+export function linkHash(link) {
+  const s = String(link || '').slice(0, 400).slice(-160);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36);
+}
+
 export const deepIdOf = link => 'deep|' + String(link || '').slice(0, 400).slice(-160);
 
 /* 이미 만들어 둔 풀이를 찾아옵니다 */

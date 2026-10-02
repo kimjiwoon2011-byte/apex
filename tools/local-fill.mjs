@@ -16,8 +16,8 @@
 import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
-         keyOf, deepIdOf } from '../api/_lib.js';
-import { SERIES, gather } from '../api/cron.js';
+         keyOf, deepIdOf, hotPicks, HOT_MAX } from '../api/_lib.js';
+import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
 const MODEL = process.env.APEX_LOCAL_MODEL || 'gemma4:12b';
@@ -50,9 +50,14 @@ for (const s of SERIES) {
   try { items = await gather(s); } catch (e) { /* 아래에서 기사 없음으로 */ }
   if (!items.length) { notes.push(s.k + ':기사없음'); continue; }
 
+  /* 서버와 같은 기준으로 화제성 있는 기사만 고릅니다. PC 는 1시간마다 돌아서
+     고른 목록도 더 자주 새로 고칩니다 */
+  const picks = hotPicks(items, await otherFeeds(s), HOT_MAX[s.k] || HOT_MAX.other);
+  await savePicks(s, picks);
+
   /* 카드 — 서버와 같이 5건씩 */
-  const have = await loadExisting(items.map(x => x.link));
-  const todo = items.filter(x => !have[keyOf(x.link)]);
+  const have = await loadExisting(picks.map(x => x.link));
+  const todo = picks.filter(x => !have[keyOf(x.link)]);
   for (let i = 0; i < todo.length; i += 5) {
     const part = todo.slice(i, i + 5);
     const r = await makeCards(part, [], '', 600000);
@@ -67,8 +72,8 @@ for (const s of SERIES) {
   }
 
   /* 설명문 — 한 건씩. 묶으면 기사끼리 섞일 수 있고, PC 는 한도가 없어 묶을 이유가 없습니다 */
-  const done = await loadDeep(items.map(x => x.link));
-  for (const it of items.filter(x => !done[deepIdOf(x.link)])) {
+  const done = await loadDeep(picks.map(x => x.link));
+  for (const it of picks.filter(x => !done[deepIdOf(x.link)])) {
     const d = await makeDeep(it, [], '', 600000);
     if (!d.deep) { notes.push(s.k + ':풀이실패'); continue; }
     deeps += await saveCards([{

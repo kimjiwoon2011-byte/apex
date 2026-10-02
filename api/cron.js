@@ -8,7 +8,7 @@
  * 불리면 지휘자가 되어 6개 부문을 한꺼번에 띄우고 다 끝날 때까지 지켜봅니다.
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
-import { makeCards, keyOf, loadExisting, saveCards,
+import { makeCards, keyOf, loadExisting, saveCards, hotPicks, linkHash, HOT_MAX,
          makeDeepBatch, deepIdOf, loadDeep, spentToday, dropOldSpend } from './_lib.js';
 
 export const maxDuration = 60;
@@ -33,7 +33,8 @@ export const SERIES = [
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
            '(KHTML, like Gecko) Chrome/131.0 Safari/537.36';
-const CARDS_PER_SERIES = 10;
+/* 앱이 보여 주는 만큼(20건) 받아, 그중 화제성 있는 것만 카드로 만듭니다 */
+const CARDS_PER_SERIES = 20;
 
 /* 눌렀을 때 나오는 자세한 풀이도 미리 만들어 둡니다.
 
@@ -67,7 +68,7 @@ const WORKER_MS = 54000;
 
 /* RSS 를 정규식으로 읽습니다. 서버에는 DOMParser 가 없고, 필요한 건
    제목·주소·도입부 셋뿐이라 이 정도면 충분합니다. */
-function parseRss(xml) {
+function parseRss(xml, limit = CARDS_PER_SERIES) {
   const items = [];
   const blocks = xml.split(/<item[\s>]/).slice(1);
   for (const b of blocks) {
@@ -86,7 +87,7 @@ function parseRss(xml) {
     const title = pick('title');
     const when = Date.parse(pick('pubDate')) || 0;
     if (link && title) items.push({ link, title, lead: pick('description'), when });
-    if (items.length >= CARDS_PER_SERIES) break;
+    if (items.length >= limit) break;
   }
   return items;
 }
@@ -112,6 +113,27 @@ export async function gather(one) {
     } catch (e) { /* 다음 곳으로 */ }
   }
   return [];
+}
+
+/* 화제성 점수에 쓰는, 다른 매체의 같은 부문 제목들 */
+export async function otherFeeds(one) {
+  const get = async u => {
+    try {
+      const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(9000) });
+      return r.ok ? parseRss(await r.text(), 40) : [];
+    } catch (e) { return []; }
+  };
+  const [as, cn] = await Promise.all([
+    get('https://www.autosport.com/rss/' + one.feed + '/news/'),
+    one.crash ? get('https://www.crash.net/rss/' + one.crash) : [],
+  ]);
+  return { as, cn };
+}
+
+/* 고른 목록을 표에 남깁니다. 앱은 이걸 읽어 카드뉴스에 올릴 기사를 정합니다 */
+export async function savePicks(one, picks) {
+  return saveCards([{ id: '_pick|' + one.k, hook: '화제', punch: String(picks.length),
+                      line: picks.map(x => linkHash(x.link)).join(',').slice(0, 120), at: Date.now() }]);
 }
 
 export default async function handler(req, res) {
@@ -197,9 +219,15 @@ export default async function handler(req, res) {
     const items = await gather(s);
     if (!items.length) throw new Error('기사 없음');
 
-    const existing = await loadExisting(items.map(x => x.link));
-    const todo = items.filter(x => !existing[keyOf(x.link)]);
-    out.cached = items.length - todo.length;
+    /* 화제성으로 고릅니다. 카드뉴스에는 고른 것만 올라가고, 카드·설명문도
+       고른 것만 만듭니다 — 무료 한도 안에서 둘 다 완성되는 하루 약 20건 */
+    const picks = hotPicks(items, await otherFeeds(s), HOT_MAX[s.k] || HOT_MAX.other);
+    await savePicks(s, picks);
+    out.picks = picks.length;
+
+    const existing = await loadExisting(picks.map(x => x.link));
+    const todo = picks.filter(x => !existing[keyOf(x.link)]);
+    out.cached = picks.length - todo.length;
 
     /* 카드가 먼저입니다. 묶음마다 만들고 바로 저장하므로, 뒤 묶음이
        실패해도 앞 묶음은 남습니다. 자세한 풀이 몫으로 6초는 남겨 둡니다. */
@@ -231,8 +259,8 @@ export default async function handler(req, res) {
     /* 자세한 풀이를 미리 만들어 둡니다. 3건 묶음은 30초 가까이 걸리므로
        그만큼 남았을 때만 묶고, 모자라면 1건씩 합니다. 이미 있는 것은
        건너뜁니다. 못 한 기사는 다음 갱신이나 누가 눌렀을 때 만들어집니다. */
-    const have = await loadDeep(items.map(x => x.link));
-    const need = items.filter(x => !have[deepIdOf(x.link)]);
+    const have = await loadDeep(picks.map(x => x.link));
+    const need = picks.filter(x => !have[deepIdOf(x.link)]);
     for (let at = 0, calls = 0; at < need.length && calls < DEEP_CALLS; calls++) {
       const room = endAt - Date.now();
       const n = room >= 36000 ? DEEP_BATCH : room >= 16000 ? 1 : 0;

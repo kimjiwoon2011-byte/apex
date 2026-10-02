@@ -1210,7 +1210,7 @@ ko:{
  'art.note':'언론사가 배포한 <b>도입부</b>를 번역해 보여드립니다. 전체 내용은 아래 버튼으로 원문에서 확인하세요.',
  'news.vList':'목록','news.vCard':'카드뉴스',
  'news.cards':'장','news.prev':'이전','news.next2':'다음','news.coverTitle':'{0} 최신 소식','news.swipe':'옆으로 넘겨보세요',
- 'news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
+ 'news.noHot':'최근 2주 사이 화제 기사가 없어요. 목록 보기에서 모든 기사를 볼 수 있어요.','news.coverSub':'중요한 소식만 골라 담았어요. 카드를 누르면 기사 전체를 쉬운 말로 풀어 드립니다.','news.refresh':'지금 갱신','news.loading':'불러오는 중…',
  'news.updated':'{0} 업데이트','news.failedShort':'불러오기 실패',
  'news.aiWork':'카드 정리 중… 20초쯤 걸려요','news.aiFail':'카드 정리 실패 — 번역본으로 보여드려요','news.aiRest':'오늘 AI 한도를 다 썼어요 — 번역본으로 보여드려요',
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
@@ -1354,7 +1354,7 @@ en:{
  'gm.hit':'Nailed it! +{0} points','gm.miss':'Not this time','gm.answer':'It was {0}',
  'gm.streak':'{0} in a row',
  'art.note':'This is the <b>opening section</b> the publisher syndicates, translated. Use the button below for the full story.',
- 'news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
+ 'news.vList':'List','news.vCard':'Cards','news.cards':' cards','news.prev':'Previous','news.next2':'Next','news.coverTitle':'Latest in {0}','news.swipe':'Swipe to read','news.noHot':"No standout stories in the last two weeks. Switch to the list to see every article.",'news.coverSub':'The stories worth knowing. Tap a card for the full article in plain language.','news.refresh':'Refresh','news.loading':'Loading…',
  'news.aiWork':'Writing cards… about 20s','news.aiFail':'Could not write cards — showing the translation','news.aiRest':'Daily AI limit reached — showing the translation',
  'news.updated':'Updated {0}','news.failedShort':'Failed to load',
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
@@ -1498,7 +1498,7 @@ ja:{
  'gm.hit':'的中！ +{0} ポイント','gm.miss':'惜しい、次こそ','gm.answer':'正解は{0}',
  'gm.streak':'{0}連続的中',
  'art.note':'報道機関が配信する<b>導入部</b>を翻訳して表示しています。全文は下のボタンから元記事でご覧ください。',
- 'news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
+ 'news.vList':'リスト','news.vCard':'カードニュース','news.cards':'枚','news.prev':'前へ','news.next2':'次へ','news.coverTitle':'{0} 最新ニュース','news.swipe':'横にスワイプ','news.noHot':'直近2週間に話題の記事はありません。リスト表示ですべての記事を見られます。','news.coverSub':'知っておきたい話題だけ集めました。カードを押すと記事全文をやさしく解説します。','news.refresh':'更新','news.loading':'読み込み中…',
  'news.aiWork':'カードを作成中… 20秒ほど','news.aiFail':'カードを作成できませんでした — 翻訳を表示します','news.aiRest':'本日のAI上限に達しました — 翻訳を表示します',
  'news.updated':'{0}に更新','news.failedShort':'読み込み失敗',
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
@@ -3322,7 +3322,7 @@ function carryCards(old, data){
   if(!Object.keys(by).length) return;
   data.hc = data.hc || {}; data.hs = data.hs || {}; data.hsd = data.hsd || {};
   Object.keys(by).forEach(lang => {
-    const n = Math.min(AI_CARDS, data.items.length);
+    const n = data.items.length;
     const arr = new Array(n).fill(null);
     let hit = 0;
     for(let i = 0; i < n; i++){
@@ -3341,6 +3341,36 @@ function carryCards(old, data){
    이 기기에 키가 없어도 카드가 만들어집니다. 만든 건 서버가 Supabase 에
    저장하므로 다른 기기는 그냥 받아 가기만 하면 됩니다.
    앱을 파일로 열었을 때(file://)는 서버가 없으니 건너뜁니다. */
+/* 서버가 고른 '화제' 기사 — 부문마다 기사 주소 지문 목록 (_pick|f1 …).
+   기기에도 저장해 두어 앱을 켜자마자 지난번 목록으로 그립니다. */
+let PICKS = DB.get('hotPicks', { at: 0, by: {} });
+async function loadPicks(){
+  if(Date.now() - PICKS.at < 10 * 60000 || !netSb()) return PICKS.by;
+  try{
+    const rows = await sb('cards?id=like._pick*&select=id,line');
+    const by = {};
+    (rows || []).forEach(r => { by[String(r.id).split('|')[1]] = String(r.line || '').split(',').filter(Boolean); });
+    PICKS = { at: Date.now(), by };
+    DB.set('hotPicks', PICKS);
+  }catch(e){ /* 못 받으면 지난번 목록 그대로 */ }
+  return PICKS.by;
+}
+/* 서버(api/_lib.js linkHash)와 똑같이 계산합니다 */
+function linkHash(link){
+  const s = String(link || '').slice(0, 400).slice(-160);
+  let h = 0x811c9dc5;
+  for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36);
+}
+/* 이 부문에서 카드뉴스에 올릴 기사 번호(화제성 높은 순). 서버가 고른 목록을
+   아직 못 받았으면 예전처럼 앞 10건입니다. */
+function pickIdx(key, data){
+  const hs = PICKS.by[key];
+  if(!hs) return [...Array(Math.min(AI_CARDS, data.items.length)).keys()];
+  const at = new Map(data.items.map((it, i) => [linkHash(it.link), i]));
+  return hs.map(h => at.get(h)).filter(i => i !== undefined);
+}
+
 async function askServerCards(items, glossary){
   if(!HOSTED || !items.length) return null;
   try{
@@ -3421,15 +3451,16 @@ async function ensureTitles(key, data, onStep, noAi){
      빠진 자리만 골라 다시 부릅니다. 전체를 다시 돌리면 이미 받은 것까지
      토큰을 또 씁니다. 몇 번 해도 안 되는 기사가 있으므로 횟수를 제한합니다. */
   if(L === 'ko'){
-    const n = Math.min(AI_CARDS, titles.length);
-    if(!Array.isArray(data.hc[L]) || data.hc[L].length !== n)
-      data.hc[L] = new Array(n).fill(null);
+    /* 카드 자리는 기사 수만큼 두고(번호 = 기사 번호), 서버가 고른 화제 기사
+       자리만 채웁니다. 나머지 기사는 목록 보기에서 번역 제목으로 보입니다. */
+    await loadPicks();
+    const want = pickIdx(key, data);
+    const n = titles.length;
+    if(!Array.isArray(data.hc[L])) data.hc[L] = new Array(n).fill(null);
+    else if(data.hc[L].length !== n)
+      data.hc[L] = Array.from({ length: n }, (_, i) => data.hc[L][i] || null);
 
-    const gaps = () => {
-      const a = [];
-      for(let i = 0; i < n; i++){ const c = data.hc[L][i]; if(!(c && c.p)) a.push(i); }
-      return a;
-    };
+    const gaps = () => want.filter(i => { const c = data.hc[L][i]; return !(c && c.p); });
 
     /* 먼저 서버에 올라온 카드를 봅니다. 다른 기기가 이미 만들어 두었다면
        AI를 부르지 않고 그대로 씁니다. 키가 없는 휴대폰에서도 이 길로 보입니다. */
@@ -3832,7 +3863,9 @@ function paintDeck(data, titles, descs){
   const nice  = data.hs?.[L] || null;      /* 기사체로 다시 쓴 제목이 있으면 우선 */
   const niced = data.hsd?.[L] || null;     /* 다시 쓴 본문 */
   const cards = data.hc?.[L] || null;      /* 카드용 훅·핵심·설명 */
-  const items = data.items.slice(0, 10);          /* 인스타도 한 묶음에 10~20장입니다 */
+  /* 서버가 고른 화제 기사만, 화제성 높은 순으로 (없으면 예전처럼 앞 10건) */
+  const idxs  = pickIdx(newsSeries, data);
+  const items = idxs.map(i => data.items[i]);
   const deck = el('div','deck');
 
   const cover = el('button','cardn cover');
@@ -3842,12 +3875,13 @@ function paintDeck(data, titles, descs){
       <div class="hd"><span class="tag solid" style="background:rgba(255,255,255,.22)">${esc(s.name)}</span>
         <span class="no">${items.length}${t('news.cards')}</span></div>
       <div class="big">${esc(t('news.coverTitle', s.name))}</div>
-      <div class="lead">${esc(t('news.coverSub'))}</div>
+      <div class="lead">${esc(t(items.length ? 'news.coverSub' : 'news.noHot'))}</div>
     </div>
     <div class="swipe">${t('news.swipe')}<span class="ar">${ic('chev')}</span></div>`;
   deck.appendChild(cover);
 
-  items.forEach((it,i)=>{
+  items.forEach((it,k)=>{
+    const i = idxs[k];                     /* 원래 기사 번호 — 번역·카드가 이 번호로 붙어 있습니다 */
     const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
     const lead  = niced?.[i] || descs?.[i] || it.desc || '';
     const card  = cards?.[i];
@@ -3869,7 +3903,7 @@ function paintDeck(data, titles, descs){
       <span class="sc"></span>
       <div class="in">
         <div class="hd"><span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>
-          <span class="no">${i+1} / ${items.length}</span></div>
+          <span class="no">${k+1} / ${items.length}</span></div>
         <div class="bd">
           ${body}
           <div class="ft"><span class="pill">${esc(it.src)}</span><span>${esc(relTime(it.at))}</span></div>
@@ -3984,6 +4018,7 @@ async function renderNews(force){
   const key = newsSeries, list = $('#newsList');
   const cache = DB.get('news3-'+key, null);
   const fresh = cache && (Date.now() - cache.at < NEWS_TTL);
+  await Promise.race([loadPicks(), new Promise(r => setTimeout(r, 1500))]);
 
   if(cache){
     paintNews(cache);
@@ -5110,7 +5145,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-02 · 기사 목록 30분마다';
+const BUILD = '2026-10-02 · 화제 기사만 카드로';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
