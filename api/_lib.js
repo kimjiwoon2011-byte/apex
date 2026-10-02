@@ -13,6 +13,32 @@ import { NAME_PAIRS } from './_names.js';
    이제 모델에게 표를 보내고, 받은 글에도 한 번 더 입힙니다. */
 const NAME_RE = NAME_PAIRS.map(([src, ko]) => [new RegExp(src, 'g'), ko]);
 
+/* 이름을 한글로 바꾼 뒤 조사를 받침에 맞춥니다.
+   모델이 영어 이름 뒤에 조사를 붙인 것(Heinrich은)을 이름만 바꾸면
+   '하인리히은' · '앙들라우어과'가 됐습니다. 표기표에 있는 한글 이름 바로 뒤의
+   조사만 고칩니다 — 이름 앞뒤가 다른 한글로 이어지면 건드리지 않습니다. */
+const JOSA = { 은: ['은', '는'], 는: ['은', '는'], 이: ['이', '가'], 가: ['이', '가'],
+               을: ['을', '를'], 를: ['을', '를'], 과: ['과', '와'], 와: ['과', '와'] };
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const KO_NAME_RE = new RegExp('(?<![가-힣])(' +
+  [...new Set(NAME_PAIRS.map(p => p[1]))].sort((a, b) => b.length - a.length).map(escRe).join('|') +
+  ')(으로|은|는|이|가|을|를|과|와|로)(?![가-힣])', 'g');
+export function fixJosa(str) {
+  return String(str || '').replace(KO_NAME_RE, (all, name, p) => {
+    const c = name.charCodeAt(name.length - 1) - 0xAC00;
+    if (c < 0 || c > 11171) return all;                  /* 한글로 끝나지 않는 이름 */
+    const jong = c % 28, has = jong !== 0;
+    if (p === '으로' || p === '로') return name + (has && jong !== 8 ? '으로' : '로');
+    return name + JOSA[p][has ? 0 : 1];
+  });
+}
+
+/* 깨진 글자 — 러시아·그리스 문자, 밑줄, 낱자모, 깨진 문자표, 한글 바로 뒤에
+   붙은 영어 소문자. 실제로 '아лекс 퀸', '2027 시_season' 이 카드로 저장됐습니다.
+   이런 결과는 받지 않고, 다음 모델이나 다음 갱신에 다시 만듭니다. */
+const GARBLED = /[\u0370-\u03FF\u0400-\u04FF\u3131-\u318E\uFFFD_]|[가-힣][a-z]/;
+export const garbled = s => GARBLED.test(String(s || ''));
+
 /* 글에 나오는 이름만 골라 "영어 = 한글" 줄로 만듭니다 (앱의 nameGlossary 와 같음) */
 export function nameGlossary(lines, max = 40) {
   const hay = lines.filter(Boolean).join(' ');
@@ -32,7 +58,7 @@ export function nameGlossary(lines, max = 40) {
 export function applyNames(str) {
   let out = String(str || '');
   for (const [re, ko] of NAME_RE) { re.lastIndex = 0; out = out.replace(re, ko); }
-  return out;
+  return fixJosa(out);
 }
 
 export const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -49,9 +75,10 @@ export const OR_MODELS = [
   'google/gemma-4-31b-it:free',
   'qwen/qwen3.8-27b:free',
   'google/gemma-4-26b-a4b-it:free',
-  'dots-studio/dots-3-note-preview:free',
-  'nvidia/nemotron-3-ultra-550b-a55b:free',
 ];
+/* dots-3-note 는 뺐습니다. 10/2 검수에서 깨진 카드 대부분이 이 모델 것이었습니다
+   ('아лекс', '시_season', '광대 레이스', '모듈 쁘띠'). 틀린 카드를 보여 주느니
+   6시간 뒤 갱신에서 다시 만드는 게 낫습니다. nemotron-ultra 는 늘 시간초과였습니다. */
 
 /* 지금 쓸 수 있는 것만 남깁니다.
 
@@ -110,7 +137,9 @@ export const OR_SYS = [
   '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
   '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
   '- 자주 틀리는 말: shootout=슛아웃, wet=젖은 노면, lost his temper=격분,',
-  '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀.',
+  '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀,',
+  '  medium(타이어)=미디엄, racing incident=레이싱 인시던트, Am class=Am 클래스,',
+  '  wide-open=혼전, derailed=무산, restart=리스타트, podium=포디엄, organisers=주최 측.',
   '- 존댓말·마침표·한자·느낌표 금지.',
   '',
   '── 출력 ──  [번호] 훅 ::: 핵심 ::: 설명',
@@ -132,6 +161,7 @@ function orParse(text, n) {
 /* 형식을 어긴 카드는 버립니다 (앱의 cardOk 와 같은 기준) */
 function cardOk(c) {
   if (!c || !c.p) return false;
+  if (garbled(c.h + ' ' + c.p + ' ' + c.d)) return false;
   const bad = s => /[.!]$/.test(s) || /[一-鿿]/.test(s) || /(습니다|입니다|합니다)$/.test(s);
   if (c.p.length > 20 || bad(c.p)) return false;
   if (c.h && (c.h.length > 22 || bad(c.h))) return false;
@@ -356,6 +386,8 @@ export const DEEP_SYS = [
   '- 영어로 두는 건 사람·팀·서킷의 고유한 이름뿐이다. 보통 낱말은 반드시',
   '  우리말로 옮겨라. team principal 은 팀 대표, engineer 는 엔지니어,',
   '  practice 는 연습주행, qualifying 은 예선, standings 는 순위다.',
+  '  medium 은 미디엄 타이어, racing incident 는 레이싱 인시던트, restart 는 리스타트,',
+  '  podium 은 포디엄, stewards 는 심사위원, organisers 는 주최 측이다.',
   '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
   '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
   '',
@@ -570,7 +602,10 @@ export async function makeDeep(item, glossary, key, budgetMs) {
       ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' : '')
     + '제목: ' + item.title + '\n본문: ' + (src || '(없음)');
 
-  const r = await deepAsk(DEEP_SYS, msg, key, t0 + (budgetMs || 45000), 28000, deepParse);
+  const r = await deepAsk(DEEP_SYS, msg, key, t0 + (budgetMs || 45000), 28000, txt => {
+    const g = deepParse(txt);
+    return g && !garbled(g.what + ' ' + g.why + ' ' + g.note) ? g : null;
+  });
   if (!r.got) return { deep: null, reason: r.reason, raw: r.raw || '', why: r.why };
   return { deep: named(r.got), model: r.model, usedFull: !!full };
 }
@@ -619,7 +654,8 @@ export async function makeDeepBatch(items, key, budgetMs) {
 
   /* 한 건짜리보다 오래 걸리므로 모델 하나에 45초까지 줍니다 */
   const r = await deepAsk(DEEP_MANY_SYS, msg, key, t0 + budgetMs, 45000, txt => {
-    const got = deepSplit(txt, items.length);
+    const got = deepSplit(txt, items.length)
+      .map(g => g && !garbled(g.what + ' ' + g.why + ' ' + g.note) ? g : null);
     return got.some(Boolean) ? got : null;     /* 일부만 나와도 받습니다 */
   });
   if (!r.got) return { deeps: null, reason: r.reason, raw: r.raw || '', why: r.why };

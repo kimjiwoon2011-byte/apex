@@ -2668,6 +2668,13 @@ const KO_FIX = [
   [/슈아웃/g, '슛아웃'],
   /* 이름표에 넣기 전에 만들어진 풀이에 남은 오표기 */
   [/컬스헤드/g, '쿨사드'], [/하크키넨/g, '하키넨'], [/린드블라(?!드)/g, '린드블라드'],
+  /* 10/2 검수에서 나온 오표기·오역 */
+  [/미디어 타이어/g, '미디엄 타이어'], [/레이싱 인정/g, '레이싱 인시던트 판정'],
+  [/아미 클래스/g, 'Am 클래스'], [/광대 레이스/g, '혼전'], [/코르크스크(?!루)/g, '코크스크루'],
+  [/디컨/g, '딕슨'], [/디듀 바리첼로/g, '두두 바리첼로'], [/크비트(?!야)/g, '크비야트'],
+  [/먼이즈|먼즈/g, '무니즈'], [/싴노/g, '시노'], [/모듈 쁘띠|모듈 프티/g, '모튤 프티'],
+  [/레스트아트/g, '리스타트'], [/포드럼/g, '포디엄'], [/도요타/g, '토요타'],
+  [/밀로리/g, '밀로이'], [/롭 하토그|하토그/g, '룩 하르토흐'], [/필리페 마사/g, '펠리페 마사'],
   [/드라이버스 standings/g, '드라이버 순위'], [/\bstandings\b/gi, '순위'],
 ];
 /* 구글 번역은 이름을 "조지 러셀(George Russell)" 처럼 원문을 괄호에 남겨 둡니다.
@@ -2696,7 +2703,31 @@ function dropEcho(s){
     return w.slice(0, w.length - n).concat(inn).join(' ');
   });
 }
-const koFix = s => dropEcho(KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || '')));
+const koFix = s => fixJosa(dropEcho(KO_FIX.reduce((a,[re,to]) => a.replace(re,to), String(s || ''))));
+
+/* 이름 바로 뒤 조사를 받침에 맞춥니다 ('하인리히은' → '하인리히는').
+   서버(api/_lib.js fixJosa)와 같은 규칙입니다. 이름표(NAME_MAP)는 아래쪽에서
+   만들어지므로 처음 쓸 때 정규식을 만듭니다. */
+let JOSA_RE = null;
+function fixJosa(s){
+  s = String(s || '');
+  if(!JOSA_RE){
+    try{
+      const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const names = [...new Set(NAME_MAP.map(p => p[1]))].sort((a,b)=> b.length - a.length);
+      JOSA_RE = new RegExp('(?<![가-힣])(' + names.map(esc).join('|') + ')(으로|은|는|이|가|을|를|과|와|로)(?![가-힣])', 'g');
+    }catch(e){ return s; }                     /* 이름표가 아직 없으면 그대로 */
+  }
+  const J = { '은':['은','는'], '는':['은','는'], '이':['이','가'], '가':['이','가'],
+              '을':['을','를'], '를':['을','를'], '과':['과','와'], '와':['과','와'] };
+  return s.replace(JOSA_RE, (all, name, p)=>{
+    const c = name.charCodeAt(name.length - 1) - 0xAC00;
+    if(c < 0 || c > 11171) return all;
+    const jong = c % 28, has = jong !== 0;
+    if(p === '으로' || p === '로') return name + (has && jong !== 8 ? '으로' : '로');
+    return name + J[p][has ? 0 : 1];
+  });
+}
 
 /* 제목 전용 다듬기 — 종결어미를 걷어내고 마침표를 뗍니다 */
 const HEAD_FIX = [
@@ -2790,6 +2821,15 @@ const EXTRA_NAMES = [
   ['Mika Hakkinen','미카 하키넨'], ['Mika Häkkinen','미카 하키넨'],
   ['Hakkinen','하키넨'], ['Häkkinen','하키넨'],
   ['Sergio Pérez','세르히오 페레스'], ['Pérez','페레스'],
+  ['Scott Dixon','스콧 딕슨'], ['Dixon','딕슨'],
+  ['Daniil Kvyat','다닐 크비야트'], ['Kvyat','크비야트'],
+  ['Tom Dillmann','톰 딜만'], ['Dillmann','딜만'],
+  ['Jeremy Clarke','제러미 클라크'], ['Alex Quinn','알렉스 퀸'],
+  ['Eduardo Barrichello','에두아르두 바리첼로'], ['Dudu Barrichello','두두 바리첼로'],
+  ['Frankie Muniz','프랭키 무니즈'], ['Muniz','무니즈'],
+  ['Philippe Sinault','필리프 시노'], ['Sinault','시노'],
+  ['Felipe Massa','펠리페 마사'], ['Kazuki Nakajima','나카지마 가즈키'],
+  ['Motul','모튤'], ['Corkscrew','코크스크루'],
   ['Antonio Felix da Costa','안토니우 펠릭스 다 코스타'],
   ['Beyond the Grid','비욘드 더 그리드'],
 ];
@@ -2899,7 +2939,7 @@ const SPORTSCAR_NAMES = [
   /* 팀·제조사 */
   ['Cadillac','캐딜락'], ['Porsche Penske','포르쉐 펜스케'],
   ['Penske','펜스케'], ['Wayne Taylor Racing','웨인 테일러 레이싱'],
-  ['Peugeot','푸조'], ['Toyota Gazoo Racing','도요타 가주 레이싱'],
+  ['Peugeot','푸조'], ['Toyota Gazoo Racing','토요타 가주 레이싱'],
   ['Gazoo Racing','가주 레이싱'], ['Alpine','알핀'],
   ['Lamborghini','람보르기니'], ['Aston Martin','애스턴 마틴'],
   ['Corvette','콜벳'], ['Acura','아큐라'], ['Lexus','렉서스'],
@@ -5066,7 +5106,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-02 · 새 무료 모델';
+const BUILD = '2026-10-02 · 번역 다듬기';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
