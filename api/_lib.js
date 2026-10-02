@@ -137,7 +137,7 @@ export const OR_SYS = [
   '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
   '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
   '- 자주 틀리는 말: shootout=슛아웃, wet=젖은 노면, lost his temper=격분,',
-  '  team principal=팀 대표, stewards=심사위원, title=챔피언십 타이틀,',
+  '  team principal=팀 대표, stewards=심판진, title=챔피언십 타이틀,',
   '  medium(타이어)=미디엄, racing incident=레이싱 인시던트, Am class=Am 클래스,',
   '  wide-open=혼전, derailed=무산, restart=리스타트, podium=포디엄, organisers=주최 측.',
   '- 존댓말·마침표·한자·느낌표 금지.',
@@ -200,7 +200,8 @@ export async function makeCards(items, glossary, key, budgetMs) {
     const room = deadline - Date.now() - 2000;
     /* 한 모델에 24초까지. 전에는 28초라 첫 모델이 느리면 묶음 시간을 다
        먹어 다음 모델로 못 넘어갔습니다 (WEC·IMSA 가 그래서 통째로 실패). */
-    const callMs = Math.min(24000, room);
+    /* 1순위(ling)가 붐빌 때 25초 넘게 걸려 IMSA 가 연달아 시간초과였습니다 */
+    const callMs = Math.min(32000, room);
     if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
     await spend('card', model);
 
@@ -387,7 +388,7 @@ export const DEEP_SYS = [
   '  우리말로 옮겨라. team principal 은 팀 대표, engineer 는 엔지니어,',
   '  practice 는 연습주행, qualifying 은 예선, standings 는 순위다.',
   '  medium 은 미디엄 타이어, racing incident 는 레이싱 인시던트, restart 는 리스타트,',
-  '  podium 은 포디엄, stewards 는 심사위원, organisers 는 주최 측이다.',
+  '  podium 은 포디엄, stewards 는 심판진, organisers 는 주최 측이다.',
   '- 한자를 쓰지 마라. 느낌표를 쓰지 마라.',
   '- 문장은 -다 로 끝낸다. 존댓말을 쓰지 마라.',
   '',
@@ -668,7 +669,11 @@ export async function makeDeepBatch(items, key, budgetMs) {
   /* 이름과 그 낱말 하나하나를 모읍니다. 원문에 성만 나와도 풀이가
      "아이작 하자르"처럼 온이름을 쓰는 건 섞인 게 아닙니다. */
   const own = items.map((it, n) => new Set(
-    nameGlossary([it.title, it.lead || '', fulls[n]], 999).map(g => g.split(' = ')[1])));
+    nameGlossary([it.title, it.lead || '', fulls[n]], 999)
+      /* 고유한 이름만 봅니다. 표에는 '예선'·'연습 주행' 같은 보통 용어도 있어서,
+         그걸로 섞였다고 오판해 멀쩡한 풀이를 버렸습니다 (10/2 F1 세 건) */
+      .filter(g => /^[A-Z0-9]/.test(g))
+      .map(g => g.split(' = ')[1])));
   const mine = own.map(set => new Set([...set].flatMap(ko => [ko, ...ko.split(' ')])));
   const why = [];
   const deeps = r.got.map((d, k) => {
