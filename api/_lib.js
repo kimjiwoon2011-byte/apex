@@ -101,6 +101,17 @@ export async function liveModels() {
   return OR_MODELS;
 }
 
+/* 다른 엔진으로 부르기 — 내 PC 의 Ollama 처럼 OpenAI 와 같은 형식을 쓰는 곳.
+   서버(Vercel)에서는 켜지 않습니다. tools/local-fill.mjs 가 켭니다.
+   켜져 있으면 OpenRouter 하루 한도를 세지도, 아끼지도 않습니다 — 내 PC 는 한도가 없습니다. */
+/* body: 그 엔진에만 더 보낼 값. Ollama 의 gemma4 는 답 전에 '생각'부터 길게 써서
+   글자 한도를 다 먹고 답 칸이 비었습니다 — reasoning_effort: 'none' 으로 끕니다. */
+let ENGINE = null;
+export function useEngine(e) { ENGINE = e; }
+const engineUrl = () => (ENGINE ? ENGINE.url : OR_URL);
+const engineHeaders = key => Object.assign({ 'Content-Type': 'application/json' },
+  ENGINE ? {} : { Authorization: 'Bearer ' + key });
+
 const OR_SEP = ' ::: ';
 
 /* 앱 안의 프롬프트와 같은 것입니다. 서버가 프롬프트를 쥐고 있어야
@@ -191,7 +202,7 @@ export async function makeCards(items, glossary, key, budgetMs) {
   const deadline = Date.now() + (budgetMs || 50000);
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   let raw = '';                       /* 규칙을 어겼을 때 뭘 뱉었는지 */
-  for (const model of await liveModels()) {
+  for (const model of ENGINE ? ENGINE.models : await liveModels()) {
     /* 한 번에 줄 시간을 남은 시간에 맞춰 정합니다. 20초로 못박아 두었더니
        기사가 6건만 돼도 다 못 만들고 잘렸습니다 — F1 에서 모델 둘이 연달아
        20초에 잘려 한 장도 못 건졌습니다. 첫 번째에 넉넉히 주고, 시간이
@@ -201,9 +212,9 @@ export async function makeCards(items, glossary, key, budgetMs) {
     /* 한 모델에 24초까지. 전에는 28초라 첫 모델이 느리면 묶음 시간을 다
        먹어 다음 모델로 못 넘어갔습니다 (WEC·IMSA 가 그래서 통째로 실패). */
     /* 1순위(ling)가 붐빌 때 25초 넘게 걸려 IMSA 가 연달아 시간초과였습니다 */
-    const callMs = Math.min(32000, room);
+    const callMs = Math.min(ENGINE ? ENGINE.callMs : 32000, room);
     if (callMs < 12000) break;                  /* 한 번 돌릴 시간이 없으면 중단 */
-    await spend('card', model);
+    if (!ENGINE) await spend('card', model);
 
     /* 시계는 본문을 다 읽을 때까지 살려 둡니다. 머리글이 오자마자 껐더니,
        답을 천천히 흘려 보내는 모델에서 res.json() 이 하염없이 기다렸고
@@ -211,11 +222,11 @@ export async function makeCards(items, glossary, key, budgetMs) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), callMs);
     try {
-      const res = await fetch(OR_URL, {
+      const res = await fetch(engineUrl(), {
         method: 'POST', signal: ac.signal,
-        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        headers: engineHeaders(key),
         body: JSON.stringify({
-          model, temperature: 0.3, max_tokens: 9000,
+          model, temperature: 0.3, max_tokens: 9000, ...(ENGINE ? ENGINE.body : {}),
           messages: [{ role: 'system', content: OR_SYS }, { role: 'user', content: msg }],
         }),
       });
@@ -542,22 +553,22 @@ function deepParse(text) {
 async function deepAsk(sys, msg, key, deadline, capMs, parse) {
   let raw = '';
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
-  for (const model of await liveModels()) {
+  for (const model of ENGINE ? ENGINE.models : await liveModels()) {
     const room = deadline - Date.now() - 2000;
-    const callMs = Math.min(capMs, room);
+    const callMs = Math.min(ENGINE ? ENGINE.callMs : capMs, room);
     if (callMs < 10000) break;
-    await spend('deep', model);
+    if (!ENGINE) await spend('deep', model);
 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), callMs);
     try {
-      const res = await fetch(OR_URL, {
+      const res = await fetch(engineUrl(), {
         method: 'POST', signal: ac.signal,
-        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        headers: engineHeaders(key),
         body: JSON.stringify({
           /* 자세한 풀이는 카드보다 훨씬 깁니다. 6000 으로 뒀더니 생각 과정이
              한도를 다 먹고 본문이 한 글자도 안 나오는 일이 있었습니다. */
-          model, temperature: 0.3, max_tokens: 14000,
+          model, temperature: 0.3, max_tokens: 14000, ...(ENGINE ? ENGINE.body : {}),
           messages: [{ role: 'system', content: sys }, { role: 'user', content: msg }],
         }),
       });
@@ -590,7 +601,7 @@ export async function makeDeep(item, glossary, key, budgetMs) {
   /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
      원문 12초 + 모델 45초 = 57초가 되어 상한(60초)에 아슬아슬합니다. */
   const t0 = Date.now();
-  if (await spentToday() >= DEEP_STOP)
+  if (!ENGINE && await spentToday() >= DEEP_STOP)
     return { deep: null, reason: 'reserve', why: ['카드 몫 남김'] };
   const full = await articleText(item.link);
   const src = full || String(item.lead || '');
@@ -642,7 +653,7 @@ export async function makeDeepBatch(items, key, budgetMs) {
     return { deeps: one.deep ? [one.deep] : null, reason: one.reason, why: one.why, model: one.model };
   }
   const t0 = Date.now();
-  if (await spentToday() >= DEEP_STOP)
+  if (!ENGINE && await spentToday() >= DEEP_STOP)
     return { deeps: null, reason: 'reserve', why: ['카드 몫 남김'] };
   const fulls = await Promise.all(items.map(it => articleText(it.link)));
   const gl = [...new Set(nameGlossary(items.flatMap((it, n) =>

@@ -22,7 +22,7 @@ export const maxDuration = 60;
 
    SUPER GT 는 Crash.net 에 전용 피드가 없습니다. 스포츠카 전체 피드를
    쓰면 China GT 같은 다른 대회 기사가 SUPER GT 로 들어가서 뺐습니다. */
-const SERIES = [
+export const SERIES = [
   { k: 'f1',   feed: 'f1',      crash: 'f1' },
   { k: 'wec',  feed: 'wec',     crash: 'sportscars' },
   { k: 'imsa', feed: 'imsa',    crash: 'sportscars' },
@@ -93,7 +93,7 @@ function parseRss(xml) {
 
 /* 앱의 fetchNews 와 같은 순서로 받아, 처음 성공한 곳의 앞 10건을 씁니다.
    앱이 화면에 올리는 기사와 정확히 같아야 카드가 제자리에 붙습니다. */
-async function gather(one) {
+export async function gather(one) {
   const urls = [
     'https://www.motorsport.com/rss/' + one.feed + '/news/',
     'https://www.autosport.com/rss/' + one.feed + '/news/',
