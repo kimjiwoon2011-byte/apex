@@ -2546,7 +2546,11 @@ const TERMS = [
    '大きな事故や悪天候でレースを一時中断すること。車はピットへ戻ります。'] },
 ];
 
-const NEWS_TTL = 3*24*3600*1000;
+/* 저장해 둔 기사 목록을 이만큼 지나면 새로 받습니다. 저장된 목록은 먼저 바로
+   보여 주고 뒤에서 받아 바꾸므로 기다림은 없습니다.
+   전에는 3일이라, F1 처럼 하루 열 건 넘게 올라오는 부문은 며칠 전 목록이 계속
+   보였고, 서버가 새 기사로 미리 만들어 둔 카드도 화면에 나오지 못했습니다. */
+const NEWS_TTL = 30*60*1000;
 let newsSeries = 'f1';
 /* 소식 보는 방식 — 목록 또는 카드뉴스 */
 let newsView = DB.get('newsView', 'list');
@@ -3961,7 +3965,7 @@ async function prefetchNews(){
       const fresh = c && Date.now() - c.at < NEWS_TTL;
       if(fresh && c.tr?.[L] && c.trd?.[L]) continue;   /* 번역까지 됐으면 넘어갑니다 */
       if(!fresh){
-        try{ c = { at: Date.now(), items: await fetchNews(k) }; DB.set('news3-'+k, c); }
+        try{ const old = c; c = { at: Date.now(), items: await fetchNews(k) }; carryCards(old, c); DB.set('news3-'+k, c); }
         catch(e){ continue; }
       }
       try{
@@ -4264,7 +4268,7 @@ async function homeNews(my){
     if(SERIES[s]?.noNews) continue;      /* 출처에 사진이 없어 소식에서 뺀 시리즈 */
     let c = DB.get('news3-'+s, null);
     if(!c || Date.now() - c.at > NEWS_TTL){
-      try{ c = { at:Date.now(), items: await fetchNews(s) }; DB.set('news3-'+s, c); }
+      try{ const old = c; c = { at:Date.now(), items: await fetchNews(s) }; carryCards(old, c); DB.set('news3-'+s, c); }
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
@@ -5106,7 +5110,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-02 · 번역 다듬기 2';
+const BUILD = '2026-10-02 · 기사 목록 30분마다';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
