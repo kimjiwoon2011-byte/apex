@@ -26,9 +26,16 @@ export const SERIES = [
   { k: 'f1',   feed: 'f1',      crash: 'f1' },
   { k: 'wec',  feed: 'wec',     crash: 'sportscars' },
   { k: 'imsa', feed: 'imsa',    crash: 'sportscars' },
-  { k: 'dtm',  feed: 'dtm',     crash: 'dtm' },
-  { k: 'sgt',  feed: 'supergt', crash: null },
-  { k: 'gt',   feed: 'gt',      crash: 'sportscars' },
+  /* 영어 매체에는 이 셋의 기사가 거의 없습니다(2026-10-02, 2주 동안 DTM 4건 ·
+     SUPER GT 0건 · GT 2건). 그 대회를 가장 많이 다루는 곳을 함께 받습니다 —
+     독일판 DTM 15건, 일본판 SUPER GT 22건, Sportscar365 GT 10건.
+     독일어·일본어 기사는 AI 가 바로 우리말로 옮깁니다. */
+  { k: 'dtm',  feed: 'dtm',     crash: 'dtm',
+    extra: [{ src: 'Motorsport.com DE', url: 'https://de.motorsport.com/rss/dtm/news/' }] },
+  { k: 'sgt',  feed: 'supergt', crash: null,
+    extra: [{ src: 'Motorsport.com JP', url: 'https://jp.motorsport.com/rss/supergt/news/' }] },
+  { k: 'gt',   feed: 'gt',      crash: 'sportscars',
+    extra: [{ src: 'Sportscar365', url: 'https://sportscar365.com/category/sro/feed/' }] },
 ];
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
@@ -94,25 +101,31 @@ function parseRss(xml, limit = CARDS_PER_SERIES) {
 
 /* 앱의 fetchNews 와 같은 순서로 받아, 처음 성공한 곳의 앞 10건을 씁니다.
    앱이 화면에 올리는 기사와 정확히 같아야 카드가 제자리에 붙습니다. */
+async function readFeed(u) {
+  try {
+    const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(9000) });
+    return r.ok ? parseRss(await r.text()) : [];
+  } catch (e) { return []; }
+}
+
 export async function gather(one) {
   const urls = [
     'https://www.motorsport.com/rss/' + one.feed + '/news/',
     'https://www.autosport.com/rss/' + one.feed + '/news/',
     one.crash ? 'https://www.crash.net/rss/' + one.crash : null,
   ].filter(Boolean);
-  for (const u of urls) {
-    try {
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 9000);
-      try {
-        const r = await fetch(u, { signal: ac.signal, headers: { 'User-Agent': UA } });
-        if (!r.ok) continue;
-        const items = parseRss(await r.text());
-        if (items.length) return items.slice(0, CARDS_PER_SERIES);
-      } finally { clearTimeout(timer); }
-    } catch (e) { /* 다음 곳으로 */ }
-  }
-  return [];
+  let main = [];
+  for (const u of urls) { main = await readFeed(u); if (main.length) break; }
+  if (!one.extra) return main.slice(0, CARDS_PER_SERIES);
+
+  /* 추가 출처를 합칩니다. 앱(fetchNews)도 똑같이 합쳐야 카드가 제자리에 붙습니다:
+     각 출처 앞 20건 → 주소로 겹침 제거(먼저 온 것) → 최신순 → 20건 */
+  const more = await Promise.all(one.extra.map(x => readFeed(x.url)));
+  const seen = new Set();
+  return main.concat(...more)
+    .filter(x => !seen.has(x.link) && seen.add(x.link))
+    .sort((a, b) => (b.when || 0) - (a.when || 0))
+    .slice(0, CARDS_PER_SERIES);
 }
 
 /* 화제성 점수에 쓰는, 다른 매체의 같은 부문 제목들 */

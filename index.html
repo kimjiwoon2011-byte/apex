@@ -1639,12 +1639,16 @@ const SERIES = {
   imsa: { name:'IMSA', full:['IMSA 웨더텍 스포츠카','IMSA WeatherTech'],     color:'#ff8a00', feed:'imsa',
           results:'https://www.imsa.com/weathertech/results/' },
   dtm:  { name:'DTM',  full:['도이체 투어렌바겐 마스터스','Deutsche Tourenwagen Masters'], color:'#ffc531', feed:'dtm',
+          /* 영어 매체엔 기사가 적어 독일판도 받습니다 (서버 api/cron.js 와 같은 출처) */
+          extra:[{ src:'Motorsport.com DE', proxy:'/api/msde/dtm/news', url:'https://de.motorsport.com/rss/dtm/news/' }],
           results:'https://www.dtm.com/en/results' },
   sgt:  { name:'SUPER GT', full:['슈퍼 GT','Super GT'],                     color:'#22c55e', feed:'supergt',
+          extra:[{ src:'Motorsport.com JP', proxy:'/api/msjp/supergt/news', url:'https://jp.motorsport.com/rss/supergt/news/' }],
           results:'https://supergt.net/en/race/result' },
   /* GT 월드 챌린지는 유럽·아시아·아메리카를 한데 묶었습니다.
      세 지역이 같은 뉴스 피드를 쓰고, 어느 지역 경기인지는 서킷으로 구분됩니다 */
   gt:   { name:'GT',   full:['GT 월드 챌린지','GT World Challenge'],         color:'#a855f7', feed:'gt',
+          extra:[{ src:'Sportscar365', proxy:'/api/s365/sro', url:'https://sportscar365.com/category/sro/feed/' }],
           results:'https://www.gt-world-challenge-europe.com/results' },
 };
 
@@ -2590,37 +2594,51 @@ function cleanLead(s){
     .slice(0, 900);
 }
 
+/* 피드 하나를 읽어 앞 20건 */
+async function readRss(u, src){
+  const ac = new AbortController();
+  const timer = setTimeout(()=>ac.abort(), 10000);
+  try{
+    const res = await fetch(u, {signal:ac.signal});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
+    const nodes = [...doc.querySelectorAll('item')];
+    if(!nodes.length) throw new Error('empty');
+    return nodes.slice(0,20).map(it=>({
+      title: stripTags(it.querySelector('title')?.textContent),
+      desc : cleanLead(stripTags(it.querySelector('description')?.textContent)),
+      link : (it.querySelector('link')?.textContent || '').split('?')[0],
+      img  : it.querySelector('enclosure')?.getAttribute('url') || '',
+      src,
+      at   : Date.parse(it.querySelector('pubDate')?.textContent || '') || Date.now(),
+    }));
+  }finally{ clearTimeout(timer); }
+}
+
 async function fetchNews(key){
   const feed = SERIES[key].feed;
   /* 자기 피드가 따로 있는 시리즈는 그걸 먼저 씁니다.
      실패하면 아래 공용 피드로 넘어갑니다 */
   const own = SERIES[key].feedUrl && HOSTED
     ? [{ src: SERIES[key].src || 'RSS', url: () => SERIES[key].feedUrl }] : [];
-  let lastErr;
+  let main = null, lastErr;
   for(const f of [...own, ...FEEDS]){
-    try{
-      const u = f.url(feed);
-      if(!u) continue;                    /* 이 시리즈에는 그 소스가 없습니다 */
-      const ac = new AbortController();
-      const timer = setTimeout(()=>ac.abort(), 10000);
-      const res = await fetch(u, {signal:ac.signal});
-      clearTimeout(timer);
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
-      const nodes = [...doc.querySelectorAll('item')];
-      if(!nodes.length) throw new Error('empty');
-      const all = nodes.map(it=>({
-        title: stripTags(it.querySelector('title')?.textContent),
-        desc : cleanLead(stripTags(it.querySelector('description')?.textContent)),
-        link : (it.querySelector('link')?.textContent || '').split('?')[0],
-        img  : it.querySelector('enclosure')?.getAttribute('url') || '',
-        src  : f.src,
-        at   : Date.parse(it.querySelector('pubDate')?.textContent || '') || Date.now(),
-      }));
-      return all.slice(0,20);
-    }catch(e){ lastErr = e; }
+    const u = f.url(feed);
+    if(!u) continue;                      /* 이 시리즈에는 그 소스가 없습니다 */
+    try{ main = await readRss(u, f.src); break; }catch(e){ lastErr = e; }
   }
-  throw lastErr;
+  const extra = SERIES[key].extra || [];
+  if(!extra.length){ if(main) return main; throw lastErr; }
+
+  /* DTM·SUPER GT·GT 는 추가 출처를 합칩니다. 서버(api/cron.js gather)와 똑같이 —
+     각 출처 앞 20건 → 주소로 겹침 제거(먼저 온 것) → 최신순 → 20건 */
+  const more = await Promise.all(extra.map(x => readRss(HOSTED ? x.proxy : x.url, x.src).catch(()=>[])));
+  const all = (main || []).concat(...more);
+  if(!all.length) throw lastErr || new Error('empty');
+  const seen = new Set();
+  return all.filter(x => !seen.has(x.link) && seen.add(x.link))
+            .sort((a,b)=> b.at - a.at)
+            .slice(0,20);
 }
 
 /* 제목 번역 — Google 번역 공개 엔드포인트(키 불필요, CORS 허용).
@@ -3272,7 +3290,7 @@ async function smartBoth(titles, leads){
 async function translateTitles(titles, target){
   /* 브라우저가 직접 부르면 구글이 막아 버립니다. 올려둔 사이트에서는 서버를 거칩니다 */
   const base = HOSTED ? '/api/tr/translate_a/single' : 'https://translate.googleapis.com/translate_a/single';
-  const url = base + '?client=gtx&sl=en&tl='
+  const url = base + '?client=gtx&sl=auto&tl='
             + target + '&dt=t&q=' + encodeURIComponent(titles.map(enFix).join('\n'));
   /* 잠깐 막히는 일이 잦아서 한 번은 쉬었다 다시 부릅니다 */
   let res;
@@ -5145,7 +5163,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-02 · 화제 기사만 카드로';
+const BUILD = '2026-10-03 · DTM·SUPER GT·GT 출처 추가';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

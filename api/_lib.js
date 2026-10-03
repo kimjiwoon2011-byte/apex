@@ -145,6 +145,9 @@ export const OR_SYS = [
   '  대로 적으면 같은 사람이 카드마다 다른 이름이 된다.',
   '  (Isack Hadjar 를 이자크 하다르 라고 쓰지 마라. Isack Hadjar 로 둬라.)',
   '- 이름이 아닌 보통 낱말은 반드시 우리말로 옮긴다.',
+  '- 기사가 독일어·일본어여도 우리말로 쓴다. 일본 사람·팀 이름(한자·가타카나)은',
+  '  한국에서 쓰는 소리대로 성 이름 순으로 쓴다(坪井翔 → 쓰보이 쇼).',
+  '  독일어 기사의 이름은 표기표에 없으면 원래 철자 그대로 둔다.',
   '- 원문의 강도를 바꾸지 마라. considers·plans·eyes 는 검토·추진, rumoured 는 설,',
   '  could·may 는 가능성이다. 정해지지 않은 일을 도입·확정이라고 쓰지 마라.',
   '- 자주 틀리는 말: shootout=슛아웃, wet=젖은 노면, lost his temper=격분,',
@@ -392,6 +395,8 @@ export const DEEP_SYS = [
   '- 원문의 강도를 바꾸지 마라. 검토·추진·설·가능성을 정해진 일처럼 쓰지 마라.',
   '- 원문 문장을 그대로 옮기지 마라. 따옴표 한 마디만 예외다.',
   '- 표기표에 있는 이름은 표기표대로 쓴다.',
+  '- 원문이 독일어·일본어여도 우리말로 쓴다. 일본 이름(한자·가타카나)은 한국에서 쓰는',
+  '  소리대로 성 이름 순으로 쓴다(坪井翔 → 쓰보이 쇼).',
   '- 표기표에 없는 사람·팀·서킷 이름은 한글로 옮기지 마라. 영어 그대로 둬라.',
   '  네가 소리 나는 대로 적으면 같은 사람이 글마다 다른 이름이 된다.',
   '  보기: Isack Hadjar 를 이자크 하다르 라고 적지 마라. Isack Hadjar 로 둬라.',
@@ -465,7 +470,7 @@ function paras(html, limit) {
    아무 제목이나 보내 공용 카드 표에 저장시킬 수 있었습니다.
    도메인 경계까지 봅니다 — 앞에 글자만 붙인 notmotorsport.com 은 안 됩니다. */
 export const isPublisherLink = link =>
-  /^https:\/\/(?:[\w-]+\.)*(?:motorsport\.com|autosport\.com|crash\.net)\//i.test(String(link || ''));
+  /^https:\/\/(?:[\w-]+\.)*(?:motorsport\.com|autosport\.com|crash\.net|sportscar365\.com)\//i.test(String(link || ''));
 
 export async function articleText(link) {
   const url = String(link || '').split('?')[0];
@@ -527,7 +532,8 @@ export async function articleText(link) {
      +1  같은 회사 매체(Autosport)도 다룸 — 거의 다 같이 실어서 약하게
      +2  우승·폴·사고·페널티·계약·이적·은퇴·부상·챔피언 같은 사건
      +1  큰 이름(베르스타펜·해밀턴·페라리·르망 …)
-     +2 / +1 / 0 / -2   24시간·3일·1주 이내 / 그보다 오래됨
+     +2 / +1 / 0 / -1   24시간·3일·1주 이내 / 1~2주 (SUPER GT·DTM 은 2~3주마다 경기라
+                         1주 넘은 경기 기사가 많아 -2 로 두니 거의 다 빠졌습니다)
      -5  시청 방법·일정표·생중계·사진·퀴즈·팟캐스트 같은 안내 글
      2주 넘은 기사는 빼고(SUPER GT 피드에 2024년 기사가 섞여 있었습니다),
      2점 이상만, 부문마다 F1 8건·나머지 4건까지 → 하루 약 20건.
@@ -542,6 +548,10 @@ const hotKeys = t => new Set((String(t).match(/[A-Z][A-Za-zÀ-ÿ'’-]{2,}/g) ||
   .map(w => w.replace(/['’]s$/, '')).filter(w => !HOT_STOP.has(w)));
 const HOT_BIG = /Verstappen|Hamilton|Leclerc|Norris|Piastri|Russell|Antonelli|Alonso|Hadjar|Ferrari|Red Bull|McLaren|Mercedes|Aston Martin|Toyota|Porsche|Cadillac|BMW|Penske|Ganassi|Le Mans|Daytona|Sebring|Spa|Suzuka|Fuji|Macau|Bathurst/i;
 const HOT_EVENT = /\b(wins?|won|victory|pole|crash(es|ed)?|penalt(y|ies|ised|ized)|disqualif\w*|ban(ned)?|fined?|champion(ship)?|title|clinch\w*|contract|sign(s|ed|ing)?|joins?|leav(e|es|ing)|exit|replac\w*|retire\w*|injur\w*|hospital|record|debut|protest|appeal\w*|investigat\w*|confirm(s|ed)?|announc\w*|deal|split|axed|dropped|seat)\b/i;
+/* 독일판 DTM · 일본판 SUPER GT 제목용. 일본어는 낱말 경계(\\b)가 없어 따로 둡니다 */
+const HOT_EVENT_X = /優勝|勝利|連勝|ポール|クラッシュ|事故|ペナルティ|失格|王者|王座|タイトル|チャンピオン|契約|移籍|引退|負傷|記録|デビュー|抗議|決定|発表|Sieg|siegt|gewinnt|gewonnen|Unfall|Strafe|disqualifiziert|Titel|Meister|Vertrag|wechselt|Abschied|verletzt|Rekord|Debüt|bestätigt|gibt .{0,40}auf/i;
+const HOT_BIG_X = /フェルスタッペン|ハミルトン|フェラーリ|トヨタ|ホンダ|日産|ニッサン|ポルシェ|TOM'?S|NISMO|ニスモ/i;
+const HOT_GUIDE_X = /タイムスケジュール|放送予定|ライブ配信|フォトギャラリー|写真特集|プレゼント|Zeitplan|TV-Übertragung|Livestream|Liveticker|Fotostrecke|Bildergalerie|Gewinnspiel|Verlosung|In eigener Sache/i;
 const HOT_GUIDE = /how to watch|schedule|start time|live (updates|blog|commentary)|as it happened|gallery|photos?\b|in pictures|podcast|quiz|weather forecast|tv times|entry list|\bresults?:|timetable/i;
 
 /* items: {title, link, when}, others: {as:[{title,when}], cn:[…]} → 고른 기사 (점수 높은 순) */
@@ -559,9 +569,10 @@ export function hotPicks(items, others, max) {
     if (age > 14 * 24) return null;
     const K = hotKeys(it.title);
     let s = (covered(K, cn) ? 2 : 0) + (covered(K, as) ? 1 : 0)
-          + (HOT_EVENT.test(it.title) ? 2 : 0) + (HOT_BIG.test(it.title) ? 1 : 0)
-          + (age < 24 ? 2 : age < 72 ? 1 : age < 168 ? 0 : -2)
-          - (HOT_GUIDE.test(it.title) ? 5 : 0);
+          + (HOT_EVENT.test(it.title) || HOT_EVENT_X.test(it.title) ? 2 : 0)
+          + (HOT_BIG.test(it.title) || HOT_BIG_X.test(it.title) ? 1 : 0)
+          + (age < 24 ? 2 : age < 72 ? 1 : age < 168 ? 0 : -1)
+          - (HOT_GUIDE.test(it.title) || HOT_GUIDE_X.test(it.title) ? 5 : 0);
     return { it, s };
   }).filter(x => x && x.s >= 2)
     .sort((a, b) => b.s - a.s || (b.it.when || 0) - (a.it.when || 0))
