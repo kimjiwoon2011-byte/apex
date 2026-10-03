@@ -3288,6 +3288,24 @@ async function smartBoth(titles, leads){
 
 
 async function translateTitles(titles, target){
+  /* 주소가 너무 길면 구글이 400 을 돌려줍니다. 일본어는 한 글자가 주소에서 9자로
+     늘어나, SUPER GT 제목+도입 40줄이 2만 4천 자가 되어 거절당했습니다.
+     8천 자 안쪽으로 나눠 부르고 이어 붙입니다. */
+  const groups = [[]];
+  let size = 0;
+  for(const t of titles){
+    const n = encodeURIComponent(enFix(t)).length + 3;
+    if(size + n > 8000 && groups[groups.length - 1].length){ groups.push([]); size = 0; }
+    groups[groups.length - 1].push(t);
+    size += n;
+  }
+  const outs = [];
+  for(const g of groups) outs.push(...await translateChunk(g, target));
+  /* 한국어일 때만 이름을 손봅니다 (일본어 표기는 데이터에 없습니다) */
+  return target === 'ko' ? outs.map(s => polish(koFix(postNames(s)))) : outs.map(polish);
+}
+
+async function translateChunk(titles, target){
   /* 브라우저가 직접 부르면 구글이 막아 버립니다. 올려둔 사이트에서는 서버를 거칩니다 */
   const base = HOSTED ? '/api/tr/translate_a/single' : 'https://translate.googleapis.com/translate_a/single';
   const url = base + '?client=gtx&sl=auto&tl='
@@ -3308,18 +3326,24 @@ async function translateTitles(titles, target){
   if(!res) throw new Error('translate blocked');
 
   const segs = (await res.json())[0] || [];
-  const outs = [];
-  let cur = '';
-  for(const seg of segs){
-    cur += String(seg[0] ?? '');
-    const breaks = (String(seg[1] ?? '').match(/\n/g) || []).length;
-    for(let i=0; i<breaks; i++){ outs.push(cur.replace(/\s+/g,' ').trim()); cur = ''; }
+  /* 줄바꿈이 번역문 안에 그대로 들어옵니다. 이어 붙여 줄로 나눕니다.
+     예전에는 덩어리마다 한 줄로 셌는데, 독일어는 여러 줄이 한 덩어리로 와서
+     줄 수가 안 맞았고(segment mismatch) DTM 제목이 하나도 번역되지 않았습니다. */
+  let outs = segs.map(seg => String(seg[0] ?? '')).join('').split('\n')
+                 .map(x => x.replace(/\s+/g,' ').trim());
+  if(outs.length !== titles.length){
+    /* 혹시 줄바꿈이 빠져 오면 예전처럼 덩어리로 셉니다 */
+    outs = [];
+    let cur = '';
+    for(const seg of segs){
+      cur += String(seg[0] ?? '');
+      const breaks = (String(seg[1] ?? '').match(/\n/g) || []).length;
+      for(let i=0; i<breaks; i++){ outs.push(cur.replace(/\s+/g,' ').trim()); cur = ''; }
+    }
+    if(cur.trim()) outs.push(cur.replace(/\s+/g,' ').trim());
   }
-  if(cur.trim()) outs.push(cur.replace(/\s+/g,' ').trim());
-
   if(outs.length !== titles.length) throw new Error('segment mismatch');
-  /* 한국어일 때만 이름을 손봅니다 (일본어 표기는 데이터에 없습니다) */
-  return target === 'ko' ? outs.map(s => polish(koFix(postNames(s)))) : outs.map(polish);
+  return outs;
 }
 
 /* 캐시에 해당 언어 번역이 없으면 받아와 저장합니다. 성공하면 true */
@@ -5163,7 +5187,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-03 · DTM·SUPER GT·GT 출처 추가';
+const BUILD = '2026-10-03 · 독일어·일본어 제목 번역';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
