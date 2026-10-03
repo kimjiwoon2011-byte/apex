@@ -9,7 +9,8 @@
  * 나란히 도니까 제일 오래 걸리는 부문만큼만 기다리면 됩니다.
  */
 import { makeCards, keyOf, loadExisting, saveCards, hotPicks, linkHash, HOT_MAX,
-         makeDeepBatch, deepIdOf, loadDeep, spentToday, dropOldSpend } from './_lib.js';
+         makeDeepBatch, deepIdOf, loadDeep, spentToday, dropOldSpend,
+         makeTitles, loadTitles, titleIdOf, dropOldTitles } from './_lib.js';
 
 export const maxDuration = 60;
 
@@ -203,14 +204,16 @@ export default async function handler(req, res) {
        이 줄은 화면에 나오지 않습니다. 표를 따로 만들지 않아도 됩니다. */
     const total = runs.reduce((n, r) => n + (r.made || 0), 0);
     const deepTotal = runs.reduce((n, r) => n + (r.deep || 0), 0);
+    const titleTotal = runs.reduce((n, r) => n + (r.titles || 0), 0);
     const used = await spentToday();
     await dropOldSpend();
+    await dropOldTitles();
     await saveCards([{
       id: '_run|cron',
       hook: '자동 갱신',
-      punch: total + '장·풀이' + deepTotal + '·호출' + used,
+      punch: total + '장·풀이' + deepTotal + '·제목' + titleTotal + '·호출' + used,
       /* 왜 0장인지도 남깁니다. 오류는 '!', 모델이 다 실패하면 '실패' */
-      line: runs.map(r => (r.series || '?') + ':' + (r.made || 0) + '+' + (r.deep || 0) +
+      line: runs.map(r => (r.series || '?') + ':' + (r.made || 0) + '+' + (r.deep || 0) + '+' + (r.titles || 0) +
                           (r.error ? '!' + String(r.error).replace(/^Error: /, '').slice(0, 8)
                            : r.note === 'daily-limit' ? '한도' : r.note === 'reserve' ? '아낌'
                            : r.note === 'all-models-failed' ? '실패' : ''))
@@ -226,7 +229,7 @@ export default async function handler(req, res) {
   const s = SERIES[i];
   const t0 = Date.now();
   const endAt = t0 + WORKER_MS;
-  const out = { series: s.k, made: 0, cached: 0, deep: 0 };
+  const out = { series: s.k, made: 0, cached: 0, deep: 0, titles: 0 };
 
   try {
     const items = await gather(s);
@@ -269,6 +272,22 @@ export default async function handler(req, res) {
       out.made += await saveCards(rows);
       out.model = made.model;
     }
+    /* 목록 제목 — 고른 기사만이 아니라 목록 20건 전부. 이미 옮긴 건 건너뛰므로
+       새 기사가 없으면 부르지 않습니다. 한 번(최대 34초)만 하고 남은 시간은 풀이에 줍니다 */
+    const named = await loadTitles(items.map(x => x.link));
+    const bare = items.filter(x => !named[titleIdOf(x.link)]);
+    const troom = endAt - Date.now();
+    if (bare.length && troom >= 20000) {
+      const tt = await makeTitles(bare, KEY, Math.min(troom - 2000, 34000));
+      if (tt.titles) {
+        const rows = [];
+        tt.titles.forEach((v, n) => {
+          if (v) rows.push({ id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: '', line: '', at: Date.now() });
+        });
+        out.titles = await saveCards(rows);
+      } else if (tt.why && tt.why.length) out.why = (out.why || []).concat('제목 ' + tt.why.join(','));
+    }
+
     /* 자세한 풀이를 미리 만들어 둡니다. 3건 묶음은 30초 가까이 걸리므로
        그만큼 남았을 때만 묶고, 모자라면 1건씩 합니다. 이미 있는 것은
        건너뜁니다. 못 한 기사는 다음 갱신이나 누가 눌렀을 때 만들어집니다. */
@@ -300,7 +319,7 @@ export default async function handler(req, res) {
 
   /* 무엇을 했는지 한 줄 남깁니다. 이게 없으면 자동 갱신이 돌았는지,
      어느 부문에서 멈췄는지 나중에 알 방법이 없습니다. */
-  console.log('cron ' + s.k + ' made=' + out.made + ' cached=' + out.cached + ' deep=' + out.deep
+  console.log('cron ' + s.k + ' made=' + out.made + ' cached=' + out.cached + ' deep=' + out.deep + ' titles=' + out.titles
               + (out.why && out.why.length ? ' why=' + out.why.join('|') : '')
               + (out.note ? ' note=' + out.note : '')
               + (out.error ? ' error=' + out.error : ''));

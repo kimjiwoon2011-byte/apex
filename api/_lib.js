@@ -619,14 +619,14 @@ function deepParse(text) {
 
 /* 풀이용으로 모델을 부릅니다. 앞 모델이 안 되면 다음 모델로 넘어갑니다.
    parse 가 쓸 만한 답이라고 돌려준 것만 받습니다. */
-async function deepAsk(sys, msg, key, deadline, capMs, parse) {
+async function deepAsk(sys, msg, key, deadline, capMs, parse, kind = 'deep') {
   let raw = '';
   const why = [];                     /* 모델마다 무엇 때문에 실패했는지 */
   for (const model of ENGINE ? ENGINE.models : await liveModels()) {
     const room = deadline - Date.now() - 2000;
     const callMs = Math.min(ENGINE ? ENGINE.callMs : capMs, room);
     if (callMs < 10000) break;
-    if (!ENGINE) await spend('deep', model);
+    if (!ENGINE) await spend(kind, model);
 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), callMs);
@@ -768,4 +768,96 @@ export async function makeDeepBatch(items, key, budgetMs) {
   });
   return { deeps: deeps.some(Boolean) ? deeps : null, model: r.model, why,
            reason: deeps.some(Boolean) ? undefined : 'mixed' };
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   목록 제목 — 화제 카드가 아닌 나머지 기사의 제목
+
+   목록 보기에서는 구글 번역 제목이 그대로 보였습니다. 직역이라
+   'In eigener Sache: Gewinner der DTM-Verlosung …' 이 "우리를 대신하여:
+   DTM 추첨의 우승자가 선정되었습니다" 가 됐습니다 (10/3, 실제 화면).
+   한 부문 20건을 한 번에 AI 로 옮기면 호출 1회입니다. 이미 옮긴 기사는
+   건너뛰므로, 부를 일은 새 기사가 올라왔을 때뿐입니다.
+   앱은 이게 있으면 구글 번역 대신 씁니다. 없으면 지금처럼 구글 번역입니다. */
+export const TITLE_STOP = 30;     /* 이만큼 쓰면 제목은 멈춥니다 — 카드(50)·풀이(35)가 먼저 */
+export const titleIdOf = link => 'ti|' + linkHash(link);
+
+export const TITLE_SYS = [
+  '너는 한국 모터스포츠 뉴스 편집자다.',
+  '영어·독일어·일본어 기사 제목을 받아 우리말 기사 제목으로 옮긴다.',
+  '',
+  '── 규칙 ──',
+  '- 직역하지 마라. 한국 스포츠 기사 제목처럼 짧고 자연스럽게 쓴다.',
+  '- 뜻은 바꾸지 마라. 원문에 없는 사실·숫자·순위를 더하지 마라.',
+  '- ::: 뒤는 기사 도입부다. 제목 뜻이 애매할 때만 참고하고, 제목에 옮겨 담지 마라.',
+  '- 따옴표 속 말은 따옴표째 살리고, 말한 사람을 앞에 둔다.',
+  '- 사람·팀·서킷 이름은 표기표가 있으면 표기표대로 쓴다. 표기표에 없는 이름은',
+  '  원래 철자 그대로 둔다. 네가 소리 나는 대로 적으면 같은 사람이 제목마다 달라진다.',
+  '- 일본 사람·팀 이름(한자·가타카나)은 한국에서 쓰는 소리대로 성 이름 순으로 쓴다',
+  '  (坪井翔 → 쓰보이 쇼). 한자·가나를 남기지 마라.',
+  '- 원문의 강도를 바꾸지 마라. 검토·추진·설·가능성을 정해진 일처럼 쓰지 마라.',
+  '- 자주 틀리는 말: stewards=심판진, team principal=팀 대표, podium=포디엄,',
+  '  pole=폴 포지션, shootout=슛아웃, restart=리스타트, organisers=주최 측.',
+  '- 존댓말·마침표·느낌표 금지. 끝은 명사나 짧은 서술로 맺는다.',
+  '',
+  '── 보기 ── (보기 문구를 그대로 쓰지 마라)',
+  '입력 [1] Leclerc explains vision issue after Monza crash',
+  '출력 [1] 르클레르, 몬차 사고 원인은 "잠깐의 시야 문제"',
+  '입력 [2] Why Porsche\'s IMSA title defence is under threat',
+  '출력 [2] 포르쉐 IMSA 타이틀 방어에 빨간불, 이유는',
+  '입력 [3] Rast verzichtet auf Testfahrten in Hockenheim',
+  '출력 [3] 라스트, 호켄하임 테스트 불참',
+  '',
+  '── 출력 ──  [번호] 제목',
+  '번호 하나당 한 줄. 합치거나 빠뜨리지 마라. 생각 과정을 쓰지 마라.',
+].join('\n');
+
+/* 이미 옮겨 둔 제목을 찾아옵니다 — { 'ti|지문': 제목 } */
+export async function loadTitles(links) {
+  const { url, headers } = sbConf();
+  const out = {};
+  if (!links.length) return out;
+  try {
+    const ids = links.map(titleIdOf).map(a => '"' + a + '"').join(',');
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + encodeURIComponent(ids) + ')&select=id,hook', { headers });
+    if (r.ok) (await r.json()).forEach(row => { out[row.id] = row.hook || ''; });
+  } catch (e) { /* 없으면 빈손으로 */ }
+  return out;
+}
+
+/* 쓸 만한 제목인지. 한자·가나가 남았거나 도입부까지 옮겼으면 버립니다 */
+const titleOk = s => !!s && s.length <= 90 && /[가-힣]/.test(s) && !garbled(s)
+  && !/[\u3040-\u30FF\u4E00-\u9FFF]/.test(s) && !s.includes(':::');
+
+/* 기사 묶음의 제목을 옮깁니다. 못 옮긴 자리는 null */
+export async function makeTitles(items, key, budgetMs) {
+  const t0 = Date.now();
+  if (!ENGINE && await spentToday() >= TITLE_STOP)
+    return { titles: null, reason: 'reserve', why: ['카드·풀이 몫 남김'] };
+  const gl = nameGlossary(items.map(it => it.title + ' ' + (it.lead || '')), 60);
+  const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title
+    + (it.lead ? OR_SEP + String(it.lead).slice(0, 160) : '')).join('\n');
+  const msg = (gl.length ? '아래 이름은 반드시 이 표기를 써라:\n' + gl.join('\n') + '\n\n' : '') + body;
+
+  const r = await deepAsk(TITLE_SYS, msg, key, t0 + budgetMs, 32000, txt => {
+    const got = orParse(txt, items.length);
+    if (!got) return null;
+    const out = got.map(s => {
+      const v = applyNames(String(s || '').replace(/[.。]$/, '').trim());
+      return titleOk(v) ? v : null;
+    });
+    return out.some(Boolean) ? out : null;
+  }, 'title');
+  if (!r.got) return { titles: null, reason: r.reason, why: r.why };
+  return { titles: r.got, model: r.model };
+}
+
+/* 한 달 지난 제목은 지웁니다. 목록에서 밀려난 지 오래라 다시 볼 일이 없습니다 */
+export async function dropOldTitles() {
+  const { url, headers } = sbConf();
+  try {
+    await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent('ti|') + '*&at=lt.' +
+      (Date.now() - 30 * 86400000), { method: 'DELETE', headers });
+  } catch (e) { /* 다음 번에 지웁니다 */ }
 }

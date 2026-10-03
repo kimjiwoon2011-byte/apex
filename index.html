@@ -2929,6 +2929,27 @@ const SPORTSCAR_NAMES = [
   ['SUPER GT','슈퍼 GT'], ['Super GT','슈퍼 GT'],
   ['Ritomo Miyata','미야타 리토모'], ['Miyata','미야타'],
   ['Ronnie Quintarelli','로니 퀸타렐리'], ['Quintarelli','퀸타렐리'],
+  /* 일본판 기사의 한자 이름. AI 가 한자를 짐작으로 읽어 塚越広大 를 '쓰카고쇼',
+     吉本大樹 를 '요시모토 다이키'(실제는 히로키)로 옮겼습니다. 표기는 위 영어 표와 같게 */
+  ['山本尚貴','야마모토 나오키'], ['野尻智紀','노지리 도모키'], ['福住仁嶺','후쿠즈미 니레이'],
+  ['坪井翔','쓰보이 쇼'], ['山下健太','야마시타 겐타'], ['塚越広大','쓰카코시 고다이'],
+  ['千代勝正','지요 가쓰마사'], ['宮田莉朋','미야타 리토모'], ['牧野任祐','마키노 다다스케'],
+  ['太田格之進','오타 가쿠노신'], ['大湯都史樹','오유 도시키'], ['松下信治','마쓰시타 노부하루'],
+  ['大津弘樹','오쓰 히로키'], ['佐藤蓮','사토 렌'], ['高星明誠','다카보시 미쓰노리'],
+  ['佐々木大樹','사사키 다이키'], ['平手晃平','히라테 고헤이'], ['三宅淳詞','미야케 아쓰시'],
+  ['名取鉄平','나토리 뎃페이'], ['石浦宏明','이시우라 히로아키'], ['大嶋和也','오시마 가즈야'],
+  ['山内英輝','야마우치 히데키'], ['井口卓人','이구치 다쿠토'], ['国本雄資','구니모토 유지'],
+  ['阪口晴南','사카구치 세나'], ['小高一斗','고다카 가즈토'], ['関口雄飛','세키구치 유히'],
+  ['中山雄一','나카야마 유이치'], ['大草りき','오쿠사 리키'], ['吉本大樹','요시모토 히로키'],
+  ['伊沢拓也','이자와 다쿠야'], ['笹原右京','사사하라 우쿄'], ['木村偉織','기무라 이오리'],
+  ['小林可夢偉','고바야시 카무이'], ['角田裕毅','츠노다 유키'], ['岩佐歩夢','이와사 아유무'],
+  ['野中誠太','노나카 세이타'], ['平良響','다이라 히비키'], ['堤優威','쓰쓰미 유이'],
+  ['菅波冬悟','스가나미 도고'], ['小出峻','고이데 슌'], ['川合孝汰','가와이 고타'],
+  ['清水英志郎','시미즈 에이시로'], ['蒲生尚弥','가모 나오야'], ['片岡龍也','가타오카 다쓰야'],
+  ['谷口信輝','다니구치 노부테루'], ['新田守男','닛타 모리오'], ['高木真一','다카기 신이치'],
+  ['藤波清斗','후지나미 기요토'], ['富田竜一郎','도미타 류이치로'], ['佐藤公哉','사토 기미야'],
+  ['小林利徠斗','고바야시 리쿠토'], ['荒川麟','아라카와 린'], ['野村勇斗','노무라 유토'],
+  ['プレリュード','프렐류드'],
   /* GT·기타 스포츠카 */
   ['China GT','차이나 GT'],
   ['Ollie Millroy','올리 밀로이'], ['Millroy','밀로이'],
@@ -3031,7 +3052,10 @@ const NAME_MAP = (()=>{
   return pairs
     .filter(([en]) => en && en.length > 2 && !seen.has(en) && seen.add(en))
     .sort((a,b) => b[0].length - a[0].length)
-    .map(([en,ko]) => [new RegExp('\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, m => '\\' + m) + '\\b', 'g'), ko]);
+    /* 한자·가나 이름에는 \b 를 붙이지 않습니다. \b 는 영문 글자 경계라서
+       붙이면 일본어 문장 안에서 한 번도 안 맞습니다 */
+    .map(([en,ko]) => { const b = /[぀-鿿]/.test(en) ? '' : '\\b';
+      return [new RegExp(b + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, m => '\\' + m) + b, 'g'), ko]; });
 })();
 
 /* 번역이 끝난 한국어 문장에 남은 영어 이름만 한국어로 바꿉니다.
@@ -3353,6 +3377,10 @@ async function translateChunk(titles, target){
 /* 새로 받은 기사 목록에, 전에 만들어 둔 카드를 주소로 맞춰 옮겨 담습니다.
    기사 순서가 바뀌어도 주소가 같으면 그대로 따라옵니다. */
 function carryCards(old, data){
+  if(old && old.ti){
+    data.ti = {};
+    data.items.forEach(it => { const h = linkHash(it.link); if(old.ti[h]) data.ti[h] = old.ti[h]; });
+  }
   if(!old || !old.items || !old.hc) return;
   const by = {};
   (old.items || []).forEach((it, i) => {
@@ -3404,6 +3432,13 @@ function linkHash(link){
   for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return (h >>> 0).toString(36);
 }
+/* AI 가 옮겨 둔 목록 제목. 서버 자동 갱신과 PC 가 부문마다 20건을 한 번에 옮겨
+   'ti|지문' 으로 저장합니다. 구글 번역은 직역이라 "우리를 대신하여: DTM 추첨의
+   우승자가 선정되었습니다" 같은 제목이 나왔습니다. 없으면 null — 구글 번역을 씁니다 */
+const aiTitle = (data, it) => {
+  const v = L === 'ko' && data.ti && data.ti[linkHash(it.link)];
+  return v ? polish(koFix(postNames(v))) : null;
+};
 /* 이 부문에서 카드뉴스에 올릴 기사 번호(화제성 높은 순). 서버가 고른 목록을
    아직 못 받았으면 예전처럼 앞 10건입니다. */
 function pickIdx(key, data){
@@ -3485,6 +3520,25 @@ async function ensureTitles(key, data, onStep, noAi){
         changed = true;
         if(onStep) onStep();
       }catch(e2){}
+    }
+  }
+
+  /* 1-2단계 — AI 가 옮겨 둔 목록 제목. 아직 없는 기사만 물어봅니다 */
+  if(L === 'ko' && netSb()){
+    data.ti ||= {};
+    const miss = data.items.filter(it => !data.ti[linkHash(it.link)]);
+    if(miss.length){
+      try{
+        const q = miss.map(it => '"' + encodeURIComponent('ti|' + linkHash(it.link)) + '"').join(',');
+        const rows = await sb('cards?id=in.(' + q + ')&select=id,hook');
+        let n = 0;
+        (rows || []).forEach(r => { if(r.hook){ data.ti[String(r.id).slice(3)] = r.hook; n++; } });
+        if(n){
+          DB.set('news3-'+key, data);
+          changed = true;
+          if(onStep) onStep();
+        }
+      }catch(e){}
     }
   }
 
@@ -3924,7 +3978,7 @@ function paintDeck(data, titles, descs){
 
   items.forEach((it,k)=>{
     const i = idxs[k];                     /* 원래 기사 번호 — 번역·카드가 이 번호로 붙어 있습니다 */
-    const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
+    const title = nice?.[i] || aiTitle(data, it) || (titles?.[i] ? hl(titles[i]) : it.title);
     const lead  = niced?.[i] || descs?.[i] || it.desc || '';
     const card  = cards?.[i];
     /* 카드 문구가 있으면 훅·핵심·설명 세 단으로 그립니다.
@@ -4121,7 +4175,7 @@ function paintNews(data){
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
     const lead = niced?.[i] || descs?.[i] || it.desc || '';
-    const title = nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
+    const title = nice?.[i] || aiTitle(data, it) || (titles?.[i] ? hl(titles[i]) : it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
     if(i === 0 && it.img){
@@ -4349,7 +4403,7 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: (c.hs?.[L]?.[i]) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: (c.hs?.[L]?.[i]) || aiTitle(c, it) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
                                         td: (c.hsd?.[L]?.[i]) || c.trd?.[L]?.[i] || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
@@ -5187,7 +5241,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-03 · 독일어·일본어 제목 번역';
+const BUILD = '2026-10-03 · 목록 제목 AI 번역';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

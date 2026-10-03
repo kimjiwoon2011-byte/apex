@@ -1,4 +1,4 @@
-/* 내 PC 의 AI(Ollama)로 비어 있는 카드뉴스와 자세한 설명문을 채웁니다.
+/* 내 PC 의 AI(Ollama)로 비어 있는 카드뉴스·자세한 설명문·목록 제목을 채웁니다.
  *
  * 서버의 자동 갱신(하루 4번, 무료 AI 하루 50번)은 그대로 돌고, 이건 PC 가 켜져
  * 있을 때 돌아서 그 사이에 올라온 기사를 채웁니다. PC 의 AI 는 한도가 없어서
@@ -16,7 +16,7 @@
 import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
-         keyOf, deepIdOf, hotPicks, HOT_MAX } from '../api/_lib.js';
+         keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf } from '../api/_lib.js';
 import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
@@ -42,7 +42,7 @@ useEngine({ url: OLLAMA + '/v1/chat/completions', models: [MODEL], callMs: 18000
             body: { reasoning_effort: 'none' } });
 
 const t0 = Date.now();
-let cards = 0, deeps = 0;
+let cards = 0, deeps = 0, titles = 0;
 const notes = [];
 
 for (const s of SERIES) {
@@ -71,6 +71,16 @@ for (const s of SERIES) {
     cards += await saveCards(rows);
   }
 
+  /* 목록 제목 — 목록 20건 중 아직 안 옮긴 것을 한 번에 */
+  const named = await loadTitles(items.map(x => x.link));
+  const bare = items.filter(x => !named[titleIdOf(x.link)]);
+  if (bare.length) {
+    const r = await makeTitles(bare, '', 600000);
+    if (!r.titles) notes.push(s.k + ':제목실패');
+    else titles += await saveCards(r.titles.map((v, n) => v && {
+      id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: '', line: '', at: Date.now() }).filter(Boolean));
+  }
+
   /* 설명문 — 한 건씩. 묶으면 기사끼리 섞일 수 있고, PC 는 한도가 없어 묶을 이유가 없습니다 */
   const done = await loadDeep(picks.map(x => x.link));
   for (const it of picks.filter(x => !done[deepIdOf(x.link)])) {
@@ -87,7 +97,7 @@ for (const s of SERIES) {
 }
 
 const sec = Math.round((Date.now() - t0) / 1000);
-log('카드 ' + cards + ' · 풀이 ' + deeps + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
+log('카드 ' + cards + ' · 풀이 ' + deeps + ' · 제목 ' + titles + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
 /* 앱 밖에서도 PC 가 일했는지 볼 수 있게 서버 표에도 한 줄 */
-await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps).slice(0, 40),
+await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps + '·제목' + titles).slice(0, 40),
                    line: (sec + '초 ' + notes.join(' ')).slice(0, 120), at: Date.now() }]);
