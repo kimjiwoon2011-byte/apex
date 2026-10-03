@@ -3387,6 +3387,7 @@ function carryCards(old, data){
   if(old && old.ti){
     data.ti = {};
     data.items.forEach(it => { const h = linkHash(it.link); if(old.ti[h]) data.ti[h] = old.ti[h]; });
+    data.tiAt = old.tiAt;
   }
   if(!old || !old.items || !old.hc) return;
   const by = {};
@@ -3532,18 +3533,25 @@ async function ensureTitles(key, data, onStep, noAi){
     }
   }
 
-  /* 1-2단계 — AI 가 옮겨 둔 목록 제목. 아직 없는 기사만 물어봅니다 */
+  /* 1-2단계 — AI 가 옮겨 둔 목록 제목. 평소엔 아직 없는 기사만 물어보고,
+     30분마다 전부 다시 받습니다. 서버가 먼저 옮긴 제목을 PC 가 나중에 더
+     정확하게 고쳐 쓰는데, 한 번 받은 걸 계속 쓰면 그 고친 게 안 보입니다 */
   if(L === 'ko' && netSb()){
     data.ti ||= {};
-    const miss = data.items.filter(it => !data.ti[linkHash(it.link)]);
+    const all = Date.now() - (data.tiAt || 0) > NEWS_TTL;
+    const miss = all ? data.items : data.items.filter(it => !data.ti[linkHash(it.link)]);
     if(miss.length){
       try{
         const q = miss.map(it => '"' + encodeURIComponent('ti|' + linkHash(it.link)) + '"').join(',');
         const rows = await sb('cards?id=in.(' + q + ')&select=id,hook');
         let n = 0;
-        (rows || []).forEach(r => { if(r.hook){ data.ti[String(r.id).slice(3)] = r.hook; n++; } });
+        (rows || []).forEach(r => {
+          const h = String(r.id).slice(3);
+          if(r.hook && data.ti[h] !== r.hook){ data.ti[h] = r.hook; n++; }
+        });
+        if(all) data.tiAt = Date.now();
+        if(n || all) DB.set('news3-'+key, data);
         if(n){
-          DB.set('news3-'+key, data);
           changed = true;
           if(onStep) onStep();
         }
