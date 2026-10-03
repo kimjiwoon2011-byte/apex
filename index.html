@@ -3441,7 +3441,9 @@ function linkHash(link){
 }
 /* AI 가 옮겨 둔 목록 제목. 서버 자동 갱신과 PC 가 부문마다 20건을 한 번에 옮겨
    'ti|지문' 으로 저장합니다. 구글 번역은 직역이라 "우리를 대신하여: DTM 추첨의
-   우승자가 선정되었습니다" 같은 제목이 나왔습니다. 없으면 null — 구글 번역을 씁니다 */
+   우승자가 선정되었습니다" 같은 제목이 나왔습니다. 없으면 null — 구글 번역을 씁니다.
+   화제 카드가 있는 기사도 목록·기사 화면에서는 이걸 먼저 씁니다. 카드 문구(훅+핵심)를
+   이어 붙이면 "신기록 달성 순간 톰 칼렌더 기록 경신" 처럼 제목으로는 어색했습니다 */
 const aiTitle = (data, it) => {
   const v = L === 'ko' && data.ti && data.ti[linkHash(it.link)];
   return v ? polish(koFix(postNames(v))) : null;
@@ -3985,7 +3987,7 @@ function paintDeck(data, titles, descs){
 
   items.forEach((it,k)=>{
     const i = idxs[k];                     /* 원래 기사 번호 — 번역·카드가 이 번호로 붙어 있습니다 */
-    const title = nice?.[i] || aiTitle(data, it) || (titles?.[i] ? hl(titles[i]) : it.title);
+    const title = aiTitle(data, it) || nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
     const lead  = niced?.[i] || descs?.[i] || it.desc || '';
     const card  = cards?.[i];
     /* 카드 문구가 있으면 훅·핵심·설명 세 단으로 그립니다.
@@ -4182,7 +4184,7 @@ function paintNews(data){
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
     const lead = niced?.[i] || descs?.[i] || it.desc || '';
-    const title = nice?.[i] || aiTitle(data, it) || (titles?.[i] ? hl(titles[i]) : it.title);
+    const title = aiTitle(data, it) || nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
     if(i === 0 && it.img){
@@ -4410,7 +4412,7 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: (c.hs?.[L]?.[i]) || aiTitle(c, it) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: aiTitle(c, it) || (c.hs?.[L]?.[i]) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
                                         td: (c.hsd?.[L]?.[i]) || c.trd?.[L]?.[i] || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
