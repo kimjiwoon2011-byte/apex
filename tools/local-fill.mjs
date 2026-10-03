@@ -71,14 +71,16 @@ for (const s of SERIES) {
     cards += await saveCards(rows);
   }
 
-  /* 목록 제목 — 목록 20건 중 아직 안 옮긴 것을 한 번에 */
+  /* 목록 제목 — 아직 안 옮긴 것과 서버가 옮긴 것을 한 번에.
+     서버 무료 AI(ling-flash)는 20건을 한꺼번에 받으면 가끔 다른 기사의 따옴표 말을
+     섞거나 이름을 지어냈습니다(10/3, 40건 중 3건). PC 의 AI 가 더 정확해서 다시 옮깁니다 */
   const named = await loadTitles(items.map(x => x.link));
-  const bare = items.filter(x => !named[titleIdOf(x.link)]);
+  const bare = items.filter(x => { const g = named[titleIdOf(x.link)]; return !g || g.by !== 'pc'; });
   if (bare.length) {
     const r = await makeTitles(bare, '', 600000);
     if (!r.titles) notes.push(s.k + ':제목실패');
     else titles += await saveCards(r.titles.map((v, n) => v && {
-      id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: '', line: '', at: Date.now() }).filter(Boolean));
+      id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: 'pc', line: '', at: Date.now() }).filter(Boolean));
   }
 
   /* 설명문 — 한 건씩. 묶으면 기사끼리 섞일 수 있고, PC 는 한도가 없어 묶을 이유가 없습니다 */

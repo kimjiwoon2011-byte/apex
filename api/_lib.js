@@ -816,15 +816,15 @@ export const TITLE_SYS = [
   '번호 하나당 한 줄. 합치거나 빠뜨리지 마라. 생각 과정을 쓰지 마라.',
 ].join('\n');
 
-/* 이미 옮겨 둔 제목을 찾아옵니다 — { 'ti|지문': 제목 } */
+/* 이미 옮겨 둔 제목을 찾아옵니다 — { 'ti|지문': { t: 제목, by: 'pc' 이면 PC 가 옮긴 것 } } */
 export async function loadTitles(links) {
   const { url, headers } = sbConf();
   const out = {};
   if (!links.length) return out;
   try {
     const ids = links.map(titleIdOf).map(a => '"' + a + '"').join(',');
-    const r = await fetch(url + '/rest/v1/cards?id=in.(' + encodeURIComponent(ids) + ')&select=id,hook', { headers });
-    if (r.ok) (await r.json()).forEach(row => { out[row.id] = row.hook || ''; });
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + encodeURIComponent(ids) + ')&select=id,hook,punch', { headers });
+    if (r.ok) (await r.json()).forEach(row => { out[row.id] = { t: row.hook || '', by: row.punch || '' }; });
   } catch (e) { /* 없으면 빈손으로 */ }
   return out;
 }
