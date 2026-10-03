@@ -3543,11 +3543,11 @@ async function ensureTitles(key, data, onStep, noAi){
     if(miss.length){
       try{
         const q = miss.map(it => '"' + encodeURIComponent('ti|' + linkHash(it.link)) + '"').join(',');
-        const rows = await sb('cards?id=in.(' + q + ')&select=id,hook');
+        const rows = await sb('cards?id=in.(' + q + ')&select=id,line');
         let n = 0;
         (rows || []).forEach(r => {
           const h = String(r.id).slice(3);
-          if(r.hook && data.ti[h] !== r.hook){ data.ti[h] = r.hook; n++; }
+          if(r.line && data.ti[h] !== r.line){ data.ti[h] = r.line; n++; }
         });
         if(all) data.tiAt = Date.now();
         if(n || all) DB.set('news3-'+key, data);

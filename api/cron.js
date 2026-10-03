@@ -282,7 +282,7 @@ export default async function handler(req, res) {
       if (tt.titles) {
         const rows = [];
         tt.titles.forEach((v, n) => {
-          if (v) rows.push({ id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: '', line: '', at: Date.now() });
+          if (v) rows.push({ id: titleIdOf(bare[n].link), hook: '', punch: '', line: v.slice(0, 120), at: Date.now() });
         });
         out.titles = await saveCards(rows);
       } else if (tt.why && tt.why.length) out.why = (out.why || []).concat('제목 ' + tt.why.join(','));

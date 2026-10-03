@@ -80,7 +80,7 @@ for (const s of SERIES) {
     const r = await makeTitles(bare, '', 600000);
     if (!r.titles) notes.push(s.k + ':제목실패');
     else titles += await saveCards(r.titles.map((v, n) => v && {
-      id: titleIdOf(bare[n].link), hook: v.slice(0, 90), punch: 'pc', line: '', at: Date.now() }).filter(Boolean));
+      id: titleIdOf(bare[n].link), hook: '', punch: 'pc', line: v.slice(0, 120), at: Date.now() }).filter(Boolean));
   }
 
   /* 설명문 — 한 건씩. 묶으면 기사끼리 섞일 수 있고, PC 는 한도가 없어 묶을 이유가 없습니다 */

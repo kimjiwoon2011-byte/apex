@@ -782,6 +782,9 @@ export async function makeDeepBatch(items, key, budgetMs) {
    앱은 이게 있으면 구글 번역 대신 씁니다. 없으면 지금처럼 구글 번역입니다. */
 export const TITLE_STOP = 30;     /* 이만큼 쓰면 제목은 멈춥니다 — 카드(50)·풀이(35)가 먼저 */
 export const titleIdOf = link => 'ti|' + linkHash(link);
+/* 제목은 line 칸에 둡니다. 표의 길이 규칙(cards_len)이 hook·punch 는 40자,
+   line 은 120자라서, hook 에 넣었더니 긴 제목이 섞인 묶음이 통째로 저장되지
+   않았습니다 (10/3 PC 채우기에서 F1·WEC·IMSA·SUPER GT 0건) */
 
 export const TITLE_SYS = [
   '너는 한국 모터스포츠 뉴스 편집자다.',
@@ -823,14 +826,14 @@ export async function loadTitles(links) {
   if (!links.length) return out;
   try {
     const ids = links.map(titleIdOf).map(a => '"' + a + '"').join(',');
-    const r = await fetch(url + '/rest/v1/cards?id=in.(' + encodeURIComponent(ids) + ')&select=id,hook,punch', { headers });
-    if (r.ok) (await r.json()).forEach(row => { out[row.id] = { t: row.hook || '', by: row.punch || '' }; });
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + encodeURIComponent(ids) + ')&select=id,line,punch', { headers });
+    if (r.ok) (await r.json()).forEach(row => { out[row.id] = { t: row.line || '', by: row.punch || '' }; });
   } catch (e) { /* 없으면 빈손으로 */ }
   return out;
 }
 
 /* 쓸 만한 제목인지. 한자·가나가 남았거나 도입부까지 옮겼으면 버립니다 */
-const titleOk = s => !!s && s.length <= 90 && /[가-힣]/.test(s) && !garbled(s)
+const titleOk = s => !!s && s.length <= 120 && /[가-힣]/.test(s) && !garbled(s)
   && !/[\u3040-\u30FF\u4E00-\u9FFF]/.test(s) && !s.includes(':::');
 
 /* 기사 묶음의 제목을 옮깁니다. 못 옮긴 자리는 null */
