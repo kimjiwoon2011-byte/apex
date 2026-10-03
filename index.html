@@ -2698,6 +2698,9 @@ const KO_FIX = [
   [/레스트아트/g, '리스타트'], [/포드럼/g, '포디엄'], [/도요타/g, '토요타'],
   [/밀로리/g, '밀로이'], [/롭 하토그|하토그/g, '룩 하르토흐'], [/필리페 마사/g, '펠리페 마사'],
   [/드라이버스 standings/g, '드라이버 순위'], [/\bstandings\b/gi, '순위'],
+  /* 10/3 목록 제목 검수 */
+  [/드뢰르/g, '되르'], [/그래서 (팀|레이싱)/g, '그라서 $1'], [/스테파네 라텔/g, '스테판 라텔'],
+  [/리온스피드/g, '라이온스피드'],
 ];
 /* 구글 번역은 이름을 "조지 러셀(George Russell)" 처럼 원문을 괄호에 남겨 둡니다.
    거기에 이름 사전이 괄호 안까지 바꿔서 "조지 러셀(조지 러셀)"이 됩니다.
@@ -2916,6 +2919,10 @@ const SPORTSCAR_NAMES = [
   ['Tom Kalender','톰 칼렌더'], ['Kalender','칼렌더'],
   ['Renger van der Zande','렝어르 판 데르 잔더'], ['van der Zande','판 데르 잔더'],
   ['Matteo Cairoli','마테오 카이롤리'], ['Cairoli','카이롤리'],
+  /* 서버 AI 가 Grasser 를 '그래서 팀'으로 옮겼습니다 (10/3) */
+  ['Grasser Racing Team','그라서 레이싱 팀'], ['Grasser','그라서'],
+  ['Stéphane Ratel','스테판 라텔'], ['Stephane Ratel','스테판 라텔'], ['Ratel','라텔'],
+  ['Lionspeed','라이온스피드'],
   ['Winward','윈워드'], ['Landgraf','란트그라프'],
   /* SUPER GT */
   ['Naoki Yamamoto','야마모토 나오키'], ['Yamamoto','야마모토'],
