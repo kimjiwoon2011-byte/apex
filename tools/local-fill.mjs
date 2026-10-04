@@ -30,11 +30,18 @@ const log = m => {
   try { appendFileSync(LOG, line + '\n'); } catch (e) { /* 기록 실패는 넘어갑니다 */ }
 };
 
-/* Ollama 가 꺼져 있으면(PC 를 막 켰을 때 등) 조용히 끝냅니다 */
-try {
-  const r = await fetch(OLLAMA + '/api/version', { signal: AbortSignal.timeout(3000) });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-} catch (e) {
+/* Ollama 가 뜰 때까지 3분까지 기다립니다. PC 를 켜면 로그인 3분 뒤에 도는데,
+   그때 Ollama 가 아직 안 떠 있으면 바로 끝나 다음 정각까지 한 시간을 그냥
+   보냈습니다 (10/3 03:47). 3분이 지나도 없으면 꺼 둔 것으로 보고 끝냅니다 */
+let up = false;
+for (let i = 0; i < 18 && !up; i++) {
+  try {
+    const r = await fetch(OLLAMA + '/api/version', { signal: AbortSignal.timeout(3000) });
+    up = r.ok;
+  } catch (e) { /* 아직 안 뜸 */ }
+  if (!up) await new Promise(r => setTimeout(r, 10000));
+}
+if (!up) {
   log('Ollama 꺼져 있음 — 건너뜀');
   process.exit(0);
 }
