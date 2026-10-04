@@ -3483,6 +3483,11 @@ const aiTitle = (data, it) => {
   const v = L === 'ko' && data.ti && data.ti[linkHash(it.link)];
   return v ? polish(koFix(postNames(v))) : null;
 };
+/* 그릴 때 이름표를 한 번 더 입힙니다. 받아 둔 카드·번역은 받을 때의 이름표로만
+   고쳐져 있어서, 그 뒤에 PC 가 배운 이름(loadLearnedNames)이 안 바뀌었습니다
+   (10/4 목록 도입부의 Frederik Vesti·Turner Motorsport). 영어 이름만 바꾸므로
+   여러 번 입혀도 같습니다 */
+const nm = s => L === 'ko' ? fixJosa(postNames(s)) : String(s || '');
 /* 이 부문에서 카드뉴스에 올릴 기사 번호(화제성 높은 순). 서버가 고른 목록을
    아직 못 받았으면 예전처럼 앞 10건입니다. */
 function pickIdx(key, data){
@@ -4029,9 +4034,10 @@ function paintDeck(data, titles, descs){
 
   items.forEach((it,k)=>{
     const i = idxs[k];                     /* 원래 기사 번호 — 번역·카드가 이 번호로 붙어 있습니다 */
-    const title = aiTitle(data, it) || nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
-    const lead  = niced?.[i] || descs?.[i] || it.desc || '';
-    const card  = cards?.[i];
+    const title = aiTitle(data, it) || nm(nice?.[i]) || (titles?.[i] ? hl(titles[i]) : it.title);
+    const lead  = nm(niced?.[i] || descs?.[i]) || it.desc || '';
+    const c0    = cards?.[i];
+    const card  = c0 && c0.p ? { h: nm(c0.h), p: nm(c0.p), d: nm(c0.d) } : c0;
     /* 카드 문구가 있으면 훅·핵심·설명 세 단으로 그립니다.
        AI가 다듬은 짧은 핵심이 제일 좋지만, 키가 없거나 하루 한도를 다 쓴 날에는
        못 받습니다. 그때도 카드뉴스 모양을 유지하려고 번역된 제목을 그대로 핵심에
@@ -4225,8 +4231,8 @@ function paintNews(data){
   const key = newsSeries;
   if(newsView === 'card'){ paintDeck(data, titles, descs); return; }
   data.items.forEach((it,i)=>{
-    const lead = niced?.[i] || descs?.[i] || it.desc || '';
-    const title = aiTitle(data, it) || nice?.[i] || (titles?.[i] ? hl(titles[i]) : it.title);
+    const lead = nm(niced?.[i] || descs?.[i]) || it.desc || '';
+    const title = aiTitle(data, it) || nm(nice?.[i]) || (titles?.[i] ? hl(titles[i]) : it.title);
 
     /* 맨 위 기사는 사진을 크게 써서 무엇이 오늘의 소식인지 한눈에 보이게 합니다 */
     if(i === 0 && it.img){
@@ -4454,8 +4460,8 @@ async function homeNews(my){
       catch(e){ if(!c) continue; }
     }
     await ensureTitles(s, c);
-    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: aiTitle(c, it) || (c.hs?.[L]?.[i]) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
-                                        td: (c.hsd?.[L]?.[i]) || c.trd?.[L]?.[i] || it.desc || '' }));
+    c.items.forEach((it,i)=> out.push({ ...it, series:s, tt: aiTitle(c, it) || nm(c.hs?.[L]?.[i]) || (c.tr?.[L]?.[i] ? hl(c.tr[L][i]) : it.title),
+                                        td: nm(c.hsd?.[L]?.[i] || c.trd?.[L]?.[i]) || it.desc || '' }));
   }
   out.sort((a,b)=> (b.at||0) - (a.at||0));
 
