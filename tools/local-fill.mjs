@@ -18,7 +18,7 @@ import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
          keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf,
-         leftoverNames, decidedNames, learnNames } from '../api/_lib.js';
+         leftoverNames, sourceNames, decidedNames, learnNames } from '../api/_lib.js';
 import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
@@ -108,6 +108,9 @@ for (const s of SERIES) {
     const ko = [c && [c.h, c.p, c.d].join(' '), t && t.t, d && [d.what, d.why, d.note].join(' ')]
       .filter(Boolean).join(' ');
     for (const w of leftoverNames(ko)) if (!cand.has(w)) cand.set(w, it.title.slice(0, 100));
+    /* 영어 원문의 이름도 — 구글 번역 도입부에 영어로 남는 이름 (독일어·일본어 원문은 뺌) */
+    if (!/de\.motorsport|jp\.motorsport/.test(it.link))
+      for (const w of sourceNames(it.title, it.lead)) if (!cand.has(w)) cand.set(w, it.title.slice(0, 100));
   }
 }
 

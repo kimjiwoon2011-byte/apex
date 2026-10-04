@@ -946,6 +946,37 @@ export function leftoverNames(ko) {
   return [...out];
 }
 
+/* 영어 원문(제목·도입부)에 나오는 '두 낱말 이상' 이름. 구글 번역 도입부에는 이름이
+   영어로 남는데(Robby Foley·Toby Sowery), AI 를 거치지 않아 위 leftoverNames 로는
+   못 찾습니다. 원문에서 미리 배워 두면 카드를 만들 때도 표기표로 넘어갑니다.
+   한 낱말짜리는 문장 첫 말·요일 같은 게 너무 많이 섞여 뺍니다. 낱말마다 대문자인
+   제목(Sportscar365 'Palou Joins Lone Star Racing')도 통째로 이름처럼 보여 뺍니다 */
+const NAME_STOP = new Set(('The A An And Or But For With From After Before About Into Over Under Why How What When ' +
+  'Where Who This That These Those His Her Their Its Our Your Will Can Could Should Would May Might Must Is Are ' +
+  'Was Were In On At By Of To As If It He She They We I Not No Yes All Both Each Every Despite While During ' +
+  'Since Until Watch Read Keep Here There Now Then Also Just Only Even Still So Than Following Ahead Inside Behind ' +
+  /* 이름 앞 직함 ('Team Principal Laurent Mekies' → 'Laurent Mekies') */
+  'Team Principal Boss Driver Drivers President Chairman Chief CEO Director Manager Champion Former Teammate').split(' '));
+const SRC_SEQ = /[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’-]*(?:\s+(?:van|de|der|da|di|von|du|[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’-]*))+/g;
+const titleCase = t => {
+  const ws = String(t).split(/\s+/).filter(w => /^[A-Za-z]{4,}/.test(w));
+  return ws.length >= 3 && ws.filter(w => /^[A-Z]/.test(w)).length / ws.length >= 0.7;
+};
+export function sourceNames(title, lead) {
+  const txt = (titleCase(title) ? '' : title + '. ') + String(lead || '').replace(/Keep reading/g, '');
+  const out = new Set();
+  for (const m of txt.match(SRC_SEQ) || []) {
+    const ws = m.split(/\s+/).map(x => x.replace(/['’]s$/, ''));
+    while (ws.length && NAME_STOP.has(ws[0])) ws.shift();
+    const w = ws.join(' ').replace(/(?:\s+(?:van|de|der|da|di|von|du))+$/, '').replace(/['’-]+$/, '');
+    if (w.length < 4 || w.length > 40 || ws.length < 2) continue;
+    if (w.split(/\s+/).every(x => /^[A-Z0-9][A-Z0-9'’-]*$/.test(x))) continue;
+    if (nameGlossary([w], 1).length) continue;
+    out.add(w);
+  }
+  return [...out];
+}
+
 const NAME_SYS = [
   '너는 한국 모터스포츠 매체의 외국어 표기 담당이다.',
   "줄마다 '외국어 ::: 그 말이 나온 기사 제목'을 받는다. 줄마다 답 하나만 쓴다.",
