@@ -993,6 +993,27 @@ const NAME_SYS = [
   '번호 하나당 한 줄. 설명을 붙이지 마라.',
 ].join('\n');
 
+/* 첫소리가 맞는지 — Random 은 ㄹ, European 은 ㅇ 으로 시작해야 합니다.
+   10/4 에 옆 줄 답이 밀려 와 'Random Vandals BMW M' 이 '마르쿠스 에릭슨',
+   'European Series' 가 '마세라티' 가 됐습니다. 그때까지 배운 141개에 돌려 보니
+   그 둘만 걸렸습니다. 낱말 수가 같으면 낱말마다, 다르면 첫 낱말만 봅니다 */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const FIRST_SOUND = {
+  A: 'ㅇ', E: 'ㅇ', I: 'ㅇ', O: 'ㅇ', U: 'ㅇ', Y: 'ㅇ', H: 'ㅎㅇ', W: 'ㅇㅂ', J: 'ㅈㅇㅎ',
+  B: 'ㅂㅃ', C: 'ㅋㅅㅊㅆㄲ', D: 'ㄷㄸ', F: 'ㅍ', G: 'ㄱㅈㅎㄲ', K: 'ㅋㄲ', L: 'ㄹ', M: 'ㅁ',
+  N: 'ㄴ', P: 'ㅍㅃ', Q: 'ㅋ', R: 'ㄹ', S: 'ㅅㅆㅈㅊ', T: 'ㅌㄸㅊㅅ', V: 'ㅂㅍ', X: 'ㅅㅈㅋㅎ', Z: 'ㅈㅊ',
+};
+function soundsLike(en, ko) {
+  const a = en.split(/\s+/).filter(w => !/^[A-Z0-9]+$/.test(w));     /* GT·BMW 같은 약어는 건너뜀 */
+  const b = ko.split(/\s+/).filter(w => /^[가-힣]/.test(w));
+  if (!a.length || !b.length) return true;
+  const pairs = a.length === b.length ? a.map((w, i) => [w, b[i]]) : [[a[0], b[0]]];
+  return pairs.every(([w, k]) => {
+    const want = FIRST_SOUND[w.normalize('NFD')[0].toUpperCase()];
+    return !want || want.includes(CHO[Math.floor((k.charCodeAt(0) - 0xAC00) / 588)]);
+  });
+}
+
 /* 말 묶음의 표기를 정해 표에 남기고, 바로 이름표에도 붙입니다. 남긴 줄을 돌려줍니다 */
 export async function learnNames(cands, key, budgetMs) {
   if (!cands.length) return [];
@@ -1010,6 +1031,7 @@ export async function learnNames(cands, key, budgetMs) {
     /* 낱말 수가 절반도 안 되면 다른 줄의 답이 밀려 온 것입니다
        (10/4 'GT World Challenge Europe Cup' → '막스 페르스타펜') */
     if (ko && ko.split(' ').length < Math.ceil(cands[i].w.split(/\s+/).length / 2)) return;
+    if (ko && !soundsLike(cands[i].w, ko)) return;
     rows.push({ id: LEARN + cands[i].w, hook: cands[i].w, punch: ko,
                 line: (how + ' ' + cands[i].ctx).slice(0, 120), at: Date.now() });
   });
