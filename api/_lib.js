@@ -20,9 +20,14 @@ const NAME_RE = NAME_PAIRS.map(([src, ko]) => [new RegExp(src, 'g'), ko]);
 const JOSA = { 은: ['은', '는'], 는: ['은', '는'], 이: ['이', '가'], 가: ['이', '가'],
                을: ['을', '를'], 를: ['을', '를'], 과: ['과', '와'], 와: ['과', '와'] };
 const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const KO_NAME_RE = new RegExp('(?<![가-힣])(' +
-  [...new Set(NAME_PAIRS.map(p => p[1]))].sort((a, b) => b.length - a.length).map(escRe).join('|') +
-  ')(으로|은|는|이|가|을|를|과|와|로)(?![가-힣])', 'g');
+/* 배운 이름(아래 loadLearned)이 붙으면 다시 만듭니다 */
+let KO_NAME_RE;
+function buildKoNameRe() {
+  KO_NAME_RE = new RegExp('(?<![가-힣])(' +
+    [...new Set(NAME_RE.map(p => p[1]))].sort((a, b) => b.length - a.length).map(escRe).join('|') +
+    ')(으로|은|는|이|가|을|를|과|와|로)(?![가-힣])', 'g');
+}
+buildKoNameRe();
 export function fixJosa(str) {
   return String(str || '').replace(KO_NAME_RE, (all, name, p) => {
     const c = name.charCodeAt(name.length - 1) - 0xAC00;
@@ -194,6 +199,7 @@ export const keyOf = link => 'ko|' + String(link || '').slice(0, 400).slice(-160
 
 /* 기사 묶음을 카드로 만듭니다. budgetMs 안에서만 움직입니다. */
 export async function makeCards(items, glossary, key, budgetMs) {
+  await loadLearned();
   const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
   /* 앱이 보낸 표가 없으면(자동 갱신) 서버가 직접 만듭니다 */
   const gl = (glossary && glossary.length) ? glossary
@@ -667,6 +673,7 @@ const named = d => ({ what: applyNames(d.what), why: applyNames(d.why), note: ap
 
 /* 기사 하나를 길게 풀어 씁니다 */
 export async function makeDeep(item, glossary, key, budgetMs) {
+  await loadLearned();
   /* 예산은 원문을 받는 시간부터 셉니다. 받은 뒤부터 세면 원문이 느린 날에
      원문 12초 + 모델 45초 = 57초가 되어 상한(60초)에 아슬아슬합니다. */
   const t0 = Date.now();
@@ -717,6 +724,7 @@ function deepSplit(text, n) {
 }
 
 export async function makeDeepBatch(items, key, budgetMs) {
+  await loadLearned();
   if (items.length === 1) {
     const one = await makeDeep(items[0], [], key, budgetMs);
     return { deeps: one.deep ? [one.deep] : null, reason: one.reason, why: one.why, model: one.model };
@@ -838,6 +846,7 @@ const titleOk = s => !!s && s.length <= 120 && /[가-힣]/.test(s) && !garbled(s
 
 /* 기사 묶음의 제목을 옮깁니다. 못 옮긴 자리는 null */
 export async function makeTitles(items, key, budgetMs) {
+  await loadLearned();
   const t0 = Date.now();
   if (!ENGINE && await spentToday() >= TITLE_STOP)
     return { titles: null, reason: 'reserve', why: ['카드·풀이 몫 남김'] };
@@ -866,4 +875,111 @@ export async function dropOldTitles() {
     await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent('ti|') + '*&at=lt.' +
       (Date.now() - 30 * 86400000), { method: 'DELETE', headers });
   } catch (e) { /* 다음 번에 지웁니다 */ }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   배운 이름 — 이름표에 없던 이름의 한글 표기
+
+   이름표에 없는 이름은 모델이 영어 그대로 둡니다. 소리 나는 대로 적게 하면 같은
+   사람이 카드마다 다르게 적히기 때문입니다. 그래서 'Vigna의 사실 강조' 처럼 영어가
+   남았고, 그때마다 손으로 이름표에 넣었습니다 (10/3·10/4 Grasser·Rossi·Vigna).
+   10/4 에 세어 보니 카드·제목·풀이에 영어로 남은 말이 201개였습니다.
+
+   PC 가 하루 한 번(tools/local-fill.mjs) 결과에 영어로 남은 말을 모아 AI 에게
+   한글 표기를 정하게 하고 '_nm|이름' 줄로 남깁니다. 서버와 앱은 그 줄을 이름표에
+   붙여 씁니다 — 한 번 정한 표기를 모두가 같이 쓰므로 카드마다 달라지지 않고,
+   이미 만든 카드도 화면에 그릴 때 바뀝니다.
+   틀린 표기는 그 줄의 punch 를 고치면 됩니다. 이름이 아니라고 본 말(skip)과
+   영어로 두는 상표(keep)도 줄로 남겨, 다음 날 다시 묻지 않습니다. */
+const LEARN = '_nm|';
+let learnedAt = 0;
+
+function addNames(pairs) {
+  const have = new Set(NAME_RE.map(([re]) => re.source));
+  let n = 0;
+  for (const [en, ko] of pairs) {
+    const src = '\\b' + escRe(en) + '\\b';
+    if (!en || !ko || have.has(src)) continue;
+    NAME_RE.push([new RegExp(src, 'g'), ko]);
+    have.add(src); n++;
+  }
+  if (n) {
+    NAME_RE.sort((a, b) => b[0].source.length - a[0].source.length);   /* 긴 이름 먼저 */
+    buildKoNameRe();
+  }
+  return n;
+}
+
+/* 한 시간에 한 번만 받아 옵니다 */
+export async function loadLearned() {
+  if (Date.now() - learnedAt < 3600000) return;
+  learnedAt = Date.now();
+  const { url, headers } = sbConf();
+  try {
+    const r = await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent(LEARN) + '*&punch=neq.&select=hook,punch', { headers });
+    if (r.ok) addNames((await r.json()).map(x => [x.hook, x.punch]));
+  } catch (e) { /* 못 받으면 원래 이름표만 씁니다 */ }
+}
+
+/* 이미 정한 말(한글·keep·skip 모두) — 다시 묻지 않으려고 */
+export async function decidedNames() {
+  const { url, headers } = sbConf();
+  try {
+    const r = await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent(LEARN) + '*&select=hook', { headers });
+    if (r.ok) return new Set((await r.json()).map(x => x.hook));
+  } catch (e) { /* 아래 빈 목록 */ }
+  return new Set();
+}
+
+/* 한국어 글에 영어로 남은 이름. 약어(DTM·GT3·FIA)와 이름표에 있는 것은 뺍니다 */
+const LATIN_SEQ = /[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’.-]*(?:\s+(?:van|de|der|da|di|von|du|[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’.-]*))*/g;
+export function leftoverNames(ko) {
+  const out = new Set();
+  for (const m of String(ko || '').match(LATIN_SEQ) || []) {
+    const w = m.replace(/(?:\s+(?:van|de|der|da|di|von|du))+$/, '').replace(/[.'’-]+$/, '');
+    if (w.length < 4 || w.length > 40) continue;
+    if (w.split(/\s+/).every(x => /^[A-Z0-9][A-Z0-9.'’-]*$/.test(x))) continue;
+    if (nameGlossary([w], 1).length) continue;
+    out.add(w);
+  }
+  return [...out];
+}
+
+const NAME_SYS = [
+  '너는 한국 모터스포츠 매체의 외국어 표기 담당이다.',
+  "줄마다 '외국어 ::: 그 말이 나온 기사 제목'을 받는다. 줄마다 답 하나만 쓴다.",
+  '',
+  '- 사람 이름: 국립국어원 외래어 표기법으로 한글로 쓴다. 그 사람 나라 말 소리를 따른다.',
+  '  이름과 성 순서는 받은 그대로 둔다. (Pierre Gasly → 피에르 가슬리)',
+  '- 팀·회사·자동차·서킷·대회 이름: 한국 매체가 쓰는 한글 표기로 쓴다.',
+  '  (Lone Star Racing → 론스타 레이싱, Maserati → 마세라티)',
+  '- 한국 매체도 영어 그대로 쓰는 스폰서 상표나 차 모델 코드는 KEEP 이라고 쓴다.',
+  '- 이름이 아니거나(This, Hour, Racing) 이름이 잘려 불완전하면 SKIP 이라고 쓴다.',
+  '- 확실하지 않으면 SKIP.',
+  '',
+  '── 출력 ──  [번호] 한글표기   또는   [번호] KEEP   또는   [번호] SKIP',
+  '번호 하나당 한 줄. 설명을 붙이지 마라.',
+].join('\n');
+
+/* 말 묶음의 표기를 정해 표에 남기고, 바로 이름표에도 붙입니다. 남긴 줄을 돌려줍니다 */
+export async function learnNames(cands, key, budgetMs) {
+  if (!cands.length) return [];
+  const msg = cands.map((c, i) => '[' + (i + 1) + '] ' + c.w + OR_SEP + c.ctx).join('\n');
+  const r = await deepAsk(NAME_SYS, msg, key, Date.now() + budgetMs, 60000, txt => orParse(txt, cands.length), 'name');
+  if (!r.got) return [];
+  const rows = [];
+  r.got.forEach((v, i) => {
+    const t = String(v || '').replace(/[.。]$/, '').trim();
+    let ko = '', how;
+    if (/^KEEP\b/i.test(t)) how = 'keep';
+    else if (/^SKIP\b/i.test(t)) how = 'skip';
+    else if (/^[가-힣]+(?:[ ·-][가-힣]+)*$/.test(t) && t.length <= 30) { ko = t; how = 'ko'; }
+    else return;                                  /* 알아볼 수 없는 답은 다음 날 다시 */
+    rows.push({ id: LEARN + cands[i].w, hook: cands[i].w, punch: ko,
+                line: (how + ' ' + cands[i].ctx).slice(0, 120), at: Date.now() });
+  });
+  await saveCards(rows);
+  addNames(rows.filter(x => x.punch).map(x => [x.hook, x.punch]));
+  return rows;
 }

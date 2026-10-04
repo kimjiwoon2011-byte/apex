@@ -1,4 +1,5 @@
-/* 내 PC 의 AI(Ollama)로 비어 있는 카드뉴스·자세한 설명문·목록 제목을 채웁니다.
+/* 내 PC 의 AI(Ollama)로 비어 있는 카드뉴스·자세한 설명문·목록 제목을 채우고,
+ * 영어로 남은 이름의 한글 표기를 배웁니다.
  *
  * 서버의 자동 갱신(2시간마다, 무료 AI 하루 50번)은 그대로 돌고, 이건 PC 가 켜져
  * 있을 때 돌아서 그 사이에 올라온 기사를 채웁니다. PC 의 AI 는 한도가 없어서
@@ -16,7 +17,8 @@
 import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
-         keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf } from '../api/_lib.js';
+         keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf,
+         leftoverNames, decidedNames, learnNames } from '../api/_lib.js';
 import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
@@ -44,6 +46,7 @@ useEngine({ url: OLLAMA + '/v1/chat/completions', models: [MODEL], callMs: 18000
 const t0 = Date.now();
 let cards = 0, deeps = 0, titles = 0;
 const notes = [];
+const cand = new Map();          /* 영어로 남은 이름 → 나온 기사 제목 */
 
 for (const s of SERIES) {
   let items = [];
@@ -96,10 +99,33 @@ for (const s of SERIES) {
       at: Date.now(),
     }]);
   }
+
+  /* 카드·목록 제목·풀이에 영어로 남은 이름을 모읍니다 (아래에서 한꺼번에 배웁니다) */
+  const links = items.map(x => x.link);
+  const [cs, ts, ds] = await Promise.all([loadExisting(links), loadTitles(links), loadDeep(links)]);
+  for (const it of items) {
+    const c = cs[keyOf(it.link)], t = ts[titleIdOf(it.link)], d = ds[deepIdOf(it.link)];
+    const ko = [c && [c.h, c.p, c.d].join(' '), t && t.t, d && [d.what, d.why, d.note].join(' ')]
+      .filter(Boolean).join(' ');
+    for (const w of leftoverNames(ko)) if (!cand.has(w)) cand.set(w, it.title.slice(0, 100));
+  }
 }
 
+/* 이름 배우기 — 이름표에 없어 영어로 남은 이름의 한글 표기를 정해 서버 표에 남깁니다.
+   서버와 앱이 그 표를 같이 쓰므로, 다음 카드부터 한글로 나오고 이미 만든 카드도
+   화면에서 바뀝니다. 이미 정한 말은 건너뜁니다. 한 번에 40개씩, 하루 최대 200개 */
+const decided = await decidedNames();
+const ask = [...cand].filter(([w]) => !decided.has(w)).slice(0, 200).map(([w, ctx]) => ({ w, ctx }));
+const learned = [];
+for (let i = 0; i < ask.length; i += 40) {
+  const rows = await learnNames(ask.slice(i, i + 40), '', 600000);
+  if (!rows.length) { notes.push('이름배우기실패'); continue; }
+  learned.push(...rows.filter(r => r.punch));
+}
+if (learned.length) log('배운 이름 ' + learned.length + ': ' + learned.map(r => r.hook + '=' + r.punch).join(', '));
+
 const sec = Math.round((Date.now() - t0) / 1000);
-log('카드 ' + cards + ' · 풀이 ' + deeps + ' · 제목 ' + titles + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
+log('카드 ' + cards + ' · 풀이 ' + deeps + ' · 제목 ' + titles + ' · 이름 ' + learned.length + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
 /* 앱 밖에서도 PC 가 일했는지 볼 수 있게 서버 표에도 한 줄 */
-await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps + '·제목' + titles).slice(0, 40),
+await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps + '·제목' + titles + '·이름' + learned.length).slice(0, 40),
                    line: (sec + '초 ' + notes.join(' ')).slice(0, 120), at: Date.now() }]);

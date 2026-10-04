@@ -3067,6 +3067,38 @@ const NAME_MAP = (()=>{
       return [new RegExp(b + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, m => '\\' + m) + b, 'g'), ko]; });
 })();
 
+/* PC 가 배운 이름 ('_nm|이름'). 서버(api/_lib.js loadLearned)와 같은 표입니다.
+   이름표에 없어 카드·제목·풀이에 영어로 남던 이름을 PC 의 AI 가 하루 한 번 한글
+   표기로 정해 둡니다. 받아서 이름표에 붙이면 이미 만든 카드도 그릴 때 바뀝니다. */
+let NAMES_LEARNED = DB.get('learnedNames', { at: 0, rows: [] });
+function addLearned(rows){
+  const have = new Set(NAME_MAP.map(([re]) => re.source));
+  let n = 0;
+  for(const [en, ko] of rows){
+    if(!en || !ko) continue;
+    const src = '\\b' + en.replace(/[-\/\\^$*+?.()|[\]{}]/g, m => '\\' + m) + '\\b';
+    if(have.has(src)) continue;
+    NAME_MAP.push([new RegExp(src, 'g'), ko]);
+    have.add(src); n++;
+  }
+  if(n){
+    NAME_MAP.sort((a,b)=> b[0].source.length - a[0].source.length);   /* 긴 이름 먼저 */
+    JOSA_RE = null; _koNames = null;                                    /* 다시 만들게 */
+  }
+  return n;
+}
+addLearned(NAMES_LEARNED.rows);
+/* 6시간에 한 번 새로 받습니다 */
+async function loadLearnedNames(){
+  if(Date.now() - NAMES_LEARNED.at < 6 * 3600000 || !netSb()) return 0;
+  try{
+    const rows = await sb('cards?id=like.' + encodeURIComponent('_nm|') + '*&punch=neq.&select=hook,punch');
+    NAMES_LEARNED = { at: Date.now(), rows: (rows || []).map(r => [r.hook, r.punch]) };
+    DB.set('learnedNames', NAMES_LEARNED);
+    return addLearned(NAMES_LEARNED.rows);
+  }catch(e){ return 0; }
+}
+
 /* 번역이 끝난 한국어 문장에 남은 영어 이름만 한국어로 바꿉니다.
    번역기에 한국어를 섞어 보내면 그 한국어까지 다시 번역해 버려
    "Mercedes"가 "현대차"나 "포르쉐"로 둔갑합니다. 그래서 반드시 번역 뒤에 합니다. */
@@ -4133,7 +4165,7 @@ async function renderNews(force){
   const key = newsSeries, list = $('#newsList');
   const cache = DB.get('news3-'+key, null);
   const fresh = cache && (Date.now() - cache.at < NEWS_TTL);
-  await Promise.race([loadPicks(), new Promise(r => setTimeout(r, 1500))]);
+  await Promise.race([Promise.all([loadPicks(), loadLearnedNames()]), new Promise(r => setTimeout(r, 1500))]);
 
   if(cache){
     paintNews(cache);
@@ -5260,7 +5292,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-03 · 목록 제목 AI 번역';
+const BUILD = '2026-10-04 · 이름 배우기';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
