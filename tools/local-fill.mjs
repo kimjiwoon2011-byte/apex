@@ -113,12 +113,13 @@ for (const s of SERIES) {
 
 /* 이름 배우기 — 이름표에 없어 영어로 남은 이름의 한글 표기를 정해 서버 표에 남깁니다.
    서버와 앱이 그 표를 같이 쓰므로, 다음 카드부터 한글로 나오고 이미 만든 카드도
-   화면에서 바뀝니다. 이미 정한 말은 건너뜁니다. 한 번에 40개씩, 하루 최대 200개 */
+   화면에서 바뀝니다. 이미 정한 말은 건너뜁니다. 하루 최대 200개.
+   한 번에 10개씩 — 40개씩 물었더니 답이 옆 줄로 밀려 엉뚱한 표기가 붙었습니다 */
 const decided = await decidedNames();
 const ask = [...cand].filter(([w]) => !decided.has(w)).slice(0, 200).map(([w, ctx]) => ({ w, ctx }));
 const learned = [];
-for (let i = 0; i < ask.length; i += 40) {
-  const rows = await learnNames(ask.slice(i, i + 40), '', 600000);
+for (let i = 0; i < ask.length; i += 10) {
+  const rows = await learnNames(ask.slice(i, i + 10), '', 600000);
   if (!rows.length) { notes.push('이름배우기실패'); continue; }
   learned.push(...rows.filter(r => r.punch));
 }

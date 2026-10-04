@@ -968,7 +968,7 @@ export async function learnNames(cands, key, budgetMs) {
   const msg = cands.map((c, i) => '[' + (i + 1) + '] ' + c.w + OR_SEP + c.ctx).join('\n');
   const r = await deepAsk(NAME_SYS, msg, key, Date.now() + budgetMs, 60000, txt => orParse(txt, cands.length), 'name');
   if (!r.got) return [];
-  const rows = [];
+  let rows = [];
   r.got.forEach((v, i) => {
     const t = String(v || '').replace(/[.。]$/, '').trim();
     let ko = '', how;
@@ -976,9 +976,17 @@ export async function learnNames(cands, key, budgetMs) {
     else if (/^SKIP\b/i.test(t)) how = 'skip';
     else if (/^[가-힣]+(?:[ ·-][가-힣]+)*$/.test(t) && t.length <= 30) { ko = t; how = 'ko'; }
     else return;                                  /* 알아볼 수 없는 답은 다음 날 다시 */
+    /* 낱말 수가 절반도 안 되면 다른 줄의 답이 밀려 온 것입니다
+       (10/4 'GT World Challenge Europe Cup' → '막스 페르스타펜') */
+    if (ko && ko.split(' ').length < Math.ceil(cands[i].w.split(/\s+/).length / 2)) return;
     rows.push({ id: LEARN + cands[i].w, hook: cands[i].w, punch: ko,
                 line: (how + ' ' + cands[i].ctx).slice(0, 120), at: Date.now() });
   });
+  /* 서로 다른 말에 같은 한글이 붙었으면 둘 다 버립니다 — 하나는 밀려 온 답입니다
+     (10/4 Bartone·GetSpeed 가 둘 다 '바르토네'). 다음 날 다시 묻습니다 */
+  const seen = {};
+  rows.forEach(x => { if (x.punch) seen[x.punch] = (seen[x.punch] || 0) + 1; });
+  rows = rows.filter(x => !x.punch || seen[x.punch] === 1);
   await saveCards(rows);
   addNames(rows.filter(x => x.punch).map(x => [x.hook, x.punch]));
   return rows;
