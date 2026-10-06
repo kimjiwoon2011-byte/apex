@@ -4877,18 +4877,19 @@ function renderHero(){
    F1 은 Jolpica F1 API, 나머지 다섯 부문은 위키백과 시즌 문서에서 서버가 모아 6시간
    동안 저장해 둡니다. 예전에는 F1 순위를 손으로 적어 넣어서 7월(11라운드)에 멈춰
    있었고, 다른 부문은 순위가 아예 없었습니다. */
-let STAND = DB.get('standings4', null);
+let STAND = DB.get('standings5', null);
 let standSeries = 'f1', standClass = '';
 async function loadStandings(force){
   if(!HOSTED) return STAND;                         /* 파일로 열면 서버가 없습니다 */
   if(!force && STAND && Date.now() - STAND.got < 3 * 3600000) return STAND;
   try{
-    const r = await fetch('/api/standings?v=2')   /* v 를 올리면 6시간 저장본을 건너뜁니다 (라운드 결과·차 이름이 붙은 판) */;
+    /* v 를 올리면 Vercel 의 6시간 저장본을 건너뜁니다 (v=3: 라운드 결과·차 이름이 붙은 판) */
+    const r = await fetch('/api/standings?v=3');
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if(j && j.series){
       STAND = Object.assign(j, { got: Date.now() });
-      DB.set('standings4', STAND);
+      DB.set('standings5', STAND);
       applyF1();
     }
   }catch(e){ /* 못 받으면 지난번 것 그대로 */ }

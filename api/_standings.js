@@ -102,8 +102,25 @@ async function wikiTables(page) {
   return { tables: out, rev: j.parse.revid };
 }
 
-/* 표 안에 든 표까지 — 순위표·참가 명단이 감싸개 표 안에 들어 있는 문서가 있습니다 */
-const innerTables = h => h.replace(/^<table[^>]*>/, '').match(/<table\b[\s\S]*?<\/table>/g) || [];
+/* 표 안에 든 표까지 — 순위표·참가 명단이 감싸개 표 안에 들어 있는 문서가 있습니다.
+   깊이를 셉니다. 처음 '</table>' 에서 끊었더니 DTM 참가 명단이 중간에 든 작은 표에서
+   잘려 아래쪽 드라이버(프라이닝·엥겔)의 차를 못 찾았습니다 */
+function innerTables(h) {
+  const body = h.replace(/^<table[^>]*>/, '');
+  const out = [], re = /<table\b|<\/table>/g;
+  let m, depth = 0, start = 0;
+  while ((m = re.exec(body))) {
+    if (m[0] === '</table>') {
+      depth--;
+      if (depth === 0) out.push(body.slice(start, m.index + 8));
+      if (depth < 0) break;
+    } else {
+      if (depth === 0) start = m.index;
+      depth++;
+    }
+  }
+  return out;
+}
 
 /* 순위표 하나 → { rows:[{ p, n, sub, pts, r }], rounds:[{ a, t }] } (순위·Points 머리글이 없으면 null).
    r 은 라운드마다의 결과('1'·'Ret'·''), rounds 는 그 라운드의 머리글(약칭·경기 이름).
