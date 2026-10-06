@@ -18,7 +18,7 @@ import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
          keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf,
-         leftoverNames, sourceNames, decidedNames, learnNames } from '../api/_lib.js';
+         leftoverNames, sourceNames, decidedNames, learnNames, nameGlossary } from '../api/_lib.js';
 import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
@@ -120,6 +120,22 @@ for (const s of SERIES) {
       for (const w of sourceNames(it.title, it.lead)) if (!cand.has(w)) cand.set(w, it.title.slice(0, 100));
   }
 }
+
+/* 순위표의 드라이버 이름도 — 순위 화면에 영어로 남지 않게. 서버가 6시간 저장해 둔
+   /api/standings 를 받습니다 (위키백과를 매시간 부르지 않으려고) */
+try {
+  const r = await fetch('https://apex-five-theta.vercel.app/api/standings', { signal: AbortSignal.timeout(60000) });
+  const st = await r.json();
+  for (const [k, v] of Object.entries(st.series || {})) {
+    for (const b of v.boards || []) {
+      if (b.kind !== 'drivers') continue;
+      for (const row of b.rows) for (const w of String(row.n).normalize('NFD').replace(/[̀-ͯ]/g, '').split(' / ')) {
+        if (w.split(' ').length >= 2 && !nameGlossary([w], 1).length && !cand.has(w))
+          cand.set(w, (k.toUpperCase() + ' ' + (b.cls || '') + ' drivers standings').replace(/\s+/g, ' '));
+      }
+    }
+  }
+} catch (e) { notes.push('순위이름실패'); }
 
 /* 이름 배우기 — 이름표에 없어 영어로 남은 이름의 한글 표기를 정해 서버 표에 남깁니다.
    서버와 앱이 그 표를 같이 쓰므로, 다음 카드부터 한글로 나오고 이미 만든 카드도

@@ -983,6 +983,7 @@ const NAME_SYS = [
   '',
   '- 사람 이름: 국립국어원 외래어 표기법으로 한글로 쓴다. 그 사람 나라 말 소리를 따른다.',
   '  이름과 성 순서는 받은 그대로 둔다. (Pierre Gasly → 피에르 가슬리)',
+  '  단 일본 사람은 한국에서 쓰는 대로 성 이름 순으로 바꾼다. (Sho Tsuboi → 쓰보이 쇼)',
   '- 팀·회사·자동차·서킷·대회 이름: 한국 매체가 쓰는 한글 표기로 쓴다.',
   '  (Lone Star Racing → 론스타 레이싱, Maserati → 마세라티)',
   '- 한국 매체도 영어 그대로 쓰는 스폰서 상표나 차 모델 코드는 KEEP 이라고 쓴다.',
@@ -1007,11 +1008,13 @@ function soundsLike(en, ko) {
   const a = en.split(/\s+/).filter(w => !/^[A-Z0-9]+$/.test(w));     /* GT·BMW 같은 약어는 건너뜀 */
   const b = ko.split(/\s+/).filter(w => /^[가-힣]/.test(w));
   if (!a.length || !b.length) return true;
-  const pairs = a.length === b.length ? a.map((w, i) => [w, b[i]]) : [[a[0], b[0]]];
-  return pairs.every(([w, k]) => {
+  const ok = (w, k) => {
     const want = FIRST_SOUND[w.normalize('NFD')[0].toUpperCase()];
     return !want || want.includes(CHO[Math.floor((k.charCodeAt(0) - 0xAC00) / 588)]);
-  });
+  };
+  if (a.length !== b.length) return ok(a[0], b[0]);
+  /* 일본 이름은 성 이름 순으로 뒤집어 적으므로 거꾸로도 맞춰 봅니다 (Yuto Nomura → 노무라 유토) */
+  return a.every((w, i) => ok(w, b[i])) || a.every((w, i) => ok(w, b[b.length - 1 - i]));
 }
 
 /* 말 묶음의 표기를 정해 표에 남기고, 바로 이름표에도 붙입니다. 남긴 줄을 돌려줍니다 */

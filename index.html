@@ -4910,10 +4910,16 @@ function applyF1(){
     CONSTRUCTORS.splice(0, CONSTRUCTORS.length, ...rows);
   }
   if(f.after) STANDINGS_AFTER = f.after;
+  /* 포디움 이름은 앱의 드라이버 표로 맞춥니다. API 는 정식 이름을 줘서
+     'Andrea Kimi Antonelli' → 'Andrea 키미 안토넬리' 가 됐습니다 */
+  const podName = x => {
+    const d = DRIVERS.find(o => String(x).includes(o.key));
+    return d && TEAMS[d.t] ? [d.n[0] + ' (' + TEAMS[d.t].n[0] + ')', d.n[1] + ' (' + TEAMS[d.t].n[1] + ')'] : [nm(x), x];
+  };
   RACES.forEach(r => {
     if(r.s !== 'f1') return;
     const pod = f.podium && f.podium[r.r];
-    if(pod && pod.length === 3 && pod.every(Boolean) && !r.p) r.p = [pod.map(x => nm(x)), pod];
+    if(pod && pod.length === 3 && pod.every(Boolean) && !r.p) r.p = [pod.map(x => podName(x)[0]), pod.map(x => podName(x)[1])];
     if(f.sessions && f.sessions[r.r]) r.ss = f.sessions[r.r];
   });
 }
@@ -4981,12 +4987,14 @@ function renderSeriesStandings(){
   const src = (v.src || []).map(x => x.page).join(', ');
   $('#stMeta').textContent = t('st.wiki', fmtDate(STAND.at || STAND.got));
   const board = boards.find(b => b.kind === standTab);
+  /* 이름표는 악센트 없는 철자라 'Sébastien Buemi' 가 'Sébastien 부에미' 로 반만 바뀌었습니다 */
+  const plain = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
   board.rows.forEach(r => {
     const row = el('div', 'srow');
     row.innerHTML = `
       <span class="pos">${esc(String(r.p).padStart(2, '0'))}</span>
       <i class="bar" style="background:${s.color}"></i>
-      <span class="who"><b>${esc(nm(r.n))}</b>${r.sub ? `<span>${esc(nm(r.sub))}</span>` : ''}</span>
+      <span class="who"><b>${esc(nm(plain(r.n)))}</b>${r.sub ? `<span>${esc(nm(plain(r.sub)))}</span>` : ''}</span>
       <span class="pts"><b>${esc(String(r.pts))}</b><span>${t('st.pts')}</span></span>`;
     list.appendChild(row);
   });
