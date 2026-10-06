@@ -5010,9 +5010,19 @@ function roundNames(key, board){
   const races = RACES.filter(r => r.s === key).sort((a, b) => a.ms - b.ms);
   const rounds = board.rounds || [];
   if(rounds.length && rounds.length === races.length) return races.map(r => rname(r));
+  /* 이름이 조금씩 다릅니다 — 'GP'·'Grand Prix', 'Daytona International'·'24 Hours of Daytona',
+     'Beijing Street Circuit'·'Beijing E-Town Street Circuit'. 소문자로 맞추고 서킷 이름은
+     흔한 낱말(Circuit·International…)을 뺀 핵심 낱말만 봅니다 */
+  const norm = x => String(x || '').toLowerCase().replace(/grand prix/g, 'gp').replace(/\s+/g, ' ').trim();
+  const GENERIC = /^(circuit|international|street|raceway|speedway|motor|park|de|of|the|autodrome|race|course|motorsports?)$/;
+  const words = c => norm(c).split(/[\s-]+/).filter(w => w && !GENERIC.test(w));
+  const same = (title, r) => {
+    const tn = norm(title), nn = norm(r.n[1]), cw = words(r.c[1]);
+    return tn === nn || tn.includes(nn) || nn.includes(tn) || (cw.length > 0 && cw.every(w => tn.includes(w)));
+  };
   return rounds.map((rd, i) => {
     const title = String(rd.t || '').replace(/^\d{4}\s+/, '');
-    const hits = title ? races.filter(r => r.n[1] === title || title.includes(r.c[1]) || r.c[1].includes(title)) : [];
+    const hits = title ? races.filter(r => same(title, r)) : [];
     /* 같은 곳 두 경기(스프린트 S1·S2, 레이스 1·2)는 약칭의 뒷부분을 붙입니다 */
     const dup = rounds.filter(x => x.t && x.t === rd.t).length > 1;
     const tail = dup ? String(rd.a).split(' ').slice(1).join(' ') : '';
