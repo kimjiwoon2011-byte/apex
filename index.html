@@ -1253,7 +1253,7 @@ ko:{
  'st.makers':'제조사','st.eu':'유럽','st.am':'아메리카','st.as':'아시아',
  'st.wiki':'{0} 기준','st.src':'출처: {0} (위키백과, CC BY-SA). 경기 뒤 편집자가 순위표를 고치면 6시간 안에 반영돼요.',
  'st.loading':'순위를 불러오는 중이에요…','st.fail':'순위를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.',
- 'r.sessions':'세션 일정','s.fp1':'연습 1','s.fp2':'연습 2','s.fp3':'연습 3','s.fp4':'연습 4',
+ 'r.sessions':'세션 일정','r.tbd':'시각 미정','s.fp':'연습 주행','s.pq':'사전 예선','s.ps':'폴 슛아웃','s.fp1':'연습 1','s.fp2':'연습 2','s.fp3':'연습 3','s.fp4':'연습 4',
  's.sq':'스프린트 예선','s.sprint':'스프린트','s.q':'예선','s.q1':'예선 1','s.q2':'예선 2',
  's.hp':'하이퍼폴','s.wu':'웜업','s.r1':'레이스 1','s.r2':'레이스 2','s.race':'결승',
  'fav.driver':'내 드라이버','fav.team':'내 팀',
@@ -1403,7 +1403,7 @@ en:{
  'st.makers':'Manufacturers','st.eu':'Europe','st.am':'America','st.as':'Asia',
  'st.wiki':'As of {0}','st.src':'Source: {0} (Wikipedia, CC BY-SA). Edits after each race show up within 6 hours.',
  'st.loading':'Loading standings…','st.fail':'Could not load standings. Please try again later.',
- 'r.sessions':'Sessions','s.fp1':'Practice 1','s.fp2':'Practice 2','s.fp3':'Practice 3','s.fp4':'Practice 4',
+ 'r.sessions':'Sessions','r.tbd':'time TBA','s.fp':'Free Practice','s.pq':'Pre-Qualifying','s.ps':'Pole Shootout','s.fp1':'Practice 1','s.fp2':'Practice 2','s.fp3':'Practice 3','s.fp4':'Practice 4',
  's.sq':'Sprint Qualifying','s.sprint':'Sprint','s.q':'Qualifying','s.q1':'Qualifying 1','s.q2':'Qualifying 2',
  's.hp':'Hyperpole','s.wu':'Warm-up','s.r1':'Race 1','s.r2':'Race 2','s.race':'Race',
  'fav.driver':'My driver','fav.team':'My team',
@@ -1553,7 +1553,7 @@ ja:{
  'st.makers':'マニュファクチャラー','st.eu':'ヨーロッパ','st.am':'アメリカ','st.as':'アジア',
  'st.wiki':'{0}時点','st.src':'出典: {0}（Wikipedia, CC BY-SA）。レース後の編集は6時間以内に反映されます。',
  'st.loading':'順位を読み込み中…','st.fail':'順位を読み込めませんでした。しばらくしてから再度お試しください。',
- 'r.sessions':'セッション','s.fp1':'フリー走行1','s.fp2':'フリー走行2','s.fp3':'フリー走行3','s.fp4':'フリー走行4',
+ 'r.sessions':'セッション','r.tbd':'時刻未定','s.fp':'フリー走行','s.pq':'予備予選','s.ps':'ポールシュートアウト','s.fp1':'フリー走行1','s.fp2':'フリー走行2','s.fp3':'フリー走行3','s.fp4':'フリー走行4',
  's.sq':'スプリント予選','s.sprint':'スプリント','s.q':'予選','s.q1':'予選1','s.q2':'予選2',
  's.hp':'ハイパーポール','s.wu':'ウォームアップ','s.r1':'レース1','s.r2':'レース2','s.race':'決勝',
  'fav.driver':'マイドライバー','fav.team':'マイチーム',
@@ -1973,7 +1973,7 @@ function widgetSvg(r, key, W, H, lay){
         font-family="sans-serif">${esx(r.cc)}  ${esx(rcirc(r))}</text>
   ${track}
   <text x="${W/2}" y="${H*0.715}" fill="${th.fg}" font-size="46" font-weight="700" text-anchor="middle"
-        font-family="sans-serif">${esx(fmtFull(r.ms))}</text>
+        font-family="sans-serif">${esx(rFull(r))}</text>
   ${cd}
   </g>
   <text x="${W/2}" y="${H*0.945}" fill="${th.dim}" font-size="30" font-weight="800" text-anchor="middle"
@@ -2221,8 +2221,11 @@ const RACES = [
    p:[['#15 BMW M 팀 WRT','#51 페라리 AF 코르세','—'],['#15 BMW M Team WRT','#51 Ferrari AF Corse','—']]},
   {s:'wec',r:5,n:['론스타 르망','Lone Star Le Mans'],c:['서킷 오브 디 아메리카스','Circuit of the Americas'],f:'🇺🇸',t:'2026-09-07T03:00:00+09:00',h:6},
   {s:'wec',r:6,n:['6시간 후지','6 Hours of Fuji'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-09-27T11:00:00+09:00',h:6},
-  {s:'wec',r:7,n:['카타르 1812km','Qatar 1812 km'],c:['루사일 인터내셔널','Lusail International'],f:'🇶🇦',t:'2026-10-24T21:00:00+09:00',h:10},
-  {s:'wec',r:8,n:['8시간 바레인','8 Hours of Bahrain'],c:['바레인 인터내셔널','Bahrain International'],f:'🇧🇭',t:'2026-11-07T20:00:00+09:00',h:8},
+  /* 카타르 1812km·바레인 8시간은 취소되고 바르셀로나·몬차로 바뀌었습니다 (2026-07 발표) */
+  {s:'wec',r:7,n:['6시간 바르셀로나','6 Hours of Barcelona'],c:['카탈루냐','Circuit de Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-18T19:00:00+09:00',h:6,
+   ss:[['FP1','2026-10-16T09:30:00Z'],['FP2','2026-10-16T14:30:00Z'],['FP3','2026-10-17T10:40:00Z'],['Q','2026-10-17T13:40:00Z'],['HP','2026-10-17T14:00:00Z'],['RACE','2026-10-18T10:00:00Z']]},
+  {s:'wec',r:8,n:['6시간 몬차','6 Hours of Monza'],c:['몬차','Monza'],f:'🇮🇹',t:'2026-11-08T19:00:00+09:00',h:6,
+   ss:[['Q','2026-11-07T14:00:00Z'],['HP','2026-11-07T14:20:00Z'],['RACE','2026-11-08T10:00:00Z']]},
 
   /* ───── IMSA ───── */
   {s:'imsa',r:1,n:['롤렉스 24 앳 데이토나','Rolex 24 at Daytona'],c:['데이토나','Daytona International'],f:'🇺🇸',t:'2026-01-25T03:40:00+09:00',h:24},
@@ -2232,7 +2235,7 @@ const RACES = [
   {s:'imsa',r:5,n:['디트로이트 스포츠카 클래식','Detroit Sports Car Classic'],c:['디트로이트 시가지','Detroit Street Circuit'],f:'🇺🇸',t:'2026-05-31T04:10:00+09:00',h:1.7},
   {s:'imsa',r:6,n:['6시간 더 글렌','Sahlen\'s Six Hours of The Glen'],c:['왓킨스 글렌','Watkins Glen'],f:'🇺🇸',t:'2026-06-28T23:40:00+09:00',h:6},
   {s:'imsa',r:7,n:['셰보레 그랑프리','Chevrolet Grand Prix'],c:['캐나디안 타이어 모터스포츠 파크','Canadian Tire Motorsport Park'],f:'🇨🇦',t:'2026-07-13T02:35:00+09:00',h:2.7},
-  {s:'imsa',r:8,n:['모튤 스포츠카 인듀어런스 GP','Motul SportsCar Endurance GP'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-03T03:10:00+09:00',h:2.7},
+  {s:'imsa',r:8,n:['모튤 스포츠카 인듀어런스 GP','Motul SportsCar Endurance GP'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-03T03:10:00+09:00',h:6},
   {s:'imsa',r:9,n:['미쉐린 GT 챌린지 앳 VIR','Michelin GT Challenge at VIR'],c:['버지니아 인터내셔널','Virginia International'],f:'🇺🇸',t:'2026-08-24T02:10:00+09:00',h:2.7},
   {s:'imsa',r:10,n:['배틀 온 더 브릭스','Battle on the Bricks'],c:['인디애나폴리스','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-09-21T00:10:00+09:00',h:2.7},
   {s:'imsa',r:11,n:['모튤 프티 르망','Motul Petit Le Mans'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-10-04T01:10:00+09:00',h:10},
@@ -2252,8 +2255,10 @@ const RACES = [
   {s:'dtm',r:12,n:['뉘르부르크링 R2','Nürburgring Race 2'],c:['뉘르부르크링','Nürburgring'],f:'🇩🇪',t:'2026-08-16T20:30:00+09:00',h:1},
   {s:'dtm',r:13,n:['작센링 R1','Sachsenring Race 1'],c:['작센링','Sachsenring'],f:'🇩🇪',t:'2026-09-12T20:30:00+09:00',h:1},
   {s:'dtm',r:14,n:['작센링 R2','Sachsenring Race 2'],c:['작센링','Sachsenring'],f:'🇩🇪',t:'2026-09-13T20:30:00+09:00',h:1},
-  {s:'dtm',r:15,n:['호켄하임 R1','Hockenheim Race 1'],c:['호켄하임링','Hockenheimring'],f:'🇩🇪',t:'2026-10-10T20:30:00+09:00',h:1},
-  {s:'dtm',r:16,n:['호켄하임 R2','Hockenheim Race 2'],c:['호켄하임링','Hockenheimring'],f:'🇩🇪',t:'2026-10-11T20:30:00+09:00',h:1},
+  {s:'dtm',r:15,n:['호켄하임 R1','Hockenheim Race 1'],c:['호켄하임링','Hockenheimring'],f:'🇩🇪',t:'2026-10-10T20:30:00+09:00',h:1,
+   ss:[['FP1','2026-10-09T09:25:00Z'],['FP2','2026-10-09T13:45:00Z'],['Q1','2026-10-10T07:45:00Z'],['R1','2026-10-10T11:30:00Z']]},
+  {s:'dtm',r:16,n:['호켄하임 R2','Hockenheim Race 2'],c:['호켄하임링','Hockenheimring'],f:'🇩🇪',t:'2026-10-11T20:30:00+09:00',h:1,
+   ss:[['Q2','2026-10-11T06:50:00Z'],['R2','2026-10-11T11:30:00Z']]},
 
   /* ───── GT World Challenge Europe ───── */
   {s:'gt',r:4,n:['6시간 폴 리카르','6 Hours of Paul Ricard'],c:['폴 리카르','Paul Ricard'],f:'🇫🇷',t:'2026-04-12T18:00:00+09:00',h:6},
@@ -2265,7 +2270,8 @@ const RACES = [
   {s:'gt',r:22,n:['3시간 뉘르부르크링','3 Hours of Nürburgring'],c:['뉘르부르크링','Nürburgring'],f:'🇩🇪',t:'2026-08-30T22:00:00+09:00',h:3},
   {s:'gt',r:23,n:['잔드보르트 스프린트','Zandvoort Sprint'],c:['잔드보르트','Zandvoort'],f:'🇳🇱',t:'2026-09-20T21:00:00+09:00',h:1},
   {s:'gt',r:25,n:['바르셀로나 스프린트','Barcelona Sprint'],c:['카탈루냐','Circuit de Barcelona-Catalunya'],f:'🇪🇸',t:'2026-10-04T21:00:00+09:00',h:1},
-  {s:'gt',r:29,n:['3시간 포르티망','3 Hours of Portimão'],c:['알가르베','Algarve International'],f:'🇵🇹',t:'2026-10-18T21:00:00+09:00',h:3},
+  {s:'gt',r:29,n:['3시간 포르티망','3 Hours of Portimão'],c:['알가르베','Algarve International'],f:'🇵🇹',t:'2026-10-18T01:00:00+09:00',h:3,
+   ss:[['Q','2026-10-16T16:55:00Z'],['RACE','2026-10-17T16:00:00Z']]},
   /* ───── GT 월드 챌린지 아시아 ─────
      6개 서킷에서 1시간 경기를 두 번씩, 모두 12경기입니다.
      세부 시각은 아직 공식 발표 전이라 현지 오후 기준으로 잡아 두었습니다. */
@@ -2273,14 +2279,14 @@ const RACES = [
   {s:'gt',r:3,n:['세팡 R2','Sepang Race 2'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-05T15:00:00+09:00',h:1},
   {s:'gt',r:6,n:['만달리카 R1','Mandalika Race 1'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-02T15:00:00+09:00',h:1},
   {s:'gt',r:7,n:['만달리카 R2','Mandalika Race 2'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-03T15:00:00+09:00',h:1},
-  {s:'gt',r:11,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-05T15:00:00+09:00',h:1},
-  {s:'gt',r:12,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-06-06T15:00:00+09:00',h:1},
+  {s:'gt',r:11,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-10-31T15:00:00+09:00',h:1,tbd:1},
+  {s:'gt',r:12,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-11-01T15:00:00+09:00',h:1,tbd:1},
   {s:'gt',r:15,n:['후지 R1','Fuji Race 1'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-11T14:00:00+09:00',h:1},
   {s:'gt',r:16,n:['후지 R2','Fuji Race 2'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-12T14:00:00+09:00',h:1},
   {s:'gt',r:19,n:['오카야마 R1','Okayama Race 1'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-29T14:00:00+09:00',h:1},
   {s:'gt',r:21,n:['오카야마 R2','Okayama Race 2'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-30T14:00:00+09:00',h:1},
-  {s:'gt',r:27,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-17T15:00:00+09:00',h:1},
-  {s:'gt',r:28,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-18T15:00:00+09:00',h:1},
+  {s:'gt',r:27,n:['베이징 R1','Beijing Race 1'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-03T15:00:00+09:00',h:1,tbd:1},
+  {s:'gt',r:28,n:['베이징 R2','Beijing Race 2'],c:['베이징 시가지','Beijing Street Circuit'],f:'🇨🇳',t:'2026-10-04T15:00:00+09:00',h:1,tbd:1},
   /* ───── GT 월드 챌린지 아메리카 ─────
      2026년부터 라운드마다 3시간 경기 한 번으로 형식이 바뀌었습니다. */
   {s:'gt',r:1,n:['소노마 3시간','Sonoma 3 Hours'],c:['소노마 레이스웨이','Sonoma Raceway'],f:'🇺🇸',t:'2026-03-29T05:00:00+09:00',h:3},
@@ -2289,17 +2295,19 @@ const RACES = [
   {s:'gt',r:13,n:['로드 애틀랜타 3시간','Road Atlanta 3 Hours'],c:['로드 애틀랜타','Road Atlanta'],f:'🇺🇸',t:'2026-06-14T02:00:00+09:00',h:3},
   {s:'gt',r:20,n:['로드 아메리카 3시간','Road America 3 Hours'],c:['로드 아메리카','Road America'],f:'🇺🇸',t:'2026-08-30T03:00:00+09:00',h:3},
   {s:'gt',r:24,n:['바버 3시간','Barber 3 Hours'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T02:00:00+09:00',h:3},
-  {s:'gt',r:26,n:['인디애나폴리스 3시간','Indianapolis 3 Hours'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T02:00:00+09:00',h:3},
+  {s:'gt',r:26,n:['인디애나폴리스 8시간','Indianapolis 8 Hour'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T01:30:00+09:00',h:8,
+   ss:[['FP','2026-10-08T23:00:00Z'],['PQ','2026-10-09T13:50:00Z'],['Q','2026-10-09T19:35:00Z'],['PS','2026-10-09T21:35:00Z'],['RACE','2026-10-10T16:30:00Z']]},
 
   /* ───── 슈퍼 GT ─────
      2026년은 세팡 라운드가 빠져 7전으로 치릅니다. */
   {s:'sgt',r:1,n:['오카야마 GT','Okayama GT'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-04-12T14:00:00+09:00',h:2},
   {s:'sgt',r:2,n:['후지 GT','Fuji GT'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-05-04T14:00:00+09:00',h:2},
-  {s:'sgt',r:3,n:['후지 GT 500마일','Fuji GT 500 Miles'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:5},
+  {s:'sgt',r:3,n:['후지 GT 300km','Fuji GT 300 km'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:2},
   {s:'sgt',r:4,n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
   {s:'sgt',r:5,n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
-  {s:'sgt',r:6,n:['오토폴리스 GT','Autopolis GT'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T14:00:00+09:00',h:2},
-  {s:'sgt',r:7,n:['모테기 GT','Motegi GT'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2},
+  {s:'sgt',r:6,n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T14:00:00+09:00',h:3,tbd:1},
+  {s:'sgt',r:7,n:['모테기 GT 250km','Motegi GT 250 km'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-07T14:00:00+09:00',h:2,tbd:1},
+  {s:'sgt',r:8,n:['모테기 GT 그랜드 파이널','Motegi GT Grand Final'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2,tbd:1},
 ];
 RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
@@ -2360,6 +2368,8 @@ const fmtDate  = ms => dtf({month:'long',day:'numeric',weekday:'short'}).format(
 const fmtShort = ms => dtf({month:'short',day:'numeric'}).format(ms);
 const fmtTime  = ms => dtf({hour:'2-digit',minute:'2-digit',hour12:false}).format(ms);
 const fmtFull  = ms => fmtDate(ms) + ' ' + fmtTime(ms);
+/* 경기 시작 시각. 공식 타임테이블이 아직 없는 경기(tbd)는 날짜만 */
+function rFull(r){ return r.tbd ? fmtDate(r.ms) + ' · ' + t('r.tbd') : fmtFull(r.ms); }
 const fmtMonth = ms => dtf({year:'numeric',month:'long'}).format(ms);
 function dayKey(ms){
   const p = new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ms);
@@ -4686,7 +4696,7 @@ function openPick(r, result){
   const cur = result ? null : (picksOf()[r.id] || {}).pick;
   openSheet(`
     <h2>${result ? t('gm.whoWon') : t('gm.q')}</h2>
-    <div class="muted">${esc(rname(r))} · ${esc(fmtFull(r.ms))}</div>
+    <div class="muted">${esc(rname(r))} · ${esc(rFull(r))}</div>
     <div class="tgrid" id="gmGrid" style="margin-top:14px"></div>
     <button class="btn ghost sm" id="gmClose">${t('r.close')}</button>`);
 
@@ -4851,7 +4861,7 @@ function renderHero(){
     </div>
     <h2>${esc(rname(r))}</h2>
     <div class="circ">${ccTag(r)}${esc(rcirc(r))}</div>
-    <div class="dt">${fmtFull(r.ms)}</div>
+    <div class="dt">${rFull(r)}</div>
     ${bottom}`;
   card.onclick = ()=> openRace(r);
 }
@@ -4926,7 +4936,7 @@ function applyF1(){
 applyF1();
 
 /* 세션 이름 — F1 은 Jolpica 의 이름, 나머지는 공식 타임테이블의 이름을 그대로 둡니다 */
-const SESS_KEY = { FP1:'s.fp1', FP2:'s.fp2', FP3:'s.fp3', FP4:'s.fp4', SQ:'s.sq', SPRINT:'s.sprint',
+const SESS_KEY = { FP:'s.fp', PQ:'s.pq', PS:'s.ps', FP1:'s.fp1', FP2:'s.fp2', FP3:'s.fp3', FP4:'s.fp4', SQ:'s.sq', SPRINT:'s.sprint',
                    Q:'s.q', Q1:'s.q1', Q2:'s.q2', HP:'s.hp', WU:'s.wu', R1:'s.r1', R2:'s.r2', RACE:'s.race' };
 const sessName = k => SESS_KEY[k] ? t(SESS_KEY[k]) : k;
 function sessionsHtml(r){
@@ -5203,7 +5213,7 @@ function raceCard(r, i){
   const stat = st==='live' ? `<div class="dd" style="color:#e5162b">${t('r.live')}</div>`
              : st==='done' ? `<div class="dd" style="color:var(--tx-3)">${t('r.done')}</div>`
              : `<div class="dd num">D-${Math.max(0,Math.ceil((r.ms-Date.now())/86400000))}</div>
-                <div class="tm num">${fmtTime(r.ms)}</div>`;
+                <div class="tm num">${r.tbd ? t('r.tbd') : fmtTime(r.ms)}</div>`;
   b.innerHTML = `
     <div class="rdate" style="color:${s.color}">
       <span style="position:absolute;inset:0;background:${s.color};opacity:.11"></span>
@@ -5388,7 +5398,7 @@ function openRace(r){
            </div>` : ''}
     <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0">
-        <div style="font-size:16px;font-weight:800;letter-spacing:-.02em">${fmtFull(r.ms)}</div>
+        <div style="font-size:16px;font-weight:800;letter-spacing:-.02em">${rFull(r)}</div>
         <div class="muted">${esc(t('r.tzNote', TZ, r.h))}</div>
       </div>
       ${st==='soon' ? `<div style="text-align:right;flex:0 0 auto">
@@ -5488,7 +5498,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-06 · 모든 부문 순위·세션 일정';
+const BUILD = '2026-10-06 · 일정 바로잡기·세션';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6441,7 +6451,7 @@ function paintCountdown(){
   card.innerHTML = `
     <div class="lbl">${live ? t('alert.live') : t('alert.next')}</div>
     <div class="nm">${ccTag(r)}${esc(rname(r))}</div>
-    <div class="ci">${esc(s.name)} ${t('r.round', r.r)} · ${esc(rcirc(r))} · ${fmtFull(r.ms)}</div>
+    <div class="ci">${esc(s.name)} ${t('r.round', r.r)} · ${esc(rcirc(r))} · ${rFull(r)}</div>
     ${live ? '' : `<div class="cdn num">
       <div><b>${dd}</b><span>${t('alert.d')}</span></div>
       <div><b>${String(hh).padStart(2,'0')}</b><span>${t('alert.h')}</span></div>
@@ -6638,7 +6648,7 @@ function openWidget(){
 
   openSheet(`
     <h2>${t('wid.title')}</h2>
-    <div class="muted">${esc(rname(r))} · ${esc(fmtFull(r.ms))}</div>
+    <div class="muted">${esc(rname(r))} · ${esc(rFull(r))}</div>
     <div class="sec">${t('wid.theme')}</div>
     <div class="chips" id="widChips">${chips}</div>
     <div class="sec">${t('wid.size')}</div>
