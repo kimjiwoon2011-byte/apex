@@ -710,6 +710,13 @@ textarea{resize:vertical;min-height:78px}
   transition:background .25s var(--ease),color .25s var(--ease)}
 .pills button.on{background:var(--tx);color:var(--bg)}
 .pillwrap{display:flex;justify-content:center}
+.sess{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.sess>div{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:12px;background:var(--surface-2)}
+.sess>div b{font-size:13px;font-weight:800}
+.sess>div span{font-family:var(--mono);font-size:12px;color:var(--tx-2)}
+.sess>div.past{opacity:.45}
+.sess>div.next{box-shadow:inset 0 0 0 2px var(--br)}
 
 /* 히어로 — 다음 경기 */
 .hero{position:relative;overflow:hidden;border-radius:var(--r4);padding:20px 18px 18px;
@@ -1074,6 +1081,8 @@ textarea{resize:vertical;min-height:78px}
       </div>
 
       <div id="standView" hidden>
+        <div class="chips" id="stSeries"></div>
+        <div class="pillwrap" id="stClassWrap" hidden style="margin-bottom:8px"><div class="pills" id="stClass"></div></div>
         <div class="pillwrap"><div class="pills" id="stPills"></div></div>
         <div class="lbl" id="stMeta" style="text-align:center;margin-bottom:14px"></div>
         <div class="slist" id="stList"></div>
@@ -1240,7 +1249,13 @@ ko:{
  'st.drivers':'드라이버','st.teams':'팀','st.pts':'PTS','st.pos':'순위',
  'st.after':'F1 2026 · {0}라운드 종료 기준','st.wins':'우승','st.podium':'포디움',
  'st.season':'2026 포디움 기록','st.noPodium':'아직 포디움 기록이 없어요.',
- 'st.note':'챔피언십 순위는 <b>F1만</b> 제공됩니다. WEC·IMSA·DTM·GT3는 시리즈별 공식 사이트를 확인해주세요.',
+ 'st.note':'F1 순위는 Jolpica F1 API, 다른 부문은 위키백과 시즌 문서에서 6시간마다 새로 받아요.',
+ 'st.makers':'제조사','st.eu':'유럽','st.am':'아메리카','st.as':'아시아',
+ 'st.wiki':'{0} 기준','st.src':'출처: {0} (위키백과, CC BY-SA). 경기 뒤 편집자가 순위표를 고치면 6시간 안에 반영돼요.',
+ 'st.loading':'순위를 불러오는 중이에요…','st.fail':'순위를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.',
+ 'r.sessions':'세션 일정','s.fp1':'연습 1','s.fp2':'연습 2','s.fp3':'연습 3','s.fp4':'연습 4',
+ 's.sq':'스프린트 예선','s.sprint':'스프린트','s.q':'예선','s.q1':'예선 1','s.q2':'예선 2',
+ 's.hp':'하이퍼폴','s.wu':'웜업','s.r1':'레이스 1','s.r2':'레이스 2','s.race':'결승',
  'fav.driver':'내 드라이버','fav.team':'내 팀',
  'fav.none':'순위 화면에서 별을 눌러 좋아하는 드라이버와 팀을 정해보세요.',
  'fav.added':'즐겨찾기에 추가했어요','fav.removed':'즐겨찾기에서 뺐어요',
@@ -1384,7 +1399,13 @@ en:{
  'st.drivers':'Drivers','st.teams':'Teams','st.pts':'PTS','st.pos':'Pos',
  'st.after':'F1 2026 · after round {0}','st.wins':'Wins','st.podium':'Podiums',
  'st.season':'2026 podiums','st.noPodium':'No podium yet this season.',
- 'st.note':'Championship standings are provided for <b>F1 only</b>. For WEC, IMSA, DTM and GT3 check each series\' official site.',
+ 'st.note':'F1 standings come from the Jolpica F1 API, other series from Wikipedia season articles, refreshed every 6 hours.',
+ 'st.makers':'Manufacturers','st.eu':'Europe','st.am':'America','st.as':'Asia',
+ 'st.wiki':'As of {0}','st.src':'Source: {0} (Wikipedia, CC BY-SA). Edits after each race show up within 6 hours.',
+ 'st.loading':'Loading standings…','st.fail':'Could not load standings. Please try again later.',
+ 'r.sessions':'Sessions','s.fp1':'Practice 1','s.fp2':'Practice 2','s.fp3':'Practice 3','s.fp4':'Practice 4',
+ 's.sq':'Sprint Qualifying','s.sprint':'Sprint','s.q':'Qualifying','s.q1':'Qualifying 1','s.q2':'Qualifying 2',
+ 's.hp':'Hyperpole','s.wu':'Warm-up','s.r1':'Race 1','s.r2':'Race 2','s.race':'Race',
  'fav.driver':'My driver','fav.team':'My team',
  'fav.none':'Tap the star in Standings to pick a favourite driver and team.',
  'fav.added':'Added to favourites','fav.removed':'Removed from favourites',
@@ -1528,7 +1549,13 @@ ja:{
  'st.drivers':'ドライバー','st.teams':'チーム','st.pts':'PTS','st.pos':'順位',
  'st.after':'F1 2026 · 第{0}戦終了時点','st.wins':'優勝','st.podium':'表彰台',
  'st.season':'2026 表彰台','st.noPodium':'今季の表彰台はまだありません。',
- 'st.note':'ランキングは<b>F1のみ</b>提供しています。WEC・IMSA・DTM・GT3は各シリーズ公式サイトをご確認ください。',
+ 'st.note':'F1はJolpica F1 API、その他のシリーズはWikipediaのシーズン記事から6時間ごとに更新します。',
+ 'st.makers':'マニュファクチャラー','st.eu':'ヨーロッパ','st.am':'アメリカ','st.as':'アジア',
+ 'st.wiki':'{0}時点','st.src':'出典: {0}（Wikipedia, CC BY-SA）。レース後の編集は6時間以内に反映されます。',
+ 'st.loading':'順位を読み込み中…','st.fail':'順位を読み込めませんでした。しばらくしてから再度お試しください。',
+ 'r.sessions':'セッション','s.fp1':'フリー走行1','s.fp2':'フリー走行2','s.fp3':'フリー走行3','s.fp4':'フリー走行4',
+ 's.sq':'スプリント予選','s.sprint':'スプリント','s.q':'予選','s.q1':'予選1','s.q2':'予選2',
+ 's.hp':'ハイパーポール','s.wu':'ウォームアップ','s.r1':'レース1','s.r2':'レース2','s.race':'決勝',
  'fav.driver':'マイドライバー','fav.team':'マイチーム',
  'fav.none':'ランキング画面の星を押して、好きなドライバーとチームを選べます。',
  'fav.added':'お気に入りに追加しました','fav.removed':'お気に入りから外しました',
@@ -2100,7 +2127,7 @@ const CONSTRUCTORS = Object.keys(TEAMS).filter(k => TEAMS[k].s === 'f1')
   .map(k => ({ t:k, pts: DRIVERS.filter(d=>d.t===k).reduce((s,d)=>s+d.pts,0) }))
   .sort((a,b)=>b.pts-a.pts)
   .map((row,i)=> ({...row, p:i+1}));
-const STANDINGS_AFTER = 11;
+let STANDINGS_AFTER = 11;     /* 순위를 받으면 applyF1 이 고칩니다 */
 
 /* 팀별 레이스카 사진 — 전부 실제 경기 중 촬영된 위키미디어 커먼즈 자유 이용 저작물입니다.
  * F1은 2026 중국 GP, 하이퍼카는 2026 르망, GT3는 2024~2025 르망 LMGT3 사진입니다.
@@ -4271,6 +4298,14 @@ $('#btnRefreshNews').onclick = ()=> renderNews(true);
 
 /* 첫 화면이 뜬 뒤 나머지 시리즈를 조용히 미리 받아 둡니다 */
 setTimeout(prefetchNews, 20000);
+setTimeout(() => {
+  const before = STAND && STAND.got;
+  loadStandings().then(x => {
+    if(!x || x.got === before) return;
+    if(tab === 'home') renderHome();
+    if(tab === 'cal') renderCal();
+  });
+}, 3000);
 
 /* ══════════════════════════════════════════════════════════════
    1-2. 마이홈 — 관심 시리즈 · 응원팀 · 응원선수
@@ -4821,8 +4856,154 @@ function renderHero(){
   card.onclick = ()=> openRace(r);
 }
 
+/* ── 시즌 순위 · F1 세션 시각 (/api/standings) ──
+   F1 은 Jolpica F1 API, 나머지 다섯 부문은 위키백과 시즌 문서에서 서버가 모아 6시간
+   동안 저장해 둡니다. 예전에는 F1 순위를 손으로 적어 넣어서 7월(11라운드)에 멈춰
+   있었고, 다른 부문은 순위가 아예 없었습니다. */
+let STAND = DB.get('standings3', null);
+let standSeries = 'f1', standClass = '';
+async function loadStandings(force){
+  if(!HOSTED) return STAND;                         /* 파일로 열면 서버가 없습니다 */
+  if(!force && STAND && Date.now() - STAND.got < 3 * 3600000) return STAND;
+  try{
+    const r = await fetch('/api/standings');
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if(j && j.series){
+      STAND = Object.assign(j, { got: Date.now() });
+      DB.set('standings3', STAND);
+      applyF1();
+    }
+  }catch(e){ /* 못 받으면 지난번 것 그대로 */ }
+  return STAND;
+}
+
+/* 'Red Bull' · 'RB F1 Team' · 'Cadillac F1 Team' → TEAMS 열쇠 */
+function f1TeamKey(name){
+  const a = String(name || '').toLowerCase().replace(/ f1 team| formula one team/g, '').trim();
+  const alias = { rb: 'rb', sauber: 'aud', 'kick sauber': 'aud' };
+  if(alias[a]) return alias[a];
+  const w = a.split(' ')[0];
+  return Object.keys(TEAMS).find(k => TEAMS[k].s === 'f1' && TEAMS[k].n[1].toLowerCase().startsWith(w)) || null;
+}
+
+/* 받은 F1 순위로 앱 안의 순위·포디움·세션을 새로 고칩니다. 마이홈·드라이버 카드도
+   같은 표(DRIVERS·CONSTRUCTORS)를 쓰므로 거기도 같이 바뀝니다 */
+function applyF1(){
+  const f = STAND && STAND.series && STAND.series.f1;
+  if(!f || !f.boards) return;
+  const dr = (f.boards.find(b => b.kind === 'drivers') || {}).rows || [];
+  const tm = (f.boards.find(b => b.kind === 'teams') || {}).rows || [];
+  if(dr.length){
+    const old = DRIVERS.slice();
+    const next = dr.map(x => {
+      const d = old.find(o => o.key === x.fam || (x.code && o.code === x.code));
+      const t = f1TeamKey(x.sub) || (d && d.t);
+      return d ? Object.assign({}, d, { p: +x.p || d.p, pts: x.pts, t })
+               : { p: +x.p || 99, code: x.code || String(x.fam).slice(0, 3).toUpperCase(), key: x.fam,
+                   n: [nm(x.n), x.n], t, pts: x.pts };
+    }).filter(d => d.t && TEAMS[d.t]);
+    DRIVERS.splice(0, DRIVERS.length, ...next);
+  }
+  if(tm.length){
+    const rows = tm.map(x => ({ t: f1TeamKey(x.n), pts: x.pts, p: +x.p })).filter(c => c.t && TEAMS[c.t]);
+    CONSTRUCTORS.splice(0, CONSTRUCTORS.length, ...rows);
+  }
+  if(f.after) STANDINGS_AFTER = f.after;
+  RACES.forEach(r => {
+    if(r.s !== 'f1') return;
+    const pod = f.podium && f.podium[r.r];
+    if(pod && pod.length === 3 && pod.every(Boolean) && !r.p) r.p = [pod.map(x => nm(x)), pod];
+    if(f.sessions && f.sessions[r.r]) r.ss = f.sessions[r.r];
+  });
+}
+applyF1();
+
+/* 세션 이름 — F1 은 Jolpica 의 이름, 나머지는 공식 타임테이블의 이름을 그대로 둡니다 */
+const SESS_KEY = { FP1:'s.fp1', FP2:'s.fp2', FP3:'s.fp3', FP4:'s.fp4', SQ:'s.sq', SPRINT:'s.sprint',
+                   Q:'s.q', Q1:'s.q1', Q2:'s.q2', HP:'s.hp', WU:'s.wu', R1:'s.r1', R2:'s.r2', RACE:'s.race' };
+const sessName = k => SESS_KEY[k] ? t(SESS_KEY[k]) : k;
+function sessionsHtml(r){
+  if(!r.ss || !r.ss.length) return '';
+  const now = Date.now();
+  const nextI = r.ss.findIndex(([, iso]) => Date.parse(iso) > now);
+  return `<div class="sec">${t('r.sessions')}</div><div class="sess">${r.ss.map(([k, iso], i) => {
+    const ms = Date.parse(iso);
+    const cls = i === nextI ? 'next' : (nextI < 0 || i < nextI) ? 'past' : '';
+    return `<div class="${cls}"><b>${esc(sessName(k))}</b><span>${esc(fmtFull(ms))}</span></div>`;
+  }).join('')}</div>`;
+}
+
+/* 부문 고르기 (순위 화면 위쪽) */
+function buildStandSeries(){
+  const box = $('#stSeries'); if(!box) return;
+  box.innerHTML = '';
+  Object.entries(SERIES).filter(([k]) => ['f1','wec','imsa','dtm','sgt','gt'].includes(k)).forEach(([k, s]) => {
+    const b = el('button', 'chip' + (k === standSeries ? ' on' : ''));
+    b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(s.name)}`;
+    b.onclick = () => { standSeries = k; standClass = ''; standTab = 'drivers'; renderStandings(); };
+    box.appendChild(b);
+  });
+}
+
+/* F1 이 아닌 부문 — 클래스(Hypercar·GT500…) → 드라이버/팀/제조사 */
+const CLS_KEY = { Europe:'st.eu', America:'st.am', Asia:'st.as' };
+function renderSeriesStandings(){
+  const s = SERIES[standSeries];
+  const v = STAND && STAND.series && STAND.series[standSeries];
+  const list = $('#stList'), pills = $('#stPills'), cw = $('#stClassWrap'), cbox = $('#stClass');
+  pills.innerHTML = ''; cbox.innerHTML = ''; list.innerHTML = '';
+  if(!v || !v.boards || !v.boards.length){
+    cw.hidden = true;
+    $('#stMeta').textContent = '';
+    list.innerHTML = `<div class="empty">${t(STAND ? 'st.fail' : 'st.loading')}</div>`;
+    if(!STAND) loadStandings(true).then(() => { if(calMode === 'stand') renderStandings(); });
+    return;
+  }
+  const classes = [...new Set(v.boards.map(b => b.cls))];
+  if(!classes.includes(standClass)) standClass = classes[0];
+  cw.hidden = classes.length < 2;
+  classes.forEach(c => {
+    const b = el('button', c === standClass ? 'on' : '');
+    b.textContent = CLS_KEY[c] ? t(CLS_KEY[c]) : c;
+    b.onclick = () => { standClass = c; renderStandings(); };
+    cbox.appendChild(b);
+  });
+  const boards = v.boards.filter(b => b.cls === standClass);
+  const kinds = ['drivers', 'teams', 'makers'].filter(k => boards.some(b => b.kind === k));
+  if(!kinds.includes(standTab)) standTab = kinds[0];
+  kinds.forEach(k => {
+    const b = el('button', k === standTab ? 'on' : '');
+    b.textContent = t('st.' + k);
+    b.onclick = () => { standTab = k; renderStandings(); };
+    pills.appendChild(b);
+  });
+  const src = (v.src || []).map(x => x.page).join(', ');
+  $('#stMeta').textContent = t('st.wiki', fmtDate(STAND.at || STAND.got));
+  const board = boards.find(b => b.kind === standTab);
+  board.rows.forEach(r => {
+    const row = el('div', 'srow');
+    row.innerHTML = `
+      <span class="pos">${esc(String(r.p).padStart(2, '0'))}</span>
+      <i class="bar" style="background:${s.color}"></i>
+      <span class="who"><b>${esc(nm(r.n))}</b>${r.sub ? `<span>${esc(nm(r.sub))}</span>` : ''}</span>
+      <span class="pts"><b>${esc(String(r.pts))}</b><span>${t('st.pts')}</span></span>`;
+    list.appendChild(row);
+  });
+  const note = el('div', 'note');
+  note.textContent = t('st.src', src);
+  list.appendChild(note);
+}
+
 /* ── 챔피언십 순위 ── */
 function renderStandings(){
+  buildStandSeries();
+  /* 처음 열 때나 오래됐으면 뒤에서 새로 받고, 바뀌었으면 다시 그립니다 */
+  const before = STAND && STAND.got;
+  loadStandings().then(x => { if(x && x.got !== before && calMode === 'stand') renderStandings(); });
+  if(standSeries !== 'f1') return renderSeriesStandings();
+  $('#stClassWrap').hidden = true;
+  if(standTab === 'makers') standTab = 'drivers';
   const pills = $('#stPills'); pills.innerHTML = '';
   [['drivers','st.drivers'],['teams','st.teams']].forEach(([k,key])=>{
     const b = el('button', k===standTab?'on':'');
@@ -5207,6 +5388,7 @@ function openRace(r){
         <div class="muted" id="rcd" data-ms="${r.ms}">${esc(liveLeft(r.ms))}</div></div>` : ''}
     </div>
     <button class="btn ghost sm" id="btnIcs">${ic('cal')} ${t('r.addCal')}</button>
+    ${sessionsHtml(r)}
 
     <div class="sec">${t('watch.video')}</div>
     <div id="vidBox"><div class="skel vid"></div></div>
@@ -5298,7 +5480,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-04 · 이름 배우기';
+const BUILD = '2026-10-06 · 모든 부문 순위·세션 일정';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',

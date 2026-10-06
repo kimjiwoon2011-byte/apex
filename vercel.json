@@ -64,6 +64,9 @@
     },
     "api/deep.js": {
       "maxDuration": 60
+    },
+    "api/standings.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
