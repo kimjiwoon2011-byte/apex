@@ -2318,18 +2318,20 @@ const RACES = [
    ss:[['FP','2026-10-08T23:00:00Z'],['PQ','2026-10-09T13:50:00Z'],['Q','2026-10-09T19:35:00Z'],['PS','2026-10-09T21:35:00Z'],['RACE','2026-10-10T16:30:00Z']]},
 
   /* ───── 슈퍼 GT ─────
-     2026년은 세팡 라운드가 빠져 7전으로 치릅니다. */
+     라운드 번호는 공식(supergt.net) 그대로입니다. 3라운드가 11월 모테기로 열려
+     번호가 날짜 순서와 다릅니다. id 는 예전 번호 그대로 — 예측 게임·리뷰·채팅방
+     기록이 'sgt-6' 같은 id 에 묶여 있어, 번호를 고쳐도 원래 경기에 붙어 있게 합니다 */
   {s:'sgt',r:1,n:['오카야마 GT','Okayama GT'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-04-12T14:00:00+09:00',h:2},
   {s:'sgt',r:2,n:['후지 GT','Fuji GT'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-05-04T14:00:00+09:00',h:2},
-  {s:'sgt',r:3,n:['후지 GT 300km','Fuji GT 300 km'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:2},
-  {s:'sgt',r:4,n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
-  {s:'sgt',r:5,n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
-  {s:'sgt',r:6,n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T13:10:00+09:00',h:3,
+  {s:'sgt',r:4,id:'sgt-3',n:['후지 GT 300km','Fuji GT 300 km'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:2},
+  {s:'sgt',r:5,id:'sgt-4',n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
+  {s:'sgt',r:6,id:'sgt-5',n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
+  {s:'sgt',r:7,id:'sgt-6',n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T13:10:00+09:00',h:3,
    ss:[['FP','2026-10-17T01:30:00Z'],['Q1','2026-10-17T05:30:00Z'],['Q2','2026-10-17T06:23:00Z'],['WU','2026-10-18T02:40:00Z'],['RACE','2026-10-18T04:10:00Z']]},
-  {s:'sgt',r:7,n:['모테기 GT 250km','Motegi GT 250 km'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-07T14:00:00+09:00',h:2,tbd:1},
+  {s:'sgt',r:3,id:'sgt-7',n:['모테기 GT 250km','Motegi GT 250 km'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-07T14:00:00+09:00',h:2,tbd:1},
   {s:'sgt',r:8,n:['모테기 GT 그랜드 파이널','Motegi GT Grand Final'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2,tbd:1},
 ];
-RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
+RACES.forEach(r=>{ r.id = r.id || r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
 RACES.sort((a,b)=>a.ms-b.ms);
 
@@ -5656,7 +5658,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-06 · 일정에 연습·예선';
+const BUILD = '2026-10-06 · 슈퍼 GT 공식 라운드 번호';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
