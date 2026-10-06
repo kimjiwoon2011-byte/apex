@@ -59,6 +59,8 @@ function grid(tableHtml) {
       const rs = +((attrs.match(/rowspan="?(\d+)/) || [])[1] || 1);
       const cs = +((attrs.match(/colspan="?(\d+)/) || [])[1] || 1);
       const cell = { t: cellText(m[3]), th: m[1] === 'th' };
+      /* 라운드 머리글('IMO')의 링크 제목('2026 6 Hours of Imola') — 경기 이름으로 씁니다 */
+      if (cell.th) { const tm = m[3].match(/<a\b[^>]*title="([^"]+)"/); if (tm) cell.title = unent(tm[1]); }
       for (let k = 0; k < cs; k++) {
         line[c] = cell;
         if (rs > 1) carry[c] = { left: rs - 1, cell };
@@ -100,16 +102,20 @@ async function wikiTables(page) {
   return { tables: out, rev: j.parse.revid };
 }
 
-/* 순위표 하나 → [{ p, n, sub, pts }] (순위·Points 머리글이 없으면 null).
+/* 표 안에 든 표까지 — 순위표·참가 명단이 감싸개 표 안에 들어 있는 문서가 있습니다 */
+const innerTables = h => h.replace(/^<table[^>]*>/, '').match(/<table\b[\s\S]*?<\/table>/g) || [];
+
+/* 순위표 하나 → { rows:[{ p, n, sub, pts, r }], rounds:[{ a, t }] } (순위·Points 머리글이 없으면 null).
+   r 은 라운드마다의 결과('1'·'Ret'·''), rounds 는 그 라운드의 머리글(약칭·경기 이름).
    순위 칸 이름은 'Pos.' 이고 SUPER GT 문서만 'Rank' 입니다 */
 const POS_HEAD = /^(Pos\.?|Rank)$/i;
+const POS_CELL = /^(\d+|=\d+|DSQ|NC|EX|WD)$/i;
 function readStandings(tableHtml) {
   /* 바깥 감싸개 표면 안쪽 표들 중에서 찾습니다 */
   const g = grid(tableHtml);
   const head = g.find(row => row.some(c => c && POS_HEAD.test(c.t)) && row.some(c => c && /^(Points|Pts\.?)$/i.test(c.t)));
   if (!head) {
-    const inner = tableHtml.replace(/^<table[^>]*>/, '').match(/<table\b[\s\S]*?<\/table>/g) || [];
-    for (const t of inner) { const got = readStandings(t); if (got) return got; }
+    for (const t of innerTables(tableHtml)) { const got = readStandings(t); if (got) return got; }
     return null;
   }
   const pos = head.findIndex(c => c && POS_HEAD.test(c.t));
@@ -117,18 +123,62 @@ function readStandings(tableHtml) {
   const name = pos + 1;
   const subHead = head[pos + 2] && head[pos + 2].t;
   const sub = /^(Team|Car|Entrant|Manufacturer|Make)$/i.test(subHead || '') ? pos + 2 : -1;
+
+  /* 라운드 칸 = 이름(·팀) 다음부터 Points 앞까지. 머리글이 두 줄이면(DTM 'RBR' 아래 '1'·'2') 합칩니다 */
+  const first = g.findIndex(row => row !== head && row[pos] && POS_CELL.test(row[pos].t));
+  const heads = g.slice(0, first < 0 ? 0 : first).filter(row => row.some(c => c && c.th));
+  const cols = [];
+  for (let c = (sub > 0 ? sub : name) + 1; c < pts; c++) {
+    const parts = [...new Set(heads.map(row => row[c]).filter(Boolean))];
+    /* 국기 그림 뒤 줄바꿈이 ' / ' 로 남아 'IMO /' 가 됐습니다 */
+    const a = parts.map(x => x.t.replace(/\s*\/\s*/g, ' ').trim()).filter(Boolean).join(' ');
+    if (a) cols.push({ c, a, t: (parts.find(x => x.title) || {}).title || '' });
+  }
+
   const rows = [];
   for (const row of g) {
     const pc = row[pos], nc = row[name], ptc = row[pts];
     if (!pc || !nc || !ptc || row === head) continue;
-    if (!/^(\d+|=\d+|DSQ|NC|EX|WD)$/i.test(pc.t)) continue;
+    if (!POS_CELL.test(pc.t)) continue;
     const v = parseFloat(String(ptc.t).replace(/[^\d.]/g, ''));
-    const item = { p: pc.t, n: nc.t, sub: sub > 0 && row[sub] ? row[sub].t : '', pts: isNaN(v) ? 0 : v };
+    const item = { p: pc.t, n: nc.t, sub: sub > 0 && row[sub] ? row[sub].t : '', pts: isNaN(v) ? 0 : v,
+                   r: cols.map(x => row[x.c] ? row[x.c].t : '') };
     const prev = rows[rows.length - 1];
-    if (prev && prev.p === item.p && prev.n === item.n) continue;      /* 합친 칸이 다음 줄로 내려온 것 */
+    if (prev && prev.p === item.p && prev.n === item.n) {             /* 합친 칸이 다음 줄로 내려온 것 */
+      /* 제조사는 차 두 대가 한 순위라 둘째 차 결과를 붙입니다 ('1/9') */
+      prev.r = prev.r.map((x, i) => [x, item.r[i]].filter(Boolean).join('/'));
+      continue;
+    }
     rows.push(item);
   }
-  return rows.length ? rows : null;
+  return rows.length ? { rows, rounds: cols.map(x => ({ a: x.a, t: x.t })) } : null;
+}
+
+/* 참가 명단에서 드라이버·팀 → 차 이름. 순위표에는 차가 없어서(DTM 드라이버 등)
+   제조사 색을 못 칠했습니다. 'Drivers' 와 'Car·Chassis·Make' 칸이 있는 표를 씁니다 */
+const plainName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+function entryCars(tables) {
+  const map = new Map();
+  const CAR = /^(Car|Chassis|Vehicle|Make|Manufacturer|Car model|Model)$/i;
+  for (const t of tables) {
+    for (const h of [t.html, ...innerTables(t.html)]) {
+      const g = grid(h);
+      const head = g.find(row => row.some(c => c && /^Drivers?$/i.test(c.t)) && row.some(c => c && CAR.test(c.t)));
+      if (!head) continue;
+      const dc = head.findIndex(c => c && /^Drivers?$/i.test(c.t));
+      const cc = head.findIndex(c => c && CAR.test(c.t));
+      const tc = head.findIndex(c => c && /^(Team|Entrant)$/i.test(c.t));
+      const nc = head.findIndex(c => c && /^No\.?$/i.test(c.t));
+      for (const row of g) {
+        if (row === head || !row[dc] || !row[cc] || row[dc].th || !row[cc].t) continue;
+        for (const d of row[dc].t.split(' / ')) if (!map.has(plainName(d))) map.set(plainName(d), row[cc].t);
+        if (tc >= 0 && row[tc] && !map.has(plainName(row[tc].t))) map.set(plainName(row[tc].t), row[cc].t);
+        /* 차 번호로도 — 순위표 팀 이름이 명단과 다를 때('No. 36 TGR Team au TOM'S') */
+        if (nc >= 0 && row[nc] && /^\d+$/.test(row[nc].t) && !map.has('#' + row[nc].t)) map.set('#' + row[nc].t, row[cc].t);
+      }
+    }
+  }
+  return map;
 }
 
 /* 같은 차를 나눠 탄 드라이버는 위키백과에서 한 사람씩 같은 순위로 나옵니다
@@ -139,7 +189,7 @@ function tidy(rows, max = 30) {
   for (const r of rows) {
     const prev = out[out.length - 1];
     if (prev && prev.p === r.p && prev.pts === r.pts && prev.sub === r.sub) { prev.n += ' / ' + r.n; continue; }
-    out.push(/^\d+$/.test(r.n) && r.sub ? { p: r.p, n: '#' + r.n + ' ' + r.sub, sub: '', pts: r.pts } : { ...r });
+    out.push(/^\d+$/.test(r.n) && r.sub ? { ...r, n: '#' + r.n + ' ' + r.sub, sub: '', team: r.sub } : { ...r });
   }
   return out.slice(0, max);
 }
@@ -194,11 +244,26 @@ async function wikiSeries(key, year) {
   WIKI[key].forEach((s, i) => {
     const { page, got } = pages[i];
     src.push({ page, rev: got.rev });
+    const cars = entryCars(got.tables);
+    /* 줄마다 차 이름 — 앱이 제조사 색을 칠합니다. 드라이버는 참가 명단에서, 팀은 명단·순위표의
+       차 칸에서, 제조사는 이름 그대로 */
+    const carOf = (row, kind) => {
+      if (kind === 'makers') return row.n;
+      if (kind === 'teams') {
+        const num = (row.n.match(/^(?:#|No\.\s*)(\d+)/) || [])[1];
+        return cars.get(plainName(row.team || row.n.replace(/^(#|No\.\s*)\S+\s*/, ''))) || row.sub
+          || (num && cars.get('#' + num)) || '';
+      }
+      for (const d of row.n.split(' / ')) { const c = cars.get(plainName(d)); if (c) return c; }
+      return '';
+    };
     for (const t of got.tables) {
       const which = s.pick(t.path);
       if (!which || boards.some(b => b.cls === which.cls && b.kind === which.kind)) continue;
-      const rows = readStandings(t.html);
-      if (rows) boards.push({ ...which, rows: tidy(rows) });
+      const got2 = readStandings(t.html);
+      if (!got2) continue;
+      const rows = tidy(got2.rows).map(r => { const car = carOf(r, which.kind); delete r.team; return car ? { ...r, car } : r; });
+      boards.push({ ...which, rounds: got2.rounds, rows });
     }
   });
   return { boards, src };

@@ -547,6 +547,10 @@ main{padding:14px 16px 0}
 .pod b.p1{background:linear-gradient(145deg,#ffdc63,#f0b400)}
 .pod b.p2{background:linear-gradient(145deg,#e3e9f2,#b9c4d4)}
 .pod b.p3{background:linear-gradient(145deg,#eab77a,#c98442)}
+/* 4위 아래·리타이어(Ret) — 글자가 길 수 있어 알약 모양 */
+.pod b.pn{background:var(--surface);color:var(--tx);border:1px solid var(--line);
+  width:auto;min-width:23px;flex:0 0 auto;padding:0 6px;border-radius:12px}
+.pod.dim{opacity:.45}
 
 .stars{display:flex;gap:8px;margin:12px 0}
 .stars button{border:0;background:none;cursor:pointer;padding:0;line-height:0;
@@ -1252,6 +1256,7 @@ ko:{
  'st.note':'F1 순위는 Jolpica F1 API, 다른 부문은 위키백과 시즌 문서에서 6시간마다 새로 받아요.',
  'st.makers':'제조사','st.eu':'유럽','st.am':'아메리카','st.as':'아시아',
  'st.wiki':'{0} 기준','st.src':'출처: {0} (위키백과, CC BY-SA). 경기 뒤 편집자가 순위표를 고치면 6시간 안에 반영돼요.',
+ 'st.rounds':'라운드별 결과','st.noRounds':'라운드별 결과가 없는 순위표예요.',
  'st.loading':'순위를 불러오는 중이에요…','st.fail':'순위를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.',
  'r.sessions':'세션 일정','r.tbd':'시각 미정','s.fp':'연습 주행','s.pq':'사전 예선','s.ps':'폴 슛아웃','s.fp1':'연습 1','s.fp2':'연습 2','s.fp3':'연습 3','s.fp4':'연습 4',
  's.sq':'스프린트 예선','s.sprint':'스프린트','s.q':'예선','s.q1':'예선 1','s.q2':'예선 2',
@@ -1402,6 +1407,7 @@ en:{
  'st.note':'F1 standings come from the Jolpica F1 API, other series from Wikipedia season articles, refreshed every 6 hours.',
  'st.makers':'Manufacturers','st.eu':'Europe','st.am':'America','st.as':'Asia',
  'st.wiki':'As of {0}','st.src':'Source: {0} (Wikipedia, CC BY-SA). Edits after each race show up within 6 hours.',
+ 'st.rounds':'Results by round','st.noRounds':'This table has no per-round results.',
  'st.loading':'Loading standings…','st.fail':'Could not load standings. Please try again later.',
  'r.sessions':'Sessions','r.tbd':'time TBA','s.fp':'Free Practice','s.pq':'Pre-Qualifying','s.ps':'Pole Shootout','s.fp1':'Practice 1','s.fp2':'Practice 2','s.fp3':'Practice 3','s.fp4':'Practice 4',
  's.sq':'Sprint Qualifying','s.sprint':'Sprint','s.q':'Qualifying','s.q1':'Qualifying 1','s.q2':'Qualifying 2',
@@ -1552,6 +1558,7 @@ ja:{
  'st.note':'F1はJolpica F1 API、その他のシリーズはWikipediaのシーズン記事から6時間ごとに更新します。',
  'st.makers':'マニュファクチャラー','st.eu':'ヨーロッパ','st.am':'アメリカ','st.as':'アジア',
  'st.wiki':'{0}時点','st.src':'出典: {0}（Wikipedia, CC BY-SA）。レース後の編集は6時間以内に反映されます。',
+ 'st.rounds':'ラウンド別結果','st.noRounds':'この表にはラウンド別の結果がありません。',
  'st.loading':'順位を読み込み中…','st.fail':'順位を読み込めませんでした。しばらくしてから再度お試しください。',
  'r.sessions':'セッション','r.tbd':'時刻未定','s.fp':'フリー走行','s.pq':'予備予選','s.ps':'ポールシュートアウト','s.fp1':'フリー走行1','s.fp2':'フリー走行2','s.fp3':'フリー走行3','s.fp4':'フリー走行4',
  's.sq':'スプリント予選','s.sprint':'スプリント','s.q':'予選','s.q1':'予選1','s.q2':'予選2',
@@ -4870,18 +4877,18 @@ function renderHero(){
    F1 은 Jolpica F1 API, 나머지 다섯 부문은 위키백과 시즌 문서에서 서버가 모아 6시간
    동안 저장해 둡니다. 예전에는 F1 순위를 손으로 적어 넣어서 7월(11라운드)에 멈춰
    있었고, 다른 부문은 순위가 아예 없었습니다. */
-let STAND = DB.get('standings3', null);
+let STAND = DB.get('standings4', null);
 let standSeries = 'f1', standClass = '';
 async function loadStandings(force){
   if(!HOSTED) return STAND;                         /* 파일로 열면 서버가 없습니다 */
   if(!force && STAND && Date.now() - STAND.got < 3 * 3600000) return STAND;
   try{
-    const r = await fetch('/api/standings');
+    const r = await fetch('/api/standings?v=2')   /* v 를 올리면 6시간 저장본을 건너뜁니다 (라운드 결과·차 이름이 붙은 판) */;
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if(j && j.series){
       STAND = Object.assign(j, { got: Date.now() });
-      DB.set('standings3', STAND);
+      DB.set('standings4', STAND);
       applyF1();
     }
   }catch(e){ /* 못 받으면 지난번 것 그대로 */ }
@@ -4964,6 +4971,87 @@ function buildStandSeries(){
 
 /* F1 이 아닌 부문 — 클래스(Hypercar·GT500…) → 드라이버/팀/제조사 */
 const CLS_KEY = { Europe:'st.eu', America:'st.am', Asia:'st.as' };
+
+/* 이름표는 악센트 없는 철자라 'Sébastien Buemi' 가 'Sébastien 부에미' 로 반만 바뀌었습니다 */
+const plainNm = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/* 줄 색 = 제조사 색. 차 이름('Toyota TR010 Hybrid')·팀 이름에서 제조사를 찾습니다.
+   예전에는 부문 색 하나로 다 칠해서 누가 어느 차인지 안 보였습니다 */
+const MAKER_COLOR = (() => {
+  const by = {};
+  Object.values(TEAMS).forEach(tm => { if(tm.s !== 'f1' && !by[tm.n[1]]) by[tm.n[1]] = tm.c; });
+  const alias = [[/chevrolet|corvette/i, 'Corvette'], [/mercedes/i, 'Mercedes-AMG'],
+                 [/toyota|gr supra|\btgr\b/i, 'Toyota'], [/honda|prelude|civic|nsx/i, 'Honda'],
+                 [/nissan|nismo/i, 'Nissan']];
+  const list = Object.keys(by).sort((a, b) => b.length - a.length)
+    .map(nm => [new RegExp(nm.replace(/[-]/g, '.?'), 'i'), by[nm]]);
+  return text => {
+    const s = String(text || '');
+    for (const [re, nm] of alias) if (re.test(s) && by[nm]) return by[nm];
+    for (const [re, c] of list) if (re.test(s)) return c;
+    return null;
+  };
+})();
+/* 제조사를 모르면 팀·이름으로 고른 색 — 같은 팀은 같은 색 */
+const ROW_PALETTE = ['#e11d48','#2563eb','#16a34a','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5'];
+function rowColor(r){
+  const c = MAKER_COLOR(r.car) || MAKER_COLOR(r.sub) || MAKER_COLOR(r.n);
+  if(c) return c;
+  const k = String(r.sub || r.n);
+  let h = 0; for(let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
+  return ROW_PALETTE[h % ROW_PALETTE.length];
+}
+
+/* 라운드 이름 — 위키백과 머리글('IMO', 링크 제목 '2026 6 Hours of Imola')을 앱 일정의
+   경기 이름으로. 라운드 수가 앱 일정과 같으면(WEC·DTM·SUPER GT) 순서대로 맞춥니다 */
+function roundNames(key, board){
+  const races = RACES.filter(r => r.s === key).sort((a, b) => a.ms - b.ms);
+  const rounds = board.rounds || [];
+  if(rounds.length && rounds.length === races.length) return races.map(r => rname(r));
+  return rounds.map((rd, i) => {
+    const title = String(rd.t || '').replace(/^\d{4}\s+/, '');
+    const hit = title && races.find(r => r.n[1] === title || title.includes(r.c[1]) || r.c[1].includes(title));
+    const base = hit ? rname(hit) : (title ? nm(title) : rd.a);
+    /* 같은 곳 두 경기(스프린트 S1·S2, 레이스 1·2)는 약칭의 뒷부분을 붙입니다 */
+    const dup = rounds.filter(x => x.t && x.t === rd.t).length > 1;
+    const tail = dup ? String(rd.a).split(' ').slice(1).join(' ') : '';
+    return tail ? base + ' ' + tail : base;
+  });
+}
+
+/* 줄을 누르면 — F1 드라이버 카드처럼 라운드마다 몇 등 했는지 */
+function openStandRow(key, board, r, v){
+  const s = SERIES[key], col = rowColor(r);
+  const res = r.r || [];
+  const first = x => parseInt(String(x).split('/')[0], 10);
+  const wins = res.filter(x => first(x) === 1).length;
+  const pod = res.filter(x => first(x) >= 1 && first(x) <= 3).length;
+  const names = roundNames(key, board);
+  const cls = board.cls ? (CLS_KEY[board.cls] ? t(CLS_KEY[board.cls]) : board.cls) + ' · ' : '';
+  const rows = names.map((n, i) => {
+    const x = res[i] || '';
+    const p = first(x);
+    const pc = p >= 1 && p <= 3 && !String(x).includes('/') ? 'p' + p : 'pn';
+    return `<div class="pod${x ? '' : ' dim'}"><b class="${pc}">${esc(x || '–')}</b>${esc(n)}</div>`;
+  }).join('');
+  openSheet(`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span class="tag solid" style="background:${col}">${esc(s.name)}</span>
+      <span class="lbl">${esc(cls + t('st.' + board.kind))}</span>
+    </div>
+    <h3 class="dn">${esc(nm(plainNm(r.n)))}</h3>
+    ${r.sub || r.car ? `<div class="muted">${esc(nm(plainNm([r.sub, r.car].filter(Boolean).join(' · '))))}</div>` : ''}
+    <div class="dstat">
+      <div><b>${esc(String(r.p).padStart(2, '0'))}</b><span>${t('st.pos')}</span></div>
+      <div><b>${esc(String(r.pts))}</b><span>${t('st.pts')}</span></div>
+      <div><b>${wins}</b><span>${t('st.wins')}</span></div>
+      <div><b>${pod}</b><span>${t('st.podium')}</span></div>
+    </div>
+    <div class="sec">${t('st.rounds')}</div>
+    ${rows ? `<div class="podium">${rows}</div>` : `<div class="note">${t('st.noRounds')}</div>`}
+    <div class="note">${esc(t('st.src', (v.src || []).map(x => x.page).join(', ')))}</div>`);
+}
+
 function renderSeriesStandings(){
   const s = SERIES[standSeries];
   const v = STAND && STAND.series && STAND.series[standSeries];
@@ -4997,15 +5085,15 @@ function renderSeriesStandings(){
   const src = (v.src || []).map(x => x.page).join(', ');
   $('#stMeta').textContent = t('st.wiki', fmtDate(STAND.at || STAND.got));
   const board = boards.find(b => b.kind === standTab);
-  /* 이름표는 악센트 없는 철자라 'Sébastien Buemi' 가 'Sébastien 부에미' 로 반만 바뀌었습니다 */
-  const plain = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
   board.rows.forEach(r => {
-    const row = el('div', 'srow');
+    const row = el('button', 'srow');
     row.innerHTML = `
       <span class="pos">${esc(String(r.p).padStart(2, '0'))}</span>
-      <i class="bar" style="background:${s.color}"></i>
-      <span class="who"><b>${esc(nm(plain(r.n)))}</b>${r.sub ? `<span>${esc(nm(plain(r.sub)))}</span>` : ''}</span>
-      <span class="pts"><b>${esc(String(r.pts))}</b><span>${t('st.pts')}</span></span>`;
+      <i class="bar" style="background:${rowColor(r)}"></i>
+      <span class="who"><b>${esc(nm(plainNm(r.n)))}</b>${r.sub || r.car ? `<span>${esc(nm(plainNm(r.sub || r.car)))}</span>` : ''}</span>
+      <span class="pts"><b>${esc(String(r.pts))}</b><span>${t('st.pts')}</span></span>
+      <span class="chev">${ic('chev')}</span>`;
+    row.onclick = () => openStandRow(standSeries, board, r, v);
     list.appendChild(row);
   });
   const note = el('div', 'note');
@@ -5498,7 +5586,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-06 · 일정 바로잡기·세션';
+const BUILD = '2026-10-06 · 순위 제조사 색·라운드별 결과';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
