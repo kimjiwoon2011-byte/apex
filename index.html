@@ -4962,9 +4962,10 @@ const SESS_KEY = { FP:'s.fp', PQ:'s.pq', PS:'s.ps', FP1:'s.fp1', FP2:'s.fp2', FP
 const sessName = k => SESS_KEY[k] ? t(SESS_KEY[k]) : k;
 /* 결승 자체인 세션 — 캘린더·경기 카드에는 결승 시각이 이미 있습니다 */
 const RACE_SS = new Set(['RACE', 'R1', 'R2']);
-/* 캘린더 칸에 적을 짧은 이름 — 그날 세션 중 스프린트 > 예선 > 연습 */
+/* 캘린더 칸에 적을 짧은 이름 — 그날 세션 중 스프린트 > 예선 > 연습.
+   GT 월드 챌린지의 사전 예선(PQ)은 이름과 달리 연습 주행이라 연습으로 셉니다 */
 const ssKind = ks => ks.includes('SPRINT') ? t('s.sprint')
-  : ks.some(k => /^(Q\d?|SQ|HP|PQ|PS)$/.test(k)) ? t('cal.q') : t('cal.fp');
+  : ks.some(k => /^(Q\d?|SQ|HP|PS)$/.test(k)) ? t('cal.q') : t('cal.fp');
 function sessionsHtml(r){
   if(!r.ss || !r.ss.length) return '';
   const now = Date.now();
