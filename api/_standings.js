@@ -205,7 +205,9 @@ function tidy(rows, max = 30) {
   const out = [];
   for (const r of rows) {
     const prev = out[out.length - 1];
-    if (prev && prev.p === r.p && prev.pts === r.pts && prev.sub === r.sub) { prev.n += ' / ' + r.n; continue; }
+    /* 라운드 결과까지 같아야 한 차입니다. 순위·점수만 보면 다른 차의 동점자까지 합쳐집니다 */
+    if (prev && prev.p === r.p && prev.pts === r.pts && prev.sub === r.sub
+        && JSON.stringify(prev.r) === JSON.stringify(r.r)) { prev.n += ' / ' + r.n; continue; }
     out.push(/^\d+$/.test(r.n) && r.sub ? { ...r, n: '#' + r.n + ' ' + r.sub, sub: '', team: r.sub } : { ...r });
   }
   return out.slice(0, max);

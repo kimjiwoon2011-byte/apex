@@ -4877,19 +4877,19 @@ function renderHero(){
    F1 은 Jolpica F1 API, 나머지 다섯 부문은 위키백과 시즌 문서에서 서버가 모아 6시간
    동안 저장해 둡니다. 예전에는 F1 순위를 손으로 적어 넣어서 7월(11라운드)에 멈춰
    있었고, 다른 부문은 순위가 아예 없었습니다. */
-let STAND = DB.get('standings5', null);
+let STAND = DB.get('standings6', null);
 let standSeries = 'f1', standClass = '';
 async function loadStandings(force){
   if(!HOSTED) return STAND;                         /* 파일로 열면 서버가 없습니다 */
   if(!force && STAND && Date.now() - STAND.got < 3 * 3600000) return STAND;
   try{
-    /* v 를 올리면 Vercel 의 6시간 저장본을 건너뜁니다 (v=3: 라운드 결과·차 이름이 붙은 판) */
-    const r = await fetch('/api/standings?v=3');
+    /* v 를 올리면 Vercel 의 6시간 저장본을 건너뜁니다 (v=4: 라운드 결과·차 이름이 붙은 판) */
+    const r = await fetch('/api/standings?v=4');
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if(j && j.series){
       STAND = Object.assign(j, { got: Date.now() });
-      DB.set('standings5', STAND);
+      DB.set('standings6', STAND);
       applyF1();
     }
   }catch(e){ /* 못 받으면 지난번 것 그대로 */ }
@@ -4984,8 +4984,9 @@ const MAKER_COLOR = (() => {
   const alias = [[/chevrolet|corvette/i, 'Corvette'], [/mercedes/i, 'Mercedes-AMG'],
                  [/toyota|gr supra|\btgr\b/i, 'Toyota'], [/honda|prelude|civic|nsx/i, 'Honda'],
                  [/nissan|nismo/i, 'Nissan']];
+  /* 낱말째로만 — 'Oxford' 안의 'ford' 가 포드로 칠해지지 않게 */
   const list = Object.keys(by).sort((a, b) => b.length - a.length)
-    .map(nm => [new RegExp(nm.replace(/[-]/g, '.?'), 'i'), by[nm]]);
+    .map(nm => [new RegExp('\\b' + nm.replace(/[-]/g, '.?') + '\\b', 'i'), by[nm]]);
   return text => {
     const s = String(text || '');
     for (const [re, nm] of alias) if (re.test(s) && by[nm]) return by[nm];
@@ -5011,12 +5012,17 @@ function roundNames(key, board){
   if(rounds.length && rounds.length === races.length) return races.map(r => rname(r));
   return rounds.map((rd, i) => {
     const title = String(rd.t || '').replace(/^\d{4}\s+/, '');
-    const hit = title && races.find(r => r.n[1] === title || title.includes(r.c[1]) || r.c[1].includes(title));
-    const base = hit ? rname(hit) : (title ? nm(title) : rd.a);
+    const hits = title ? races.filter(r => r.n[1] === title || title.includes(r.c[1]) || r.c[1].includes(title)) : [];
     /* 같은 곳 두 경기(스프린트 S1·S2, 레이스 1·2)는 약칭의 뒷부분을 붙입니다 */
     const dup = rounds.filter(x => x.t && x.t === rd.t).length > 1;
     const tail = dup ? String(rd.a).split(' ').slice(1).join(' ') : '';
-    return tail ? base + ' ' + tail : base;
+    /* 약칭에 구분이 없으면(GT 아시아 'SEP'·'SEP') 앱 일정의 같은 곳 경기를 차례로 씁니다.
+       예전에는 둘 다 첫 경기 이름('세팡 R1')이 나왔습니다 */
+    const k = rounds.slice(0, i).filter(x => x.t && x.t === rd.t).length;
+    const hit = dup && !tail ? hits[k] : hits[0];
+    if(hit) return tail ? rname(hit) + ' ' + tail : rname(hit);
+    const base = title ? nm(title) : rd.a;
+    return tail ? base + ' ' + tail : dup ? base + ' ' + (k + 1) : base;
   });
 }
 
@@ -5025,8 +5031,10 @@ function openStandRow(key, board, r, v){
   const s = SERIES[key], col = rowColor(r);
   const res = r.r || [];
   const first = x => parseInt(String(x).split('/')[0], 10);
-  const wins = res.filter(x => first(x) === 1).length;
-  const pod = res.filter(x => first(x) >= 1 && first(x) <= 3).length;
+  /* 제조사는 차 두 대('9/3') — 어느 한 대라도 포디움이면 셉니다 */
+  const best = x => Math.min(...String(x).split('/').map(y => parseInt(y, 10)).filter(n => !isNaN(n)));
+  const wins = res.filter(x => best(x) === 1).length;
+  const pod = res.filter(x => best(x) >= 1 && best(x) <= 3).length;
   const names = roundNames(key, board);
   const cls = board.cls ? (CLS_KEY[board.cls] ? t(CLS_KEY[board.cls]) : board.cls) + ' · ' : '';
   const rows = names.map((n, i) => {
@@ -5061,8 +5069,8 @@ function renderSeriesStandings(){
   if(!v || !v.boards || !v.boards.length){
     cw.hidden = true;
     $('#stMeta').textContent = '';
+    /* 받아 오기는 renderStandings 가 이미 시작했고, 받으면 다시 그립니다 */
     list.innerHTML = `<div class="empty">${t(STAND ? 'st.fail' : 'st.loading')}</div>`;
-    if(!STAND) loadStandings(true).then(() => { if(calMode === 'stand') renderStandings(); });
     return;
   }
   const classes = [...new Set(v.boards.map(b => b.cls))];
