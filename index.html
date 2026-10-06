@@ -471,6 +471,9 @@ main{padding:14px 16px 0}
 .cell .cl{font-size:8px;font-weight:800;line-height:1.3;letter-spacing:-.01em;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cell .cl.more{color:var(--tx-3)}
+/* 연습·예선 날 — 결승 날(시리즈 이름)보다 옅게, 시리즈 색 점 + '예선'·'연습' */
+.cell .cl.ss{color:var(--tx-2);font-weight:700}
+.cell .cl.ss i{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:2px;vertical-align:1px}
 .cell.pad{opacity:.2}
 .cell.sun .d{color:#e0566a}
 .cell.has{cursor:pointer;background:var(--surface-2)}
@@ -502,6 +505,13 @@ main{padding:14px 16px 0}
 .rname{font-size:14px;font-weight:700;letter-spacing:-.015em;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 .rsub{font-size:11px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 경기 카드 아래 연습·예선 시각 */
+.rss{display:flex;flex-wrap:wrap;gap:3px 4px;margin-top:3px}
+.rss span{font-size:10px;font-weight:700;color:var(--tx-2);background:var(--surface-2);
+  border-radius:6px;padding:2px 6px;white-space:nowrap}
+.rss span b{font-weight:800;color:var(--tx)}
+.rss span.past{opacity:.45}
+.rss span.on{box-shadow:inset 0 0 0 1.5px var(--br)}
 .rstat{flex:0 0 auto;align-self:center;text-align:right}
 .rstat .dd{font-size:13px;font-weight:800;color:var(--br);letter-spacing:-.02em}
 .rstat .tm{font-size:10.5px;color:var(--tx-3);margin-top:2px}
@@ -1229,7 +1239,7 @@ ko:{
  'news.failed':'소식을 가져오지 못했어요.<br>인터넷 연결을 확인하고 <b>지금 갱신</b>을 눌러주세요.',
  'news.stale':'갱신 실패 — 저장된 소식을 보여줍니다','news.empty':'표시할 소식이 없어요.',
  'time.now':'방금',
- 'cal.all':'전체','cal.month':'{0} 경기 ({1})','cal.day':'{0} 경기','cal.upcoming':'다가오는 경기',
+ 'cal.all':'전체','cal.month':'{0} 경기 ({1})','cal.day':'{0} 경기','cal.q':'예선','cal.fp':'연습','cal.upcoming':'다가오는 경기',
  'cal.none':'이 달에는 예정된 경기가 없어요.<br>다른 달을 확인해보세요.',
  'cal.dow':['일','월','화','수','목','금','토'],
  'cal.tabCal':'캘린더','cal.tabStand':'순위',
@@ -1380,7 +1390,7 @@ en:{
  'news.failed':"Couldn't load the news.<br>Check your connection and tap <b>Refresh</b>.",
  'news.stale':'Refresh failed — showing saved news','news.empty':'No news to show.',
  'time.now':'just now',
- 'cal.all':'All','cal.month':'{0} ({1} races)','cal.day':'{0}','cal.upcoming':'Coming up',
+ 'cal.all':'All','cal.month':'{0} ({1} races)','cal.day':'{0}','cal.q':'Quali','cal.fp':'Practice','cal.upcoming':'Coming up',
  'cal.none':'No races this month.<br>Try another month.',
  'cal.dow':['S','M','T','W','T','F','S'],
  'cal.tabCal':'Calendar','cal.tabStand':'Standings',
@@ -1531,7 +1541,7 @@ ja:{
  'news.failed':'ニュースを取得できませんでした。<br>接続を確認して<b>更新</b>を押してください。',
  'news.stale':'更新に失敗 — 保存済みのニュースを表示します','news.empty':'表示できるニュースがありません。',
  'time.now':'たった今',
- 'cal.all':'すべて','cal.month':'{0}（{1}戦）','cal.day':'{0}','cal.upcoming':'次のレース',
+ 'cal.all':'すべて','cal.month':'{0}（{1}戦）','cal.day':'{0}','cal.q':'予選','cal.fp':'練習','cal.upcoming':'次のレース',
  'cal.none':'今月のレースはありません。<br>別の月を見てみましょう。',
  'cal.dow':['日','月','火','水','木','金','土'],
  'cal.tabCal':'カレンダー','cal.tabStand':'ランキング',
@@ -2286,8 +2296,10 @@ const RACES = [
   {s:'gt',r:3,n:['세팡 R2','Sepang Race 2'],c:['세팡 인터내셔널','Sepang International'],f:'🇲🇾',t:'2026-04-05T15:00:00+09:00',h:1},
   {s:'gt',r:6,n:['만달리카 R1','Mandalika Race 1'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-02T15:00:00+09:00',h:1},
   {s:'gt',r:7,n:['만달리카 R2','Mandalika Race 2'],c:['만달리카 인터내셔널','Mandalika International'],f:'🇮🇩',t:'2026-05-03T15:00:00+09:00',h:1},
-  {s:'gt',r:11,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-10-31T15:00:00+09:00',h:1,tbd:1},
-  {s:'gt',r:12,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-11-01T15:00:00+09:00',h:1,tbd:1},
+  {s:'gt',r:11,n:['상하이 R1','Shanghai Race 1'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-10-31T13:50:00+09:00',h:1,
+   ss:[['FP','2026-10-30T02:38:00Z'],['PQ','2026-10-30T06:55:00Z'],['Q1','2026-10-31T01:35:00Z'],['R1','2026-10-31T04:50:00Z']]},
+  {s:'gt',r:12,n:['상하이 R2','Shanghai Race 2'],c:['상하이 인터내셔널','Shanghai International'],f:'🇨🇳',t:'2026-11-01T14:05:00+09:00',h:1,
+   ss:[['Q2','2026-10-31T01:57:00Z'],['R2','2026-11-01T05:05:00Z']]},
   {s:'gt',r:15,n:['후지 R1','Fuji Race 1'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-11T14:00:00+09:00',h:1},
   {s:'gt',r:16,n:['후지 R2','Fuji Race 2'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-07-12T14:00:00+09:00',h:1},
   {s:'gt',r:19,n:['오카야마 R1','Okayama Race 1'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-08-29T14:00:00+09:00',h:1},
@@ -2312,7 +2324,8 @@ const RACES = [
   {s:'sgt',r:3,n:['후지 GT 300km','Fuji GT 300 km'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:2},
   {s:'sgt',r:4,n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
   {s:'sgt',r:5,n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
-  {s:'sgt',r:6,n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T14:00:00+09:00',h:3,tbd:1},
+  {s:'sgt',r:6,n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T13:10:00+09:00',h:3,
+   ss:[['FP','2026-10-17T01:30:00Z'],['Q1','2026-10-17T05:30:00Z'],['Q2','2026-10-17T06:23:00Z'],['WU','2026-10-18T02:40:00Z'],['RACE','2026-10-18T04:10:00Z']]},
   {s:'sgt',r:7,n:['모테기 GT 250km','Motegi GT 250 km'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-07T14:00:00+09:00',h:2,tbd:1},
   {s:'sgt',r:8,n:['모테기 GT 그랜드 파이널','Motegi GT Grand Final'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2,tbd:1},
 ];
@@ -4818,7 +4831,7 @@ function buildCalPills(){
 /* 날짜를 선택했으면 그 날 경기를, 아니면 다음 경기를 보여줍니다 */
 function heroRace(){
   if(calSel){
-    const day = visibleRaces().filter(x=>dayKey(x.ms) === calSel);
+    const day = calDays[calSel] || [];
     if(day.length) return {r:day[0], more:day.length-1};
   }
   return {r: visibleRaces().find(x=>x.end > Date.now()), more:0};
@@ -4947,6 +4960,11 @@ applyF1();
 const SESS_KEY = { FP:'s.fp', PQ:'s.pq', PS:'s.ps', FP1:'s.fp1', FP2:'s.fp2', FP3:'s.fp3', FP4:'s.fp4', SQ:'s.sq', SPRINT:'s.sprint',
                    Q:'s.q', Q1:'s.q1', Q2:'s.q2', HP:'s.hp', WU:'s.wu', R1:'s.r1', R2:'s.r2', RACE:'s.race' };
 const sessName = k => SESS_KEY[k] ? t(SESS_KEY[k]) : k;
+/* 결승 자체인 세션 — 캘린더·경기 카드에는 결승 시각이 이미 있습니다 */
+const RACE_SS = new Set(['RACE', 'R1', 'R2']);
+/* 캘린더 칸에 적을 짧은 이름 — 그날 세션 중 스프린트 > 예선 > 연습 */
+const ssKind = ks => ks.includes('SPRINT') ? t('s.sprint')
+  : ks.some(k => /^(Q\d?|SQ|HP|PQ|PS)$/.test(k)) ? t('cal.q') : t('cal.fp');
 function sessionsHtml(r){
   if(!r.ss || !r.ss.length) return '';
   const now = Date.now();
@@ -5210,6 +5228,7 @@ function openDriver(d){
 }
 let calYM = (()=>{ const p = partsNow(); return {y:p.y, m:p.m}; })();
 let calSel = null;
+let calDays = {};   /* 날짜 → 그날 결승이나 연습·예선이 있는 경기 (renderCal 이 채웁니다) */
 const visibleRaces = ()=> calFilter==='all' ? RACES : RACES.filter(r=>r.s===calFilter);
 
 function buildCalChips(){
@@ -5242,12 +5261,26 @@ function renderCal(){
   if(calMode === 'stand'){ renderStandings(); return; }
 
   buildCalChips();
+  /* 날짜별 경기 — 결승 날(byDay)과 연습·예선 날(ssDay: 날짜 → {경기 id: {r, 세션들}}).
+     dayMs 는 그날의 실제 시각 하나 (목록 제목의 날짜를 시간대와 상관없이 맞게 쓰려고) */
+  const byDay = {}, ssDay = {}, dayMs = {};
+  visibleRaces().forEach(r=>{
+    const rk = dayKey(r.ms);
+    (byDay[rk] ||= []).push(r); dayMs[rk] = r.ms;
+    (r.ss || []).forEach(([k, iso])=>{
+      if(RACE_SS.has(k)) return;
+      const ms = Date.parse(iso), sk = dayKey(ms);
+      if(sk === rk) return;                       /* 결승 날은 이미 시리즈 이름이 적힙니다 */
+      ((ssDay[sk] ||= {})[r.id] ||= {r, k:[]}).k.push(k); dayMs[sk] = ms;
+    });
+  });
+  calDays = {};
+  Object.keys(dayMs).forEach(key=>{
+    calDays[key] = (byDay[key] || []).concat(Object.values(ssDay[key] || {}).map(x=>x.r));
+  });
   renderHero();
   const {y,m} = calYM;
   $('#calTitle').textContent = fmtMonth(Date.UTC(y, m-1, 15, 12));
-
-  const byDay = {};
-  visibleRaces().forEach(r=>{ (byDay[dayKey(r.ms)] ||= []).push(r); });
 
   const grid = $('#cgrid'); grid.innerHTML = '';
   t('cal.dow').forEach(d=>{ const h = el('div','dow'); h.textContent = d; grid.appendChild(h); });
@@ -5259,17 +5292,20 @@ function renderCal(){
   for(let i=0;i<lead;i++) grid.appendChild(el('button','cell pad'));
   for(let d=1; d<=days; d++){
     const key = `${y}-${m}-${d}`;
-    const races = byDay[key] || [];
-    const c = el('button','cell' + (races.length?' has':'') + (key===todayKey?' today':'')
+    /* 점만 찍지 않고 어떤 시리즈 경기인지 이름을 함께 적습니다 (2개까지, 나머지는 +N).
+       연습·예선만 있는 날은 옅게 '● 예선'·'● 연습' */
+    const labels = (byDay[key] || []).map(r=>
+        `<span class="cl" style="color:${SERIES[r.s].color}">${esc(SERIES[r.s].name)}</span>`)
+      .concat(Object.values(ssDay[key] || {}).map(x=>
+        `<span class="cl ss"><i style="background:${SERIES[x.r.s].color}"></i>${esc(ssKind(x.k))}</span>`));
+    const c = el('button','cell' + (labels.length?' has':'') + (key===todayKey?' today':'')
               + (key===calSel?' sel':'') + ((lead+d-1)%7===0?' sun':''));
-    /* 점만 찍지 않고 어떤 시리즈 경기인지 이름을 함께 적습니다 (2개까지, 나머지는 +N) */
     c.innerHTML = `<span class="d num">${d}</span>`
-      + races.slice(0,2).map(r=>
-          `<span class="cl" style="color:${SERIES[r.s].color}">${esc(SERIES[r.s].name)}</span>`).join('')
-      + (races.length > 2 ? `<span class="cl more">+${races.length-2}</span>` : '');
+      + labels.slice(0,2).join('')
+      + (labels.length > 2 ? `<span class="cl more">+${labels.length-2}</span>` : '');
     /* 날짜를 누르면 맨 위 히어로 카드가 그 경기(서킷·일시·남은 시간)로 바뀌므로
        히어로가 보이도록 위로 스크롤합니다 */
-    if(races.length) c.onclick = ()=>{
+    if(labels.length) c.onclick = ()=>{
       const sel = calSel === key ? null : key;
       calSel = sel; renderCal();
       if(!sel) return;
@@ -5287,8 +5323,8 @@ function renderCal(){
   const list = $('#raceList'); list.innerHTML = '';
   let shown, title;
   if(calSel){
-    shown = byDay[calSel] || [];
-    title = t('cal.day', fmtDate(shown[0]?.ms ?? Date.now()));
+    shown = calDays[calSel] || [];
+    title = t('cal.day', fmtDate(dayMs[calSel] ?? Date.now()));
   }else{
     shown = visibleRaces().filter(r=>{ const p = dayKey(r.ms).split('-'); return +p[0]===y && +p[1]===m; });
     title = t('cal.month', fmtMonth(Date.UTC(y,m-1,15,12)), shown.length);
@@ -5333,10 +5369,24 @@ function raceCard(r, i){
         ${r.sp?`<span class="tag" style="padding:2px 6px;font-size:9px">${t('r.sprint')}</span>`:''}</div>
       <div class="rname">${ccTag(r)}${esc(rname(r))}</div>
       <div class="rsub">${esc(rcirc(r))}</div>
+      ${st === 'done' ? '' : ssLine(r)}
     </div>
     <div class="rstat">${stat}</div>`;
   b.onclick = ()=> openRace(r);
   return b;
+}
+
+/* 경기 카드 아래 연습·예선 시각 (결승 시각은 카드 오른쪽에 있습니다).
+   지난 세션은 옅게, 캘린더에서 고른 날의 세션은 테두리 */
+function ssLine(r){
+  const list = (r.ss || []).filter(([k])=> !RACE_SS.has(k));
+  if(!list.length) return '';
+  const now = Date.now(), wd = dtf({weekday:'short'});
+  return `<div class="rss">${list.map(([k, iso])=>{
+    const ms = Date.parse(iso);
+    const cls = (ms < now ? 'past' : '') + (calSel && dayKey(ms) === calSel ? ' on' : '');
+    return `<span class="${cls}">${esc(sessName(k))} <b class="num">${esc(wd.format(ms))} ${esc(fmtTime(ms))}</b></span>`;
+  }).join('')}</div>`;
 }
 
 /* ── 시트 ── */
@@ -5605,7 +5655,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-06 · 순위 제조사 색·라운드별 결과';
+const BUILD = '2026-10-06 · 일정에 연습·예선';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
