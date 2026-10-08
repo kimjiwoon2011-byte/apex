@@ -1686,9 +1686,6 @@ const SERIES = {
           /* 영어 매체엔 기사가 적어 독일판도 받습니다 (서버 api/cron.js 와 같은 출처) */
           extra:[{ src:'Motorsport.com DE', proxy:'/api/msde/dtm/news', url:'https://de.motorsport.com/rss/dtm/news/' }],
           results:'https://www.dtm.com/en/results' },
-  sgt:  { name:'SUPER GT', full:['슈퍼 GT','Super GT'],                     color:'#22c55e', feed:'supergt',
-          extra:[{ src:'Motorsport.com JP', proxy:'/api/msjp/supergt/news', url:'https://jp.motorsport.com/rss/supergt/news/' }],
-          results:'https://supergt.net/en/race/result' },
   /* GT 월드 챌린지는 유럽·아시아·아메리카를 한데 묶었습니다.
      세 지역이 같은 뉴스 피드를 쓰고, 어느 지역 경기인지는 서킷으로 구분됩니다 */
   gt:   { name:'GT',   full:['GT 월드 챌린지','GT World Challenge'],         color:'#a855f7', feed:'gt',
@@ -1715,10 +1712,6 @@ const WATCH = {
   dtm: [
     { nm:'DTM',    sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',   c1:'#ff0000', c2:'#ff5b52', yt:'DTM' },
     { nm:'ran.de', sb:['독일 무료 중계','Free in Germany'],          mark:'ran', c1:'#e2001a', c2:'#ff5f70', url:'https://www.ran.de/motorsport/dtm' },
-  ],
-  sgt: [
-    { nm:'SUPER GT', sb:['유튜브 공식 채널','Official YouTube'],  ico:'play',    c1:'#ff0000', c2:'#ff5b52', yt:'SUPERGTOfficialChannel' },
-    { nm:'J SPORTS', sb:['일본 생중계','Live in Japan'],           mark:'J\nSP', c1:'#0b7a3b', c2:'#22c55e', url:'https://www.jsports.co.jp/motor/supergt/' },
   ],
   gt: [
     { nm:'GTWorld', sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play', c1:'#ff0000', c2:'#ff5b52', yt:'gtworld' },
@@ -2092,16 +2085,6 @@ const TEAMS = {
   gt3_for:{ s:'gt', n:['포드','Ford'],               c:'#00274E', p:'gt3_for' },
   gt3_cor:{ s:'gt', n:['콜벳','Corvette'],           c:'#C5B358', p:'gt3_cor' },
 
-  /* 슈퍼 GT — GT500은 일본 3사, GT300은 GT3 차량이 섞입니다 */
-  sgt_toy:{ s:'sgt', n:['토요타','Toyota'],             c:'#EB0A1E', p:'wec_toy' },
-  sgt_hon:{ s:'sgt', n:['혼다','Honda'],                c:'#E8002D', p:'ims_acu' },
-  sgt_nis:{ s:'sgt', n:['닛산','Nissan'],               c:'#C3002F', p:'gt3_lex' },
-  sgt_lex:{ s:'sgt', n:['렉서스','Lexus'],              c:'#1A1A1A', p:'gt3_lex' },
-  sgt_por:{ s:'sgt', n:['포르쉐','Porsche'],            c:'#D5001C', p:'gt3_por' },
-  sgt_mer:{ s:'sgt', n:['메르세데스-AMG','Mercedes-AMG'], c:'#00D7B6', p:'gt3_mer' },
-  sgt_bmw:{ s:'sgt', n:['BMW','BMW'],                   c:'#0066B1', p:'gt3_bmw' },
-  sgt_fer:{ s:'sgt', n:['페라리','Ferrari'],            c:'#E8002D', p:'gt3_fer' },
-
   /* GT 월드 챌린지 아시아 — 유럽과 같은 GT3 차량이라 사진을 공유합니다 */
   gta_fer:{ s:'gt', n:['페라리','Ferrari'],          c:'#E8002D', p:'gt3_fer' },
   gta_por:{ s:'gt', n:['포르쉐','Porsche'],          c:'#D5001C', p:'gt3_por' },
@@ -2316,22 +2299,8 @@ const RACES = [
   {s:'gt',r:24,n:['바버 3시간','Barber 3 Hours'],c:['바버 모터스포츠 파크','Barber Motorsports Park'],f:'🇺🇸',t:'2026-09-27T02:00:00+09:00',h:3},
   {s:'gt',r:26,n:['인디애나폴리스 8시간','Indianapolis 8 Hour'],c:['인디애나폴리스 모터 스피드웨이','Indianapolis Motor Speedway'],f:'🇺🇸',t:'2026-10-11T01:30:00+09:00',h:8,
    ss:[['FP','2026-10-08T23:00:00Z'],['PQ','2026-10-09T13:50:00Z'],['Q','2026-10-09T19:35:00Z'],['PS','2026-10-09T21:35:00Z'],['RACE','2026-10-10T16:30:00Z']]},
-
-  /* ───── 슈퍼 GT ─────
-     라운드 번호는 공식(supergt.net) 그대로입니다. 3라운드가 11월 모테기로 열려
-     번호가 날짜 순서와 다릅니다. id 는 예전 번호 그대로 — 예측 게임·리뷰·채팅방
-     기록이 'sgt-6' 같은 id 에 묶여 있어, 번호를 고쳐도 원래 경기에 붙어 있게 합니다 */
-  {s:'sgt',r:1,n:['오카야마 GT','Okayama GT'],c:['오카야마 인터내셔널','Okayama International'],f:'🇯🇵',t:'2026-04-12T14:00:00+09:00',h:2},
-  {s:'sgt',r:2,n:['후지 GT','Fuji GT'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-05-04T14:00:00+09:00',h:2},
-  {s:'sgt',r:4,id:'sgt-3',n:['후지 GT 300km','Fuji GT 300 km'],c:['후지 스피드웨이','Fuji Speedway'],f:'🇯🇵',t:'2026-08-02T13:00:00+09:00',h:2},
-  {s:'sgt',r:5,id:'sgt-4',n:['스즈카 GT','Suzuka GT'],c:['스즈카 서킷','Suzuka Circuit'],f:'🇯🇵',t:'2026-08-23T14:00:00+09:00',h:3},
-  {s:'sgt',r:6,id:'sgt-5',n:['스고 GT','Sugo GT'],c:['스포츠랜드 스고','Sportsland Sugo'],f:'🇯🇵',t:'2026-09-20T14:00:00+09:00',h:2},
-  {s:'sgt',r:7,id:'sgt-6',n:['오토폴리스 GT 3시간','Autopolis GT 3 Hours'],c:['오토폴리스','Autopolis'],f:'🇯🇵',t:'2026-10-18T13:10:00+09:00',h:3,
-   ss:[['FP','2026-10-17T01:30:00Z'],['Q1','2026-10-17T05:30:00Z'],['Q2','2026-10-17T06:23:00Z'],['WU','2026-10-18T02:40:00Z'],['RACE','2026-10-18T04:10:00Z']]},
-  {s:'sgt',r:3,id:'sgt-7',n:['모테기 GT 250km','Motegi GT 250 km'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-07T14:00:00+09:00',h:2,tbd:1},
-  {s:'sgt',r:8,n:['모테기 GT 그랜드 파이널','Motegi GT Grand Final'],c:['모빌리티 리조트 모테기','Mobility Resort Motegi'],f:'🇯🇵',t:'2026-11-08T14:00:00+09:00',h:2,tbd:1},
 ];
-RACES.forEach(r=>{ r.id = r.id || r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
+RACES.forEach(r=>{ r.id = r.s+'-'+r.r; r.ms = new Date(r.t).getTime(); r.end = r.ms + r.h*3600000;
                    r.cc = ccOf(r.f); });
 RACES.sort((a,b)=>a.ms-b.ms);
 
@@ -2627,8 +2596,6 @@ if(SERIES[newsSeries]?.noNews) newsSeries = 'f1';
 const HOSTED = location.protocol === 'https:' || location.protocol === 'http:';
 /* 예비 소스 Crash.net의 경로 — 시리즈 이름이 우리 것과 달라 짝을 지어 둡니다.
    스포츠카 피드 하나가 WEC·IMSA·GT를 함께 다룹니다 */
-/* SUPER GT 는 Crash.net 에 전용 피드가 없습니다. 스포츠카 전체 피드를 쓰면
-   China GT 같은 다른 대회 기사가 SUPER GT 로 들어가서 뺐습니다. */
 const CRASH_PATH = { f1:'f1', dtm:'dtm', wec:'sportscars', imsa:'sportscars',
                      gt:'sportscars' };
 const FEEDS = [
@@ -2689,7 +2656,7 @@ async function fetchNews(key){
   const extra = SERIES[key].extra || [];
   if(!extra.length){ if(main) return main; throw lastErr; }
 
-  /* DTM·SUPER GT·GT 는 추가 출처를 합칩니다. 서버(api/cron.js gather)와 똑같이 —
+  /* DTM·GT 는 추가 출처를 합칩니다. 서버(api/cron.js gather)와 똑같이 —
      각 출처 앞 20건 → 주소로 겹침 제거(먼저 온 것) → 최신순 → 20건 */
   const more = await Promise.all(extra.map(x => readRss(HOSTED ? x.proxy : x.url, x.src).catch(()=>[])));
   const all = (main || []).concat(...more);
@@ -4983,7 +4950,7 @@ function sessionsHtml(r){
 function buildStandSeries(){
   const box = $('#stSeries'); if(!box) return;
   box.innerHTML = '';
-  Object.entries(SERIES).filter(([k]) => ['f1','wec','imsa','dtm','sgt','gt'].includes(k)).forEach(([k, s]) => {
+  Object.entries(SERIES).filter(([k]) => ['f1','wec','imsa','dtm','gt'].includes(k)).forEach(([k, s]) => {
     const b = el('button', 'chip' + (k === standSeries ? ' on' : ''));
     b.innerHTML = `<i class="sdot" style="background:${s.color}"></i>${esc(s.name)}`;
     b.onclick = () => { standSeries = k; standClass = ''; standTab = 'drivers'; renderStandings(); };
@@ -5026,7 +4993,7 @@ function rowColor(r){
 }
 
 /* 라운드 이름 — 위키백과 머리글('IMO', 링크 제목 '2026 6 Hours of Imola')을 앱 일정의
-   경기 이름으로. 라운드 수가 앱 일정과 같으면(WEC·DTM·SUPER GT) 순서대로 맞춥니다 */
+   경기 이름으로. 라운드 수가 앱 일정과 같으면(WEC·DTM) 순서대로 맞춥니다 */
 function roundNames(key, board){
   const races = RACES.filter(r => r.s === key).sort((a, b) => a.ms - b.ms);
   const rounds = board.rounds || [];
@@ -5658,7 +5625,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-06 · 미국·캐나다 GP 시각';
+const BUILD = '2026-10-09 · 슈퍼 GT 제거';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -5677,13 +5644,13 @@ const SB_AUTH = 'https://nlwfmhrhbgzvvenztejn.supabase.co';
   if(saved && saved.mode === 'free' && !saved.url && !saved.key) DB.del('net');
 })();
 
-/* TC 부문을 없앴습니다. 이미 TC를 관심 목록에 담아 둔 기기가 있으면
-   TEAMS['tc_hyu'] 가 없어져 .s 를 읽다 앱이 통째로 멈춥니다.
-   저장된 설정에서 TC 흔적만 걷어냅니다. */
+/* TC·SUPER GT 부문을 없앴습니다. 이미 관심 목록에 담아 둔 기기가 있으면
+   TEAMS['tc_hyu']·SERIES['sgt'] 가 없어져 .s·.color 를 읽다 앱이 통째로 멈춥니다.
+   저장된 설정에서 없어진 부문의 흔적을 걷어냅니다. */
 (function(){
   const my = DB.get('myhome', null);
   if(my){
-    const s = (my.series || []).filter(k => k !== 'tc');
+    const s = (my.series || []).filter(k => SERIES[k]);
     const tm = (my.teams || []).filter(k => TEAMS[k]);
     if(s.length !== (my.series || []).length || tm.length !== (my.teams || []).length){
       DB.set('myhome', { series:s, teams:tm, driver:my.driver });
@@ -5693,7 +5660,7 @@ const SB_AUTH = 'https://nlwfmhrhbgzvvenztejn.supabase.co';
   if(fav && fav.team && !TEAMS[fav.team]){
     DB.set('fav', { driver:fav.driver, team:null });
   }
-  DB.del('news3-tc');
+  DB.del('news3-tc'); DB.del('news3-sgt');
 })();
 
 /* 앱이 새 버전으로 바뀌면 담아 둔 소식을 한 번 비웁니다.

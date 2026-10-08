@@ -1,6 +1,6 @@
 /* 시즌 순위표 — F1 은 Jolpica(옛 Ergast) API, 나머지 다섯 부문은 위키백과 시즌 문서.
  *
- * 왜 위키백과인가 — WEC·IMSA·DTM·SUPER GT·GT 월드 챌린지는 공개 API 가 없고, 공식
+ * 왜 위키백과인가 — WEC·IMSA·DTM·GT 월드 챌린지는 공개 API 가 없고, 공식
  * 사이트마다 생김새가 달라 따로따로 긁어야 합니다. 위키백과 시즌 문서는 경기 직후
  * 편집자들이 순위표를 고치고, 다섯 부문 모두 같은 틀(wikitable)이라 한 방식으로
  * 읽힙니다. 내용은 CC BY-SA 라 화면에 출처를 밝힙니다.
@@ -230,10 +230,6 @@ const WIKI = {
   } }],
   dtm: [{ page: 'Deutsche Tourenwagen Masters', pick: p =>
     !/Rookie/i.test(last(p)) && kindOf(last(p)) && { cls: '', kind: kindOf(last(p)) } }],
-  sgt: [{ page: 'Super GT Series', pick: p => {
-    const c = p.find(x => /^GT(500|300)$/.test(x));
-    return c && kindOf(last(p)) && { cls: c, kind: kindOf(last(p)) };
-  } }],
   /* GT 월드 챌린지는 유럽·아메리카·아시아 셋. 클래스별 컵(골드·실버…)은 빼고 종합만 */
   gt: [
     { page: 'GT World Challenge Europe', pick: p =>

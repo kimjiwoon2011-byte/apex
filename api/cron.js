@@ -24,21 +24,17 @@ export const maxDuration = 60;
    Motorsport.com 을 먼저 받아, 그게 실패할 때만 Autosport → Crash.net
    순으로 넘어갑니다 (fetchNews). 한때 여기서 세 곳을 합쳤더니, 앱에는
    나오지도 않는 기사에 호출을 쓰고 정작 화면의 기사는 빠뜨렸습니다.
-
-   SUPER GT 는 Crash.net 에 전용 피드가 없습니다. 스포츠카 전체 피드를
-   쓰면 China GT 같은 다른 대회 기사가 SUPER GT 로 들어가서 뺐습니다. */
+   SUPER GT 는 2026-10-09 앱에서 뺐습니다. */
 export const SERIES = [
   { k: 'f1',   feed: 'f1',      crash: 'f1' },
   { k: 'wec',  feed: 'wec',     crash: 'sportscars' },
   { k: 'imsa', feed: 'imsa',    crash: 'sportscars' },
-  /* 영어 매체에는 이 셋의 기사가 거의 없습니다(2026-10-02, 2주 동안 DTM 4건 ·
-     SUPER GT 0건 · GT 2건). 그 대회를 가장 많이 다루는 곳을 함께 받습니다 —
-     독일판 DTM 15건, 일본판 SUPER GT 22건, Sportscar365 GT 10건.
-     독일어·일본어 기사는 AI 가 바로 우리말로 옮깁니다. */
+  /* 영어 매체에는 이 둘의 기사가 거의 없습니다(2026-10-02, 2주 동안 DTM 4건 ·
+     GT 2건). 그 대회를 가장 많이 다루는 곳을 함께 받습니다 —
+     독일판 DTM 15건, Sportscar365 GT 10건.
+     독일어 기사는 AI 가 바로 우리말로 옮깁니다. */
   { k: 'dtm',  feed: 'dtm',     crash: 'dtm',
     extra: [{ src: 'Motorsport.com DE', url: 'https://de.motorsport.com/rss/dtm/news/' }] },
-  { k: 'sgt',  feed: 'supergt', crash: null,
-    extra: [{ src: 'Motorsport.com JP', url: 'https://jp.motorsport.com/rss/supergt/news/' }] },
   { k: 'gt',   feed: 'gt',      crash: 'sportscars',
     extra: [{ src: 'Sportscar365', url: 'https://sportscar365.com/category/sro/feed/' }] },
 ];

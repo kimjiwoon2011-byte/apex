@@ -23,10 +23,6 @@
       "destination": "https://de.motorsport.com/rss/:path*/"
     },
     {
-      "source": "/api/msjp/:path*",
-      "destination": "https://jp.motorsport.com/rss/:path*/"
-    },
-    {
       "source": "/api/s365/:path*",
       "destination": "https://sportscar365.com/category/:path*/feed/"
     },
