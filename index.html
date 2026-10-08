@@ -2620,6 +2620,14 @@ function cleanLead(s){
     .slice(0, 900);
 }
 
+/* 사진이 enclosure 에 없는 피드(Sportscar365 같은 워드프레스)는 본문(content:encoded)
+   안 <img> 에 있습니다. 기사 사진에는 wp-image- 가 붙고, 그렇지 않은 건 광고 배너라 뺍니다 */
+function bodyImg(it){
+  const html = it.getElementsByTagName('content:encoded')[0]?.textContent || '';
+  const tag = (html.match(/<img\b[^>]*>/gi) || []).find(x => /wp-image-/.test(x));
+  return (tag && (tag.match(/\ssrc=["']([^"']+)["']/i) || [])[1]) || '';
+}
+
 /* 피드 하나를 읽어 앞 20건 */
 async function readRss(u, src){
   const ac = new AbortController();
@@ -2634,7 +2642,7 @@ async function readRss(u, src){
       title: stripTags(it.querySelector('title')?.textContent),
       desc : cleanLead(stripTags(it.querySelector('description')?.textContent)),
       link : (it.querySelector('link')?.textContent || '').split('?')[0],
-      img  : it.querySelector('enclosure')?.getAttribute('url') || '',
+      img  : it.querySelector('enclosure')?.getAttribute('url') || bodyImg(it),
       src,
       at   : Date.parse(it.querySelector('pubDate')?.textContent || '') || Date.now(),
     }));
@@ -5625,7 +5633,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-09 · 슈퍼 GT 제거';
+const BUILD = '2026-10-09 · GT 카드뉴스 사진';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
