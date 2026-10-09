@@ -740,6 +740,9 @@ textarea{resize:vertical;min-height:78px}
 .hdeck .hero{flex:0 0 100%;min-width:0;scroll-snap-align:start;margin-bottom:0}
 .hdeck.multi .hero{flex-basis:calc(100% - 26px)}
 .herowrap .deckbar{margin:10px 0 0}
+/* 칸이 10개라 카드뉴스 막대(34px)로는 두 줄이 됩니다 — 한 줄에 들어가게 줄입니다 */
+.herowrap .dots{flex-wrap:nowrap}
+.herowrap .dots button{flex:0 0 12px}
 .hero{position:relative;overflow:hidden;border-radius:var(--r4);padding:20px 18px 18px;
   margin-bottom:18px;border:1px solid var(--line);background:var(--surface);
   cursor:pointer;transition:transform .2s var(--ease)}
