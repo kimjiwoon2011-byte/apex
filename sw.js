@@ -10,7 +10,7 @@
  *   소식·번역·서버   항상 새로 받습니다. 안 되면 담아 둔 것으로 대신합니다.
  *                   (오래된 소식을 보여 주느니 안 보여 주는 게 낫습니다)
  */
-const VER = 'apex-2026-10-10g';
+const VER = 'apex-2026-10-10h';
 const SHELL = VER + '-shell';
 const DATA  = VER + '-data';
 
@@ -52,12 +52,25 @@ self.addEventListener('notificationclick', e => {
   }));
 });
 
-/* 담아 두면 안 되는 것 — 로그인, 서버 쓰기, AI 호출 */
+/* 담아 두면 안 되는 것 — 로그인, 서버 쓰기, AI 호출, 유튜브 검색.
+   유튜브 검색 결과(/api/yt)는 하나가 1.2MB 쯤이라 경기 화면을 6번 열면 7MB 가
+   쌓였습니다. 통신이 안 되면 영상도 어차피 못 보니 담아 둘 까닭이 없습니다 */
 function skip(url) {
   return url.pathname.startsWith('/api/cards')
       || url.pathname.startsWith('/api/cron')
+      || url.pathname.startsWith('/api/yt')
       || url.hostname.endsWith('supabase.co')
       || url.hostname === 'openrouter.ai';
+}
+
+/* 소식·번역을 담아 두는 칸이 끝없이 늘지 않게 합니다. 번역은 기사 제목마다 주소가
+   달라 새 소식이 올 때마다 하나씩 쌓입니다. 오래된 것부터 지워 DATA_MAX 개만 둡니다
+   (같은 주소를 다시 담으면 맨 뒤로 가므로, 앞쪽이 가장 오래 안 쓴 것입니다) */
+const DATA_MAX = 120;
+async function trimData() {
+  const c = await caches.open(DATA);
+  const keys = await c.keys();
+  for (const k of keys.slice(0, Math.max(0, keys.length - DATA_MAX))) await c.delete(k);
 }
 
 self.addEventListener('fetch', e => {
@@ -76,7 +89,7 @@ self.addEventListener('fetch', e => {
         .then(res => {
           if (res && res.ok) {
             const copy = res.clone();
-            caches.open(DATA).then(c => c.put(req, copy)).catch(() => {});
+            caches.open(DATA).then(c => c.put(req, copy)).then(trimData).catch(() => {});
           }
           return res;
         })
