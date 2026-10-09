@@ -744,6 +744,10 @@ textarea{resize:vertical;min-height:78px}
   transition:background .25s var(--ease),color .25s var(--ease)}
 .pills button.on{background:var(--tx);color:var(--bg)}
 .pillwrap{display:flex;justify-content:center}
+/* hidden 은 언제나 숨깁니다. 위처럼 display 를 정한 칸(.pillwrap·.icon-btn·.btn)은
+   브라우저 기본 [hidden] 보다 우선해서, 코드가 숨겨도 보였습니다 — F1 순위에 GT 의
+   '유럽·아메리카·아시아' 버튼이 남고, 소식 새로고침 버튼이 모든 탭에 떴습니다 */
+[hidden]{display:none !important}
 .sess{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
 .sess>div{display:flex;justify-content:space-between;align-items:center;gap:10px;
   padding:9px 12px;border-radius:12px;background:var(--surface-2)}
@@ -5789,7 +5793,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-10 · 중계 로고 꽉 채우기';
+const BUILD = '2026-10-10 · 숨김(hidden) 제대로';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
