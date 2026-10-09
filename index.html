@@ -1714,11 +1714,13 @@ const SERIES = {
 /* 중계 플랫폼 — 앱 아이콘 타일.
    logo: 각 서비스가 자기 서버에 둔 아이콘(파일로 담지 않고 그 자리에서 불러옵니다).
    av:1 은 유튜브 채널 프로필 사진(= 시리즈 공식 로고)이라 칸을 꽉 채웁니다.
-   주소가 바뀌어 못 불러오면 아래 c1·c2 색 타일과 mark·ico 로 돌아갑니다 */
+   주소가 바뀌어 못 불러오면 아래 c1·c2 색 타일과 mark·ico 로 돌아갑니다.
+   F1 TV 는 아이콘에 Cross-Origin-Resource-Policy: same-origin 을 걸어 다른 사이트에서
+   못 쓰게 해 두어서, 그 뜻대로 로고 없이 색 타일을 씁니다 */
 const WATCH = {
   f1: [
     { nm:'쿠팡플레이', logo:'https://assets.coupangplay.com/favicon.ico',  sb:['국내 독점 · 전 세션 4K','Korea exclusive · 4K'], mark:'쿠팡\nplay', c1:'#e5342b', c2:'#ff6b5e', url:'https://www.coupangplay.com/' },
-    { nm:'F1 TV Pro', logo:'https://f1tv.formula1.com/static/apple-touch-icon.png',   sb:['공식 글로벌 스트리밍','Official global stream'],  mark:'F1\nTV',    c1:'#e10600', c2:'#ff5b52', url:'https://f1tv.formula1.com/' },
+    { nm:'F1 TV Pro',   sb:['공식 글로벌 스트리밍','Official global stream'],  mark:'F1\nTV',    c1:'#e10600', c2:'#ff5b52', url:'https://f1tv.formula1.com/' },
   ],
   wec: [
     { nm:'FIA WEC', logo:'https://yt3.googleusercontent.com/uw6xQ6RV1C8SXQi69QPZfw9XHkH5JUhwqfcPKB56iEmqnHwJSTLjtE9pOeHKMAcbk6DSxZYX=s176-c-k-c0x00ffffff-no-rj', av:1,        sb:['유튜브 무료 생중계','Free live on YouTube'], ico:'play',     c1:'#ff0000', c2:'#ff5b52', yt:'FIAWEC' },
