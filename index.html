@@ -275,6 +275,7 @@ main{padding:14px 16px 0}
 .vidwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .skel.vid{aspect-ratio:16/9;height:auto;border-radius:var(--r2)}
 .vidout{display:block;text-align:center;text-decoration:none;line-height:1.2;margin-top:0}
+.vidout.cp{margin-top:10px}
 
 /* ── 기사 읽기 ── */
 .artimg{width:100%;border-radius:var(--r2);margin-bottom:14px;display:block;
@@ -1241,6 +1242,7 @@ ko:{
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상',
  'watch.openYt':'유튜브에서 이 경기 영상 보기',
+ 'watch.cpKo':'쿠팡플레이 스포츠에서 한국어 영상 보기',
  'gm.q':'이번 경기, 누가 이길까요?','gm.pick':'우승자 예측하기','gm.change':'다시 고르기',
  'gm.picked':'내 예측 · <b>{0}</b>','gm.saved':'{0} 선택! 경기 끝나고 채점해요',
  'gm.locked':'경기가 시작돼서 예측을 바꿀 수 없어요.','gm.tooLate':'이번 경기는 예측 시간이 지났어요.',
@@ -5485,6 +5487,14 @@ function videoSearch(r){
   return 'https://www.youtube.com/' + ytChannelSearch(r);
 }
 
+/* F1 한국어 영상 — 국내 중계권을 가진 쿠팡플레이의 스포츠 채널. 경기 전체 하이라이트가
+   아니라 짧은 클립·인터뷰라 앱 안 영상은 F1 공식 하이라이트로 두고, 링크만 더 답니다.
+   그 채널 제목이 '…ㅣ2026 F1ㅣ싱가포르 그랑프리' 꼴이라 같은 말로 찾습니다 */
+function cpKoSearch(r){
+  return 'https://www.youtube.com/@coupangplaysports/search?query='
+       + encodeURIComponent(new Date(r.ms).getFullYear() + ' F1 ' + r.n[0]);
+}
+
 /* 경기 영상을 앱 안에서 바로 재생합니다.
    유튜브 검색 결과를 통째로 임베드하는 방법(listType=search)은 막혀 있어서,
    서버가 대신 검색 페이지를 받아와 영상 목록을 뽑고, 그중 이 경기 영상을 골라 넣습니다.
@@ -5664,6 +5674,8 @@ function openRace(r){
 
     <div class="sec">${t('watch.video')}</div>
     <div id="vidBox"><div class="skel vid"></div></div>
+    ${r.s === 'f1' && L === 'ko' ? `<a class="btn ghost sm vidout cp" href="${esc(cpKoSearch(r))}"
+         target="_blank" rel="noopener noreferrer">${t('watch.cpKo')}</a>` : ''}
     <div class="sec">${t('r.watch')}</div>
     <div class="wgrid">${watch}</div>
     <div class="note">${t('r.watchNote')}</div>
@@ -5752,7 +5764,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-10 · 공식 채널 영상·중계 로고';
+const BUILD = '2026-10-10 · F1 한국어 영상 링크';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
