@@ -2421,8 +2421,13 @@ let CFG = Object.assign({
   nick : '',
   nickAt : 0,          /* 설정에서 이름을 마지막으로 바꾼 때 */
   lead : 30,
-  subs : { f1:true, wec:true, imsa:true, dtm:true, gtwc:true },
+  subs : { f1:true, wec:true, imsa:true, dtm:true, gt:true },
 }, DB.get('cfg', {}));
+/* GT 부문 키가 gtwc → gt 로 바뀌었는데 기본값만 옛 키로 남아, GT 경기가 알림과
+   '다음 경기'에서 빠졌습니다. 저장된 설정은 subs 를 통째로 덮어쓰므로 여기서 옮깁니다.
+   옛 키로 일부러 꺼 둔 사람은 꺼진 채로 둡니다 */
+if(!('gt' in CFG.subs)) CFG.subs.gt = CFG.subs.gtwc !== false;
+delete CFG.subs.gtwc;
 L = LANGS[CFG.lang] ? CFG.lang : 'en';
 function saveCfg(){ DB.set('cfg', CFG); }
 function applyTheme(){ document.documentElement.setAttribute('data-theme', CFG.theme); }
@@ -5633,7 +5638,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-09 · GT 카드뉴스 사진';
+const BUILD = '2026-10-10 · GT 알림 기본으로 켜기';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
