@@ -732,7 +732,14 @@ textarea{resize:vertical;min-height:78px}
 .sess>div.past{opacity:.45}
 .sess>div.next{box-shadow:inset 0 0 0 2px var(--br)}
 
-/* 히어로 — 다음 경기 */
+/* 히어로 — 다음 경기. 여러 경기면 옆으로 넘깁니다 (다음 칸이 살짝 보이게) */
+.herowrap{margin-bottom:18px}
+.hdeck{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hdeck::-webkit-scrollbar{display:none}
+.hdeck .hero{flex:0 0 100%;min-width:0;scroll-snap-align:start;margin-bottom:0}
+.hdeck.multi .hero{flex-basis:calc(100% - 26px)}
+.herowrap .deckbar{margin:10px 0 0}
 .hero{position:relative;overflow:hidden;border-radius:var(--r4);padding:20px 18px 18px;
   margin-bottom:18px;border:1px solid var(--line);background:var(--surface);
   cursor:pointer;transition:transform .2s var(--ease)}
@@ -1071,7 +1078,7 @@ textarea{resize:vertical;min-height:78px}
       <div class="pillwrap"><div class="pills" id="calPills"></div></div>
 
       <div id="calView">
-        <div class="hero" id="heroCard"></div>
+        <div class="herowrap" id="heroCard"></div>
         <!-- 다음 경기 캘린더 — 예전에는 알림 탭 구석의 작은 버튼이라 아무도 못 찾았습니다 -->
         <button class="calcta" id="calCta">
           <div class="cc-prev" id="calCtaPrev"></div>
@@ -1356,7 +1363,7 @@ ko:{
  'set.reset':'전체 초기화 (방·평점·설정 삭제)',
  'set.resetAsk':'단톡방·채팅·평점·설정이 모두 지워집니다. 계속할까요?',
  'set.note':'소식은 Motorsport.com / Autosport 피드를 <b>3일마다</b> 자동으로 새로 받아옵니다. 제목은 자동 번역되고, <b>전문 번역</b> 링크를 누르면 기사 전체를 번역해 볼 수 있어요.<br>단톡방·평점·설정은 이 브라우저에만 저장돼요.',
- 'set.tz':'시간대는 기기 설정({0})을 따릅니다.','set.close':'닫기',
+ 'set.tz':'시각은 한국 시간({0})으로 보여 줍니다.','set.close':'닫기',
 },
 en:{
  'tab.news':'News','tab.home':'My Home','tab.cal':'Schedule','tab.chat':'Rooms','tab.alert':'Alerts',
@@ -1658,7 +1665,7 @@ ja:{
  'set.reset':'すべて初期化（ルーム・評価・設定）',
  'set.resetAsk':'ルーム・チャット・評価・設定がすべて消えます。続けますか？',
  'set.note':'ニュースは Motorsport.com / Autosport から<b>3日ごと</b>に自動取得します。タイトルは自動翻訳され、<b>全文翻訳</b>リンクで記事全体を翻訳できます。<br>ルーム・評価・設定はこのブラウザにのみ保存されます。',
- 'set.tz':'時刻は端末のタイムゾーン（{0}）に従います。','set.close':'閉じる',
+ 'set.tz':'時刻は日本時間（{0}）で表示します。','set.close':'閉じる',
 },
 };
 let L = 'ko';
@@ -2352,9 +2359,12 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), 2300);
 }
 
-/* ── 날짜: 기기 시간대 기준 ── */
-const TZ = (()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul'; }catch(e){ return 'Asia/Seoul'; } })();
-const dtf = o => new Intl.DateTimeFormat(LOCALE[L], Object.assign({timeZone:TZ}, o));
+/* ── 날짜: 언어별 시간대 — 한국어는 한국 시각, 일본어는 일본 시각, 영어는 기기 시간대.
+   언어를 바꾸면 바로 따라가도록 값이 아니라 함수로 둡니다 ── */
+const DEVICE_TZ = (()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul'; }catch(e){ return 'Asia/Seoul'; } })();
+const LANG_TZ = { ko:'Asia/Seoul', ja:'Asia/Tokyo' };
+const tz = () => LANG_TZ[L] || DEVICE_TZ;
+const dtf = o => new Intl.DateTimeFormat(LOCALE[L], Object.assign({timeZone:tz()}, o));
 const fmtDate  = ms => dtf({month:'long',day:'numeric',weekday:'short'}).format(ms);
 const fmtShort = ms => dtf({month:'short',day:'numeric'}).format(ms);
 const fmtTime  = ms => dtf({hour:'2-digit',minute:'2-digit',hour12:false}).format(ms);
@@ -2363,7 +2373,7 @@ const fmtFull  = ms => fmtDate(ms) + ' ' + fmtTime(ms);
 function rFull(r){ return r.tbd ? fmtDate(r.ms) + ' · ' + t('r.tbd') : fmtFull(r.ms); }
 const fmtMonth = ms => dtf({year:'numeric',month:'long'}).format(ms);
 function dayKey(ms){
-  const p = new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ms);
+  const p = new Intl.DateTimeFormat('en-CA',{timeZone:tz(),year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ms);
   const g = k => p.find(x=>x.type===k).value;
   return `${+g('year')}-${+g('month')}-${+g('day')}`;
 }
@@ -2449,6 +2459,7 @@ function syncLabels(){
 }
 
 function applyLang(){
+  if(L !== CFG.lang) calSel = null;   /* 시간대가 바뀌면 고른 날짜('2026-10-9')가 다른 날일 수 있습니다 */
   L = CFG.lang;
   document.documentElement.lang = L;
   syncLabels();
@@ -4810,62 +4821,119 @@ function buildCalPills(){
   });
 }
 
-/* 날짜를 선택했으면 그 날 경기를, 아니면 다음 경기를 보여줍니다 */
-function heroRace(){
+/* 위쪽 경기 칸 — 옆으로 넘겨 봅니다. 날짜를 골랐으면 그날 경기들(연습·예선만 있는 날의
+   경기 포함), 아니면 다음 경기부터 차례로 HERO_MAX 개 */
+const HERO_MAX = 10;
+function heroRaces(){
   if(calSel){
     const day = calDays[calSel] || [];
-    if(day.length) return {r:day[0], more:day.length-1};
+    if(day.length) return day;
   }
-  return {r: visibleRaces().find(x=>x.end > Date.now()), more:0};
+  return visibleRaces().filter(x=>x.end > Date.now()).slice(0, HERO_MAX);
 }
 
-function renderHero(){
-  const card = $('#heroCard');
-  const {r, more} = heroRace();
-  if(!r){ card.hidden = true; card.dataset.sig = ''; return; }
-  card.hidden = false;
-  const s = SERIES[r.s], st = status(r);
-  const d = Math.max(0, r.ms - Date.now());
-  const dd = Math.floor(d/86400000), hh = Math.floor(d%86400000/3600000),
-        mm = Math.floor(d%3600000/60000), ss = Math.floor(d%60000/1000);
-  const z = n => String(n).padStart(2,'0');
-  /* 1초마다 불립니다. 경기와 상태가 그대로면 숫자만 바꿉니다 — 서킷 3D 그림
-     (SVG 10장)까지 매초 새로 그리면 폰에서 쓸데없이 무겁습니다. */
-  const sig = [r.id, r.ms, st, calSel ? 1 : 0, more, L].join('|');
-  if(card.dataset.sig === sig){
-    const b = card.querySelectorAll('.cdu b');
-    if(st === 'soon' && b.length === 4) [dd, hh, mm, ss].forEach((v, i)=>{ b[i].textContent = z(v); });
-    return;
-  }
-  card.dataset.sig = sig;
-  card.style.setProperty('--acc', s.color);
-  const hk = circuitKey(r);
-
+/* 경기 하나의 칸. 남은 시간 숫자는 heroTick 이 채웁니다 */
+function heroSlide(r, i){
+  const s = SERIES[r.s], st = status(r), hk = circuitKey(r);
   let bottom;
   if(st === 'live')      bottom = `<div class="cdrow"><div class="cdu"><b>${t('hero.live')}</b></div></div>`;
   else if(st === 'done') bottom = `<div class="cdrow"><div class="cdu"><b style="font-size:17px">${t('hero.done')}</b>
                                      <span class="lbl">${r.p ? esc(lz(r.p)[0]) : t('hero.doneSub')}</span></div></div>`;
-  else bottom = `<div class="cdrow">
-      <div class="cdu"><b>${z(dd)}</b><span class="lbl">${t('alert.d')}</span></div>
-      <div class="cdu"><b>${z(hh)}</b><span class="lbl">${t('alert.h')}</span></div>
-      <div class="cdu"><b>${z(mm)}</b><span class="lbl">${t('alert.m')}</span></div>
-      <div class="cdu"><b>${z(ss)}</b><span class="lbl">${t('alert.s')}</span></div>
-    </div>`;
-
-  card.innerHTML = `
+  else bottom = `<div class="cdrow">${['alert.d','alert.h','alert.m','alert.s'].map(k=>
+      `<div class="cdu"><b>00</b><span class="lbl">${t(k)}</span></div>`).join('')}</div>`;
+  const label = calSel ? t('hero.picked') : i === 0 ? t('hero.next') : '';
+  const b = el('div','hero');
+  b.style.setProperty('--acc', s.color);
+  b.dataset.id = r.id; b.dataset.ms = r.ms; b.dataset.st = st;
+  b.innerHTML = `
     <span class="wash"></span>
     ${hk ? `<span class="trk">${track3d(hk, s.color, 116)}</span>` : ''}
     <div class="rnd">
       <span class="tag solid" style="background:${s.color}">${esc(s.name)}</span>
       <span class="lbl">${esc(t('hero.round', r.r))}</span>
-      <span class="lbl">${calSel ? t('hero.picked') : t('hero.next')}</span>
-      ${more ? `<span class="tag grey">+${more}</span>` : ''}
+      ${label ? `<span class="lbl">${label}</span>` : ''}
     </div>
     <h2>${esc(rname(r))}</h2>
     <div class="circ">${ccTag(r)}${esc(rcirc(r))}</div>
     <div class="dt">${rFull(r)}</div>
     ${bottom}`;
-  card.onclick = ()=> openRace(r);
+  b.onclick = ()=> openRace(r);
+  return b;
+}
+
+/* 지금 보이는 칸 번호 — 카드뉴스와 같은 기준(스크롤 위치) */
+function heroAt(deck){
+  const base = deck.children[0].offsetLeft, x = deck.scrollLeft;
+  let near = 0, best = Infinity;
+  [...deck.children].forEach((c, i)=>{
+    const d = Math.abs((c.offsetLeft - base) - x);
+    if(d < best){ best = d; near = i; }
+  });
+  return near;
+}
+
+/* 남은 시간 숫자만 바꿉니다 */
+function heroTick(box){
+  const z = n => String(n).padStart(2,'0');
+  box.querySelectorAll('.hero[data-st="soon"]').forEach(h=>{
+    const d = Math.max(0, +h.dataset.ms - Date.now());
+    const v = [Math.floor(d/86400000), Math.floor(d%86400000/3600000), Math.floor(d%3600000/60000), Math.floor(d%60000/1000)];
+    h.querySelectorAll('.cdu b').forEach((b, i)=>{ b.textContent = z(v[i]); });
+  });
+}
+
+function renderHero(){
+  const box = $('#heroCard');
+  const list = heroRaces();
+  if(!list.length){ box.hidden = true; box.dataset.sig = ''; return; }
+  box.hidden = false;
+  /* 1초마다 불립니다. 경기 목록과 상태가 그대로면 숫자만 바꿉니다 — 서킷 3D 그림
+     (칸마다 SVG 10장)까지 매초 새로 그리면 폰에서 쓸데없이 무겁고, 넘기던 자리도 튑니다. */
+  const sig = [list.map(r => r.id + ':' + r.ms + ':' + status(r)).join(','), calSel || '', L].join('|');
+  if(box.dataset.sig !== sig){
+    /* 경기가 시작하는 등으로 다시 그려도 보던 경기에 머뭅니다 (날짜를 새로 고르면 첫 경기부터) */
+    const old = box.querySelector('.hdeck');
+    const keepId = old && old.children.length && box.dataset.day === (calSel || '')
+      ? old.children[heroAt(old)].dataset.id : null;
+    box.dataset.sig = sig; box.dataset.day = calSel || '';
+    const deck = el('div', 'hdeck' + (list.length > 1 ? ' multi' : ''));
+    list.forEach((r, i)=> deck.appendChild(heroSlide(r, i)));
+    box.innerHTML = ''; box.appendChild(deck);
+
+    if(list.length > 1){
+      const go = (i, how)=>{
+        const c = deck.children[i]; if(!c) return;
+        deck.scrollTo({ left: c.offsetLeft - deck.children[0].offsetLeft, behavior: how || 'smooth' });
+      };
+      const bar  = el('div','deckbar');
+      const prev = el('button','prev'); prev.type = 'button';
+      prev.setAttribute('aria-label', t('news.prev')); prev.innerHTML = ic('chev');
+      const next = el('button','next'); next.type = 'button';
+      next.setAttribute('aria-label', t('news.next2')); next.innerHTML = ic('chev');
+      const dots = el('div','dots');
+      list.forEach((r, i)=>{
+        const d = el('button'); d.type = 'button'; d.setAttribute('aria-label', String(i + 1));
+        d.onclick = ()=> go(i);
+        dots.appendChild(d);
+      });
+      bar.append(prev, dots, next);
+      box.appendChild(bar);
+      const mark = ()=>{
+        const n = heroAt(deck);
+        [...dots.children].forEach((d, i)=> d.classList.toggle('on', i === n));
+        prev.disabled = n === 0;
+        next.disabled = n >= list.length - 1;
+      };
+      prev.onclick = ()=> go(heroAt(deck) - 1);
+      next.onclick = ()=> go(heroAt(deck) + 1);
+      let tk;
+      deck.onscroll = ()=>{ clearTimeout(tk); tk = setTimeout(mark, 80); };
+      const k = keepId ? list.findIndex(r => r.id === keepId) : -1;
+      if(k > 0) go(k, 'auto');
+      mark();
+    }
+  }
+  heroTick(box);
 }
 
 /* ── 시즌 순위 · F1 세션 시각 (/api/standings) ──
@@ -5539,7 +5607,7 @@ function openRace(r){
     <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0">
         <div style="font-size:16px;font-weight:800;letter-spacing:-.02em">${rFull(r)}</div>
-        <div class="muted">${esc(t('r.tzNote', TZ, r.h))}</div>
+        <div class="muted">${esc(t('r.tzNote', tz(), r.h))}</div>
       </div>
       ${st==='soon' ? `<div style="text-align:right;flex:0 0 auto">
         <div class="num" style="font-size:19px;font-weight:800;color:var(--br);letter-spacing:-.03em">D-${Math.max(0,Math.ceil((r.ms-Date.now())/86400000))}</div>
@@ -5638,7 +5706,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-10 · GT 알림 기본으로 켜기';
+const BUILD = '2026-10-10 · 경기 칸 넘기기·언어별 시각';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6955,7 +7023,7 @@ $('#btnSettings').onclick = ()=>{
     <div class="sec">${t('set.data')}</div>
     <button class="btn ghost sm" id="clearNews">${t('set.clearNews')}</button>
     <button class="btn danger sm" id="resetAll">${t('set.reset')}</button>
-    <div class="note">${t('set.note')}<br>${esc(t('set.tz', TZ))}<br>
+    <div class="note">${t('set.note')}<br>${esc(t('set.tz', tz()))}<br>
       ${esc(t('r.trackNote'))} <span style="opacity:.75">bacinger/f1-circuits (ODbL)</span></div>
     <button class="btn ghost sm" id="setClose">${t('set.close')}</button>`);
 
