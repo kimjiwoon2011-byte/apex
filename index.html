@@ -276,6 +276,14 @@ main{padding:14px 16px 0}
 .skel.vid{aspect-ratio:16/9;height:auto;border-radius:var(--r2)}
 .vidout{display:block;text-align:center;text-decoration:none;line-height:1.2;margin-top:0}
 .vidout.cp{margin-top:10px}
+/* 앱 안 재생이 막힌 영상(F1) — 썸네일을 누르면 유튜브에서 재생 */
+.vidlink{display:block;text-decoration:none;color:#fff}
+.vidlink img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vidlink .play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:45px;
+  border-radius:12px;background:#ff0000;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.vidlink .play svg{width:24px;height:24px;color:#fff}
+.vidlink .yt{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.72);font-size:11.5px;
+  font-weight:700;padding:5px 9px;border-radius:8px}
 
 /* ── 기사 읽기 ── */
 .artimg{width:100%;border-radius:var(--r2);margin-bottom:14px;display:block;
@@ -1241,7 +1249,7 @@ ko:{
  'art.deepWait':'내용을 정리하는 중… 처음 여는 기사는 20초쯤 걸려요','art.deepFail':'설명문을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.','art.deepLimit':'오늘 무료로 만들 수 있는 양을 다 썼어요. 매일 아침 9시에 다시 채워져요.','art.deepRetry':'다시 시도','upd.ready':'새 버전을 받았어요 · 눌러서 바꾸기','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상',
- 'watch.openYt':'유튜브에서 이 경기 영상 보기',
+ 'watch.openYt':'유튜브에서 이 경기 영상 보기','watch.onYt':'유튜브에서 재생',
  'watch.cpKo':'쿠팡플레이 스포츠에서 한국어 영상 보기',
  'gm.q':'이번 경기, 누가 이길까요?','gm.pick':'우승자 예측하기','gm.change':'다시 고르기',
  'gm.picked':'내 예측 · <b>{0}</b>','gm.saved':'{0} 선택! 경기 끝나고 채점해요',
@@ -1395,7 +1403,7 @@ en:{
  'art.deepWait':'Summarising… a new article takes about 20 seconds','art.deepFail':"Couldn't prepare the summary. Please try again shortly.",'art.deepLimit':"Today's free limit is used up. It refills every day at 00:00 UTC.",'art.deepRetry':'Try again','upd.ready':'New version ready · tap to update','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video',
- 'watch.openYt':'Watch this race on YouTube',
+ 'watch.openYt':'Watch this race on YouTube','watch.onYt':'Play on YouTube',
  'gm.q':'Who wins this one?','gm.pick':'Make your pick','gm.change':'Change pick',
  'gm.picked':'Your pick · <b>{0}</b>','gm.saved':'{0} it is — we\u2019ll score it after the race',
  'gm.locked':'The race has started, so picks are locked.','gm.tooLate':'Too late to pick this one.',
@@ -1546,7 +1554,7 @@ ja:{
  'art.deepWait':'内容をまとめています… 初めての記事は20秒ほどかかります','art.deepFail':'解説を作れませんでした。少し後でもう一度お試しください。','art.deepLimit':'本日の無料枠を使い切りました。毎朝9時（日本時間）に回復します。','art.deepRetry':'再試行','upd.ready':'新しいバージョンがあります · タップで更新','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像',
- 'watch.openYt':'YouTubeでこのレースを見る',
+ 'watch.openYt':'YouTubeでこのレースを見る','watch.onYt':'YouTubeで再生',
  'gm.q':'今回、勝つのは誰？','gm.pick':'優勝者を予想する','gm.change':'選び直す',
  'gm.picked':'あなたの予想 · <b>{0}</b>','gm.saved':'{0}ですね。レース後に採点します',
  'gm.locked':'レースが始まったので変更できません。','gm.tooLate':'今回の予想時間は過ぎました。',
@@ -1695,7 +1703,7 @@ const lz = a => Array.isArray(a) ? (L === 'ko' ? a[0] : a[1]) : a;
    시리즈
    ══════════════════════════════════════════════════════════════ */
 const SERIES = {
-  f1:   { name:'F1',   full:['포뮬러 1','Formula 1'],                       color:'#e10600', feed:'f1', yt:'Formula1',
+  f1:   { name:'F1',   full:['포뮬러 1','Formula 1'],                       color:'#e10600', feed:'f1', yt:'Formula1', noEmbed:1,
           results:'https://www.formula1.com/en/results/2026/races' },
   wec:  { name:'WEC',  full:['FIA 월드 인듀어런스','FIA World Endurance'],   color:'#00b4d8', feed:'wec', yt:'FIAWEC',
           results:'https://www.fiawec.com/en/season/2026' },
@@ -5608,6 +5616,18 @@ async function fillVideo(r){
                         target="_blank" rel="noopener noreferrer">${t('watch.openYt')}</a>`;
     return;
   }
+  /* F1 공식 영상은 Formula One Management 가 다른 사이트 안에서 재생을 막아 두어
+     ('이 웹사이트 또는 애플리케이션에 표시되지 않도록 차단') 플레이어가 오류만 띄웁니다.
+     그래서 썸네일을 보여 주고, 누르면 유튜브에서 재생합니다 */
+  if(SERIES[r.s].noEmbed){
+    box.innerHTML = `<a class="vidwrap vidlink" href="https://www.youtube.com/watch?v=${esc(id)}"
+                        target="_blank" rel="noopener noreferrer" aria-label="${esc(t('watch.onYt'))}">
+        <img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="" loading="lazy">
+        <span class="play">${ic('play','fill')}</span>
+        <span class="yt">${esc(t('watch.onYt'))}</span>
+      </a>`;
+    return;
+  }
   box.innerHTML = `<div class="vidwrap">
       <iframe src="https://www.youtube-nocookie.com/embed/${esc(id)}?rel=0"
               title="${esc(rname(r))}" loading="lazy" allowfullscreen
@@ -5764,7 +5784,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-10 · F1 한국어 영상 링크';
+const BUILD = '2026-10-10 · F1 영상은 유튜브에서 재생';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
