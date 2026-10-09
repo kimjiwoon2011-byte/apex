@@ -1254,7 +1254,7 @@ ko:{
  'my.news':'{0} 소식','my.noNews':'아직 관련 소식이 없어요.',
  'my.other':'다른 시리즈는 순위 정보가 없어서 소식만 보여드려요.',
  'my.credit':'사진 {0} · {1} · 위키미디어 커먼즈',
- 'art.deepWait':'내용을 정리하는 중… 처음 여는 기사는 20초쯤 걸려요','art.deepFail':'설명문을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.','art.deepLimit':'오늘 무료로 만들 수 있는 양을 다 썼어요. 매일 아침 9시에 다시 채워져요.','art.deepRetry':'다시 시도','upd.ready':'새 버전을 받았어요 · 눌러서 바꾸기','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
+ 'art.deepWait':'내용을 정리하는 중… 처음 여는 기사는 20초쯤 걸려요','art.deepFail':'설명문을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.','art.deepLimit':'오늘 무료로 만들 수 있는 양을 다 썼어요. 매일 아침 9시에 다시 채워져요.','art.deepRetry':'다시 시도','art.deepLater':'자세한 설명은 아직 준비 중이에요.','upd.ready':'새 버전을 받았어요 · 눌러서 바꾸기','art.deepWhy':'왜 중요한가 ','art.deepNote':'알아둘 것 ','art.deepBy':'원문을 바탕으로 정리했습니다',
  'art.terms':'이 기사에 나온 용어','art.full':'원문 기사 보기',
  'watch.video':'이 경기 영상',
  'watch.openYt':'유튜브에서 이 경기 영상 보기','watch.onYt':'유튜브에서 재생',
@@ -1408,7 +1408,7 @@ en:{
  'my.news':'{0} news','my.noNews':'No related news yet.',
  'my.other':'Other series have no standings data, so only news is shown.',
  'my.credit':'Photo {0} · {1} · Wikimedia Commons',
- 'art.deepWait':'Summarising… a new article takes about 20 seconds','art.deepFail':"Couldn't prepare the summary. Please try again shortly.",'art.deepLimit':"Today's free limit is used up. It refills every day at 00:00 UTC.",'art.deepRetry':'Try again','upd.ready':'New version ready · tap to update','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
+ 'art.deepWait':'Summarising… a new article takes about 20 seconds','art.deepFail':"Couldn't prepare the summary. Please try again shortly.",'art.deepLimit':"Today's free limit is used up. It refills every day at 00:00 UTC.",'art.deepRetry':'Try again','art.deepLater':'A detailed explainer for this story is on its way.','upd.ready':'New version ready · tap to update','art.deepWhy':'Why it matters ','art.deepNote':'Background ','art.deepBy':'Summarised from the original article',
  'art.terms':'Terms in this story','art.full':'Read the full article',
  'watch.video':'Race video',
  'watch.openYt':'Watch this race on YouTube','watch.onYt':'Play on YouTube',
@@ -1559,7 +1559,7 @@ ja:{
  'my.news':'{0}のニュース','my.noNews':'関連ニュースはまだありません。',
  'my.other':'他のシリーズは順位データがないため、ニュースのみ表示します。',
  'my.credit':'写真 {0} · {1} · ウィキメディア・コモンズ',
- 'art.deepWait':'内容をまとめています… 初めての記事は20秒ほどかかります','art.deepFail':'解説を作れませんでした。少し後でもう一度お試しください。','art.deepLimit':'本日の無料枠を使い切りました。毎朝9時（日本時間）に回復します。','art.deepRetry':'再試行','upd.ready':'新しいバージョンがあります · タップで更新','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
+ 'art.deepWait':'内容をまとめています… 初めての記事は20秒ほどかかります','art.deepFail':'解説を作れませんでした。少し後でもう一度お試しください。','art.deepLimit':'本日の無料枠を使い切りました。毎朝9時（日本時間）に回復します。','art.deepRetry':'再試行','art.deepLater':'この記事の詳しい解説は準備中です。','upd.ready':'新しいバージョンがあります · タップで更新','art.deepWhy':'なぜ重要か ','art.deepNote':'知っておくこと ','art.deepBy':'原文をもとにまとめました',
  'art.terms':'この記事に出てくる用語','art.full':'元記事を読む',
  'watch.video':'このレースの映像',
  'watch.openYt':'YouTubeでこのレースを見る','watch.onYt':'YouTubeで再生',
@@ -3793,6 +3793,30 @@ async function ensureTitles(key, data, onStep, noAi){
         if(onStep) onStep();
       }
     }
+  }else if((L === 'en' || L === 'ja') && netSb()){
+    /* 영어·일본어 카드는 PC 의 AI 가 원문에서 바로 만들어 서버에 둡니다
+       (tools/local-fill.mjs). 아직 없으면 지금처럼 제목·도입부 카드로 보입니다 */
+    await loadPicks();
+    const want = pickIdx(key, data);
+    const n = titles.length;
+    if(!Array.isArray(data.hc[L]) || data.hc[L].length !== n)
+      data.hc[L] = Array.from({ length: n }, (_, i) => (data.hc[L] || [])[i] || null);
+    const miss = want.filter(i => { const c = data.hc[L][i]; return !(c && c.p); });
+    if(miss.length){
+      try{
+        const got = await CARDS.get(miss.map(i => data.items[i]), L);
+        let n2 = 0;
+        miss.forEach(i => {
+          const c = got[CARDS.key(data.items[i], L)];
+          if(c && c.p){ data.hc[L][i] = c; n2++; }
+        });
+        if(n2){
+          DB.set('news3-'+key, data);
+          changed = true;
+          if(onStep) onStep();
+        }
+      }catch(e){}
+    }
   }
   return changed;
 }
@@ -3841,7 +3865,7 @@ const hlBody = s => s ? polish(koFix(postNames(s))) : '';
 
 /* 받아온 풀이는 저장해 둡니다. 같은 기사를 다시 열 때 또 부르면
    하루 호출 한도를 금방 써 버립니다. */
-const deepKey = it => 'deep-' + artId(it).slice(-120);
+const deepKey = it => 'deep-' + (L === 'ko' ? '' : L + '-') + artId(it).slice(-120);
 
 function deepParse(text){
   const s = String(text || '');
@@ -3862,6 +3886,23 @@ async function deepRead(it){
   const title = it.title || '';
   const lead  = (it.desc || '').replace(/\s+/g, ' ').trim();
   if(!title) return null;
+  /* 영어·일본어 — PC 의 AI 가 원문에서 바로 만든 그 언어 풀이만 씁니다.
+     서버·이 기기 키로 만드는 길은 한국어 풀이라 쓰지 않습니다 */
+  if(L !== 'ko'){
+    deepWhy = 'later';
+    if(!netSb()) return null;
+    try{
+      const rows = await sb('cards?id=eq.' + encodeURIComponent('deep|' + L + '|' + artId(it).slice(-160)) + '&select=*');
+      const r = rows && rows[0];
+      if(r && r.hook){
+        const got = { what: r.hook, why: r.punch || '', note: r.line || '' };
+        DB.set(deepKey(it), got);
+        return got;
+      }
+    }catch(e){}
+    return null;
+  }
+
   const glos = nameGlossary([title, lead]);
 
   /* ① 서버에 누가 이미 만들어 둔 글이 있으면 그대로 씁니다 (AI 호출 0회) */
@@ -4022,6 +4063,8 @@ function openArticle(it, title, lead){
     const cur = $('#deepBox'); if(!cur) return;    /* 그새 창을 닫았습니다 */
     if(!d){
       /* 빈칸으로 두면 기능이 없는 줄 압니다. 이유와 다시 시도를 보여 줍니다 */
+      /* 영어·일본어 풀이가 아직 없으면 — PC 가 하루 한 번 채웁니다 */
+      if(deepWhy === 'later'){ cur.innerHTML = `<div class="deep wait">${t('art.deepLater')}</div>`; return; }
       const lim = deepWhy === 'daily-limit' || deepWhy === 'reserve';
       cur.innerHTML = `<div class="deep wait">${t(lim ? 'art.deepLimit' : 'art.deepFail')}
         <button class="btn ghost sm" type="button" id="deepRetry">${t('art.deepRetry')}</button></div>`;
@@ -5816,7 +5859,7 @@ function pruneRooms(){
    붙여넣을 내용이 그대로 나옵니다. 이 파일을 받은 사람은 아무 설정 없이
    바로 같은 방에 들어옵니다. (publishable 키는 공개용이라 적어도 됩니다)
    ══════════════════════════════════════════════════════════════ */
-const BUILD = '2026-10-10 · 언어별 중계 안내';
+const BUILD = '2026-10-10 · 영어·일본어 카드뉴스';
 
 const DEFAULT_NET = { mode:'sb',
   url:'https://nlwfmhrhbgzvvenztejn.supabase.co',
@@ -6352,13 +6395,13 @@ const artId = it => String(it.link || it.title || (String(it.at) + it.src)).slic
    카드가 하나도 안 보였습니다. 여기에 올려 두면 키 없이도 보입니다.
    기사 주소를 열쇠로 쓰므로, 어느 부문에서 만들었든 그대로 맞물립니다. */
 const CARDS = {
-  key: it => 'ko|' + artId(it).slice(-160),
+  key: (it, lang = 'ko') => lang + '|' + artId(it).slice(-160),
 
-  /* 기사 여러 개의 카드를 한 번에 받아옵니다 */
-  async get(items){
+  /* 기사 여러 개의 카드를 한 번에 받아옵니다 (lang: 영어·일본어 카드는 PC 가 만듭니다) */
+  async get(items, lang = 'ko'){
     if(!netSb() || !items.length) return {};
     try{
-      const ids = items.map(it => this.key(it));
+      const ids = items.map(it => this.key(it, lang));
       const q = ids.map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
       const rows = await sb('cards?id=in.(' + q + ')&select=*');
       const out = {};

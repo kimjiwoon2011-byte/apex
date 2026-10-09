@@ -18,7 +18,9 @@ import { appendFileSync } from 'fs';
 import { join } from 'path';
 import { useEngine, makeCards, makeDeep, loadExisting, loadDeep, saveCards,
          keyOf, deepIdOf, hotPicks, HOT_MAX, makeTitles, loadTitles, titleIdOf,
-         leftoverNames, sourceNames, decidedNames, learnNames, nameGlossary } from '../api/_lib.js';
+         leftoverNames, sourceNames, decidedNames, learnNames, nameGlossary,
+         FOREIGN, keyOfL, deepIdOfL, loadRows, makeCardsL, makeDeepL, dropOldForeign,
+         articleText } from '../api/_lib.js';
 import { SERIES, gather, otherFeeds, savePicks } from '../api/cron.js';
 
 const OLLAMA = 'http://localhost:11434';
@@ -51,9 +53,15 @@ useEngine({ url: OLLAMA + '/v1/chat/completions', models: [MODEL], callMs: 18000
             body: { reasoning_effort: 'none' } });
 
 const t0 = Date.now();
-let cards = 0, deeps = 0, titles = 0;
+let cards = 0, deeps = 0, titles = 0, cardsL = 0, deepsL = 0;
 const notes = [];
 const cand = new Map();          /* 영어로 남은 이름 → 나온 기사 제목 */
+/* 원문은 한 번만 받습니다 — 영어·일본어 풀이가 같은 원문을 씁니다 */
+const fulls = new Map();
+const fullOf = async link => {
+  if (!fulls.has(link)) fulls.set(link, await articleText(link).catch(() => ''));
+  return fulls.get(link);
+};
 
 for (const s of SERIES) {
   let items = [];
@@ -107,6 +115,31 @@ for (const s of SERIES) {
     }]);
   }
 
+  /* 영어·일본어 카드와 풀이 — 원문(영어 기사)에서 바로 만듭니다. 한국어 카드를
+     옮기면 이름이 한글 표기로 바뀐 뒤라 되돌릴 수 없습니다 (api/_lib.js 의 FOREIGN 설명) */
+  for (const lang of FOREIGN) {
+    const haveL = await loadRows(picks.map(x => keyOfL(lang, x.link)));
+    const todoL = picks.filter(x => !haveL[keyOfL(lang, x.link)]);
+    for (let i = 0; i < todoL.length; i += 5) {
+      const part = todoL.slice(i, i + 5);
+      const r = await makeCardsL(part, lang, 600000);
+      if (!r.cards) { notes.push(s.k + ':' + lang + '카드실패'); continue; }
+      const rows = [];
+      r.cards.forEach((c, n) => {
+        if (c && c.p) rows.push({ id: keyOfL(lang, part[n].link), hook: c.h || '', punch: c.p,
+                                  line: c.d || '', at: Date.now() });
+      });
+      cardsL += await saveCards(rows);
+    }
+    const doneL = await loadRows(picks.map(x => deepIdOfL(lang, x.link)));
+    for (const it of picks.filter(x => !doneL[deepIdOfL(lang, x.link)])) {
+      const d = await makeDeepL(it, lang, 600000, await fullOf(it.link));
+      if (!d.deep) { notes.push(s.k + ':' + lang + '풀이실패'); continue; }
+      deepsL += await saveCards([{ id: deepIdOfL(lang, it.link), hook: d.deep.what,
+                                   punch: d.deep.why, line: d.deep.note, at: Date.now() }]);
+    }
+  }
+
   /* 카드·목록 제목·풀이에 영어로 남은 이름을 모읍니다 (아래에서 한꺼번에 배웁니다) */
   const links = items.map(x => x.link);
   const [cs, ts, ds] = await Promise.all([loadExisting(links), loadTitles(links), loadDeep(links)]);
@@ -151,8 +184,11 @@ for (let i = 0; i < ask.length; i += 10) {
 }
 if (learned.length) log('배운 이름 ' + learned.length + ': ' + learned.map(r => r.hook + '=' + r.punch).join(', '));
 
+await dropOldForeign();
+
 const sec = Math.round((Date.now() - t0) / 1000);
-log('카드 ' + cards + ' · 풀이 ' + deeps + ' · 제목 ' + titles + ' · 이름 ' + learned.length + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
+log('카드 ' + cards + ' · 풀이 ' + deeps + ' · 제목 ' + titles + ' · 이름 ' + learned.length +
+    ' · 영어·일본어 카드 ' + cardsL + ' 풀이 ' + deepsL + ' · ' + sec + '초' + (notes.length ? ' · ' + notes.join(' / ') : ''));
 /* 앱 밖에서도 PC 가 일했는지 볼 수 있게 서버 표에도 한 줄 */
-await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps + '·제목' + titles + '·이름' + learned.length).slice(0, 40),
+await saveCards([{ id: '_run|pc', hook: 'PC 채우기', punch: (cards + '장·풀이' + deeps + '·제목' + titles + '·이름' + learned.length + '·외국' + cardsL + '/' + deepsL).slice(0, 40),
                    line: (sec + '초 ' + notes.join(' ')).slice(0, 120), at: Date.now() }]);

@@ -1050,3 +1050,212 @@ export async function learnNames(cands, key, budgetMs) {
   addNames(rows.filter(x => x.punch).map(x => [x.hook, x.punch]));
   return rows;
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   영어·일본어 카드뉴스와 자세한 풀이 — PC(tools/local-fill.mjs)만 만듭니다
+
+   서버 무료 AI 는 한국어만으로 하루 한도(50회)를 다 씁니다(10/7~10/9 하루 56~64회).
+   그래서 한도가 없는 PC 의 AI 가 만듭니다. 영어 사용자·일본어 사용자에게 보입니다.
+
+   한국어 카드를 옮기지 않고 원문(영어 기사)에서 바로 만듭니다. 한국어 카드에는
+   이름이 이미 한글로 바뀌어 있어 되돌릴 수 없습니다 — 10/10 시험에서 '로비 폴리'
+   (Robby Foley)가 구글 번역으로 Robbie Polly, PC AI 로도 Robby Pollard 가 됐습니다.
+
+   줄 이름  카드 'en|기사주소 끝 160자' · 'ja|…'
+            풀이 'deep|en|…' · 'deep|ja|…' (deep| 으로 시작해야 표의 긴 글 한도를 받습니다)
+   ══════════════════════════════════════════════════════════════ */
+export const FOREIGN = ['en', 'ja'];
+const tail = link => String(link || '').slice(0, 400).slice(-160);
+export const keyOfL = (lang, link) => lang + '|' + tail(link);
+export const deepIdOfL = (lang, link) => 'deep|' + lang + '|' + tail(link);
+
+/* 줄 이름 목록으로 한 번에 찾아옵니다 */
+export async function loadRows(ids) {
+  const { url, headers } = sbConf();
+  const out = {};
+  if (!ids.length) return out;
+  try {
+    const q = ids.map(a => '"' + encodeURIComponent(a).replace(/"/g, '') + '"').join(',');
+    const r = await fetch(url + '/rest/v1/cards?id=in.(' + q + ')&select=*', { headers });
+    if (r.ok) (await r.json()).forEach(row => { out[row.id] = row; });
+  } catch (e) { /* 없으면 빈손으로 */ }
+  return out;
+}
+
+const CARD_SYS_L = {
+  en: [
+    'You write short motorsport news cards in English for a phone app.',
+    'For each article (title ::: lead) write three parts.',
+    'hook   2-4 words. Why it matters now, a short background. Leave it empty if the article has none.',
+    'punch  2-5 words. What happened, at a glance. A noun phrase with no full stop.',
+    'line   one factual sentence of 6-14 words: who did what.',
+    'Hard limits: hook and punch at most 35 characters each, line at most 110 characters.',
+    '',
+    'Rules',
+    '- Use only facts in the article. Never invent numbers, positions, dates or quotes.',
+    '- Keep every person, team and circuit name exactly as spelled in the article.',
+    '- If the article is in German, still write in English.',
+    '- Keep the strength of the article: considers or plans is not confirmed, a rumour stays a rumour.',
+    '- No exclamation marks, no emojis.',
+    '',
+    'Example',
+    'Input [1] Madrid F1 track hit by cable theft two weeks before race ::: Spanish police confirmed a large theft of generator cables.',
+    'Output [1] Two weeks to go ::: Madrid cable theft ::: Police confirm generator cables stolen from the new F1 venue',
+    'Do not copy the example wording.',
+    '',
+    'Output: [number] hook ::: punch ::: line',
+    'One line per article. Do not merge or skip articles. Do not explain.',
+  ].join('\n'),
+  ja: [
+    'あなたはスマホアプリ用のモータースポーツ・ニュースカードを日本語で書く記者だ。',
+    '各記事（タイトル ::: 導入）から三つの部分を書く。',
+    'フック  なぜ今重要かの短い背景。8〜16文字。記事に背景がなければ空欄にする。',
+    '要点    何が起きたかを一目で。6〜18文字。体言止め。句点を付けない。',
+    '説明    誰が何をしたかの事実一文。20〜45文字。',
+    '上限: フックと要点は各30文字以内、説明は60文字以内。',
+    '',
+    'ルール',
+    '- 記事にない事実を作らない。数字・順位・日付・発言を作らない。',
+    '- 人名・チーム名・サーキット名は日本のモータースポーツ報道で一般的なカタカナ表記にする',
+    '  （Max Verstappen → マックス・フェルスタッペン、Ferrari → フェラーリ）。',
+    '  一般的な表記が分からない名前は、原文のアルファベットのまま残す。',
+    '- ドイツ語の記事でも日本語で書く。',
+    '- 断定の強さを変えない（検討・計画は決定ではない、噂は噂、可能性は可能性）。',
+    '- 感嘆符・絵文字・です／ます調は使わない。',
+    '',
+    '例',
+    '入力 [1] Madrid F1 track hit by cable theft two weeks before race ::: Spanish police confirmed a large theft of generator cables.',
+    '出力 [1] 開催2週間前 ::: マドリードで盗難事件 ::: スペイン警察、発電機ケーブルの大量盗難を確認',
+    '例の文言をそのまま使わない。',
+    '',
+    '出力: [番号] フック ::: 要点 ::: 説明',
+    '一行に一記事。まとめたり飛ばしたりしない。考えた過程は書かない。',
+  ].join('\n'),
+};
+
+const HANGUL = /[가-힣ㄱ-ㅎㅏ-ㅣ]/;
+const JA_CHAR = /[぀-ヿ一-鿿]/;
+const noEnd = s => String(s || '').trim().replace(/[.!。！]+$/, '');
+
+/* 형식을 어긴 카드는 버립니다. 표의 한도(40·40·120자)를 넘으면 묶음 저장이 통째로
+   실패하므로 여기서 미리 걸러 냅니다 */
+function cardOkL(c, lang) {
+  if (!c || !c.p) return false;
+  const all = c.h + ' ' + c.p + ' ' + c.d;
+  if (HANGUL.test(all) || garbled(all)) return false;
+  if (c.h.length > 40 || c.p.length > 40 || c.d.length > 120) return false;
+  if (lang === 'en' && JA_CHAR.test(all)) return false;
+  if (lang === 'ja' && !JA_CHAR.test(c.p + c.d)) return false;
+  return true;
+}
+
+/* 기사 묶음을 그 언어 카드로. PC 엔진이 켜져 있을 때만 부릅니다 */
+export async function makeCardsL(items, lang, budgetMs) {
+  const body = items.map((it, i) => '[' + (i + 1) + '] ' + it.title + OR_SEP + cut(it.lead)).join('\n');
+  const r = await deepAsk(CARD_SYS_L[lang], body, '', Date.now() + (budgetMs || 60000), 60000, txt => {
+    const got = orParse(txt, items.length);
+    if (!got) return null;
+    const cards = got.map(s => {
+      if (!s) return null;
+      const p = s.split(/\s*:{2,}\s*/).map(x => x.trim());
+      if (p.length < 2) return null;
+      const c = { h: noEnd(p[0]), p: noEnd(p[1]), d: String(p[2] || '').trim() };
+      return cardOkL(c, lang) ? c : null;
+    });
+    return cards.some(Boolean) ? cards : null;
+  }, 'card-' + lang);
+  return r.got ? { cards: r.got } : { cards: null, why: r.why };
+}
+
+const DEEP_SYS_L = {
+  en: [
+    'You are a motorsport journalist. You explain the news in plain English so that fans who are new to racing understand it.',
+    '',
+    'Write three parts about the article:',
+    '[WHAT] Who did what, when and where. 2-4 sentences.',
+    '[WHY] What changes because of it. 1-2 sentences.',
+    '[NOTE] Background and what comes next. 1-2 sentences.',
+    '',
+    '- Write concrete things when the article has them: names, numbers, positions, points gaps, laps, dates, circuits, teams.',
+    '- If someone is quoted in the article, you may include one short quote.',
+    '- Explain a racing term briefly in brackets the first time, e.g. VSC (virtual safety car: the whole track slows down).',
+    '- Never write empty sentences such as "all eyes will be on" or "it remains to be seen".',
+    '- Never invent facts, numbers, positions, dates or quotes that are not in the article.',
+    '- If a part is unknown, write only - after its tag.',
+    '- Keep every person, team and circuit name exactly as spelled in the article.',
+    '- If the article is in German, still write in English.',
+    '- Length: [WHAT] at most 500 characters, [WHY] and [NOTE] at most 330 characters each.',
+    '',
+    'Output only the three tagged parts, each on its own line. Do not explain your thinking.',
+  ].join('\n'),
+  ja: [
+    'あなたはモータースポーツの記者だ。レースを見始めたばかりの人にも分かる、やさしい日本語でニュースを解説する。',
+    '',
+    '記事について三つの部分を書く（タグは英語のまま使う）:',
+    '[WHAT] 誰がいつどこで何をしたか。2〜4文。',
+    '[WHY] それで何が変わるか。1〜2文。',
+    '[NOTE] 背景とこれから。1〜2文。',
+    '',
+    '- 記事にあれば具体的に書く: 名前・数字・順位・ポイント差・周回・日付・サーキット・チーム。',
+    '- 記事に発言があれば、短い一言だけ「」で入れてよい。',
+    '- レース用語は初出で短く括弧書きで説明する（例: VSC（バーチャル・セーフティカー。全区間で減速する））。',
+    '- 「注目が集まる」「今後に期待」のような中身のない文は書かない。',
+    '- 記事にない事実・数字・順位・日付・発言を作らない。',
+    '- 分からない部分はタグの後に - だけ書く。',
+    '- 人名・チーム名・サーキット名は日本のモータースポーツ報道で一般的なカタカナ表記にする。分からない名前は原文のアルファベットのまま残す。',
+    '- ドイツ語の記事でも日本語で書く。だ・である調。感嘆符を使わない。',
+    '- 長さ: [WHAT] は300文字以内、[WHY] と [NOTE] は各200文字以内。',
+    '',
+    '三つのタグ部分だけを、それぞれ一行で出力する。考えた過程は書かない。',
+  ].join('\n'),
+};
+
+function deepParseL(text) {
+  const s = String(text || '');
+  const grab = name => {
+    const m = s.match(new RegExp('\\[' + name + '\\]\\s*:?\\s*([\\s\\S]*?)(?=\\s*\\[(?:WHAT|WHY|NOTE)\\]|$)', 'i'));
+    const v = m ? m[1].replace(/\s+/g, ' ').trim() : '';
+    return (!v || /^-+$/.test(v)) ? '' : v;
+  };
+  const out = { what: grab('WHAT'), why: grab('WHY'), note: grab('NOTE') };
+  return out.what ? out : null;
+}
+
+/* 표의 한도(600·400·400자) 안으로 — 문장 끝에서 자릅니다. 한도를 넘으면 저장이 실패합니다 */
+function fitText(s, n) {
+  s = String(s || '').trim();
+  if (s.length <= n) return s;
+  const part = s.slice(0, n);
+  const end = Math.max(part.lastIndexOf('. '), part.lastIndexOf('。'));
+  return end > n * 0.4 ? part.slice(0, end + 1) : part.slice(0, n - 1).replace(/\s+\S*$/, '') + '…';
+}
+
+/* 기사 하나를 그 언어로 길게 풀어 씁니다. full 은 원문(없으면 도입부로) */
+export async function makeDeepL(item, lang, budgetMs, full) {
+  if (!item.title) return { deep: null, reason: 'no-title' };
+  const src = full || String(item.lead || '');
+  const msg = 'Title: ' + item.title + '\nArticle: ' + (src || '(none)').slice(0, 6000);
+  const r = await deepAsk(DEEP_SYS_L[lang], msg, '', Date.now() + (budgetMs || 60000), 60000, txt => {
+    const g = deepParseL(txt);
+    if (!g) return null;
+    const all = g.what + ' ' + g.why + ' ' + g.note;
+    if (HANGUL.test(all) || garbled(all)) return null;
+    if (lang === 'ja' && !JA_CHAR.test(g.what)) return null;
+    if (lang === 'en' && JA_CHAR.test(all)) return null;
+    return g;
+  }, 'deep-' + lang);
+  if (!r.got) return { deep: null, why: r.why };
+  return { deep: { what: fitText(r.got.what, 600), why: fitText(r.got.why, 400), note: fitText(r.got.note, 400) } };
+}
+
+/* 한 달 지난 영어·일본어 카드·풀이는 지웁니다. 기사가 목록에서 밀려난 지 오래입니다 */
+export async function dropOldForeign() {
+  const { url, headers } = sbConf();
+  for (const p of FOREIGN.flatMap(l => [l + '|', 'deep|' + l + '|'])) {
+    try {
+      await fetch(url + '/rest/v1/cards?id=like.' + encodeURIComponent(p) + '*&at=lt.' +
+        (Date.now() - 30 * 86400000), { method: 'DELETE', headers });
+    } catch (e) { /* 다음 번에 지웁니다 */ }
+  }
+}
