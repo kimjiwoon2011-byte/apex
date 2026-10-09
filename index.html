@@ -3645,7 +3645,9 @@ async function askServerDeep(it, glossary){
   }catch(e){ deepWhy = 'net'; return null; }
 }
 async function ensureTitles(key, data, onStep, noAi){
-  if(L === 'en' || !data.items.length) return false;
+  /* 영어는 번역할 게 없지만, PC 가 만든 영어 카드는 아래(맨 끝)에서 받아야 해서
+     여기서 끝내지 않습니다. 예전엔 영어면 바로 끝났습니다 */
+  if(!data.items.length) return false;
   data.tr ||= {}; data.trd ||= {}; data.hs ||= {}; data.hsd ||= {}; data.hc ||= {};
   if(data.hv !== HL_VER){        /* 기준이 바뀌었으면 옛 AI 결과를 버립니다 */
     data.hs = {}; data.hsd = {}; data.hc = {}; data.hv = HL_VER;
@@ -3658,8 +3660,8 @@ async function ensureTitles(key, data, onStep, noAi){
   const leads  = data.items.map(i => (i.desc || '').replace(/\s+/g, ' ').trim() || '-');
   let changed = false;
 
-  /* 1단계 — 구글 번역 (보통 2초). 일단 한국어로 읽히게 만듭니다 */
-  if(!data.tr[L] || !data.trd[L]){
+  /* 1단계 — 구글 번역 (보통 2초). 일단 한국어로 읽히게 만듭니다 (영어는 원문 그대로) */
+  if(L !== 'en' && (!data.tr[L] || !data.trd[L])){
     try{
       const out = await translateTitles([...titles, ...leads], L);
       if(out.length === titles.length + leads.length){
